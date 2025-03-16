@@ -1,0 +1,43 @@
+<aside class="admin-master-sidebar">
+    <ul class="sidebar-menu">
+        <!-- Gerenciar Dashboard - todos -->
+        <li><a href="/dashboard">Dashboard</a></li>
+        
+        <!-- Gerenciar Distritos e Escolas -->
+        <% if (user.role === 'Master' || user.role === 'Inspetor') { %>
+            <li><a href="/districts">Distritos e Escolas</a></li>
+        <% } %>  
+
+        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Secretario') { %>
+            <li><a href="/grades">Turmas e Alunos</a></li>
+        <% } %>  
+
+        <!-- Gerenciar Usuários -->
+        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Coordenador' || user.role === 'Pedagogo' || user.role === 'Secretario'){ %>
+            <li><a href="/admin/users">Gerenciar Usuários</a></li>
+        <% } %>          
+        
+        <!-- Gerenciar Vendas (Apenas Master) -->
+        <% if (user.role === 'Master') { %>
+            <li><a href="/admin/sales">Gerenciar Vendas</a></li>
+        <% } %>
+
+        <!-- Gerenciar Conteúdo -->
+        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Coordenador' || user.role === 'Pedagogo' || user.role === 'Secretario') { %>
+            <li><a href="/admin/content">Gerenciar Conteúdo</a></li>
+        <% } %>
+
+        <!-- Gerenciar Ferramentas -->
+        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Secretario') { %>
+            <li><a href="/admin/tools/management">Gerenciar Ferramentas</a></li>
+        <% } %>
+        <% if (user.role !== 'Aluno') { %>
+        <!-- Acessar as Ferramentas -->
+        <li><a href="/admin/tools">Acessar as Ferramentas</a></li>
+        <% } %>
+        <!-- Configurações Globais (Apenas Master) -->
+        <% if (user.role === 'Master') { %>
+            <li><a href="/admin/settings">Configurações Globais</a></li>
+        <% } %>
+    </ul>
+</aside>

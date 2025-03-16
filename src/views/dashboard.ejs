@@ -1,0 +1,90 @@
+<section class="admin-master-container">
+  <!-- Incluir o Menu Lateral (Partial) -->
+  <%- include('partials/admin-sidebar') %>
+
+  <main class="admin-master-content">
+      <header class="admin-master-header">
+        <h1>Painel Administrativo</h1>
+        <p><%= user.gender === 'Feminino' ? 'Bem-vinda' : 'Bem-vindo' %>, 
+          <b><%= user.name %></b>. Você é <%= user.gender === 'Feminino' ? 'uma usuária' : 'um usuário' %> 
+          <b><%= user.role %></b>. Utilize os atalhos abaixo para gerenciar o sistema.
+        </p>
+      </header>
+    
+      <section class="admin-master-cards">
+
+        <!-- Card 1: Gerenciar Distritos e Escolas -->
+        <% if (user.role === 'Master' || user.role === 'Inspetor') { %>
+          <div class="admin-card">
+            <h3>Gerenciar Distritos e Escolas</h3>
+            <p>Controle os Distritos e adicione escolas ao sistema.</p>
+            <a href="/districts" class="admin-card-btn">Acessar</a>
+          </div>
+        <% } %>
+
+        <!-- Card 2: Gerenciar Turmas -->
+        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Secretario') { %>
+          <div class="admin-card">
+            <h3>Gerenciar as Turmas das Escolas</h3>
+            <p>Controle as turmas das escolas do sistema e acrescente o nome dos alunos.</p>
+            <a href="/grades" class="admin-card-btn">Acessar</a>
+          </div>
+        <% } %>
+        
+        <!-- Card 3: Gerenciar Usuários -->
+        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Coordenador' || user.role === 'Pedagogo' || user.role === 'Secretario') { %>
+          <div class="admin-card">
+            <h3>Gerenciar Usuários</h3>
+            <p>Controle os usuários administrativos e clientes do sistema.</p>
+            <a href="/admin/users" class="admin-card-btn">Acessar</a>
+          </div>
+        <% } %>
+    
+        <!-- Card 4: Gerenciar Vendas -->
+        <% if (user.role === 'Master') { %>
+          <div class="admin-card">
+            <h3>Gerenciar Vendas</h3>
+            <p>Crie e edite planos, visualize métricas e responda a dúvidas sobre vendas.</p>
+            <a href="/admin/sales" class="admin-card-btn">Acessar</a>
+          </div>
+        <% } %>
+    
+        <!-- Card 5: Gerenciar Conteúdo -->
+        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Coordenador' || user.role === 'Pedagogo' || user.role === 'Secretario') { %>
+          <div class="admin-card">
+            <h3>Gerenciar Conteúdo</h3>
+            <p>Edite postagens no blog e o conteúdo do site.</p>
+            <a href="/admin/content" class="admin-card-btn">Acessar</a>
+          </div>
+        <% } %>
+    
+        <!-- Card 6: Gerenciar Ferramentas -->
+        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Secretario') { %>
+          <div class="admin-card">
+            <h3>Gerenciar Ferramentas</h3>
+            <p>Altere as configurações das ferramentas disponíveis.</p>
+            <a href="/admin/tools/management" class="admin-card-btn">Acessar</a>
+          </div>
+        <% } %>
+    
+        <!-- Card 7: Acessar as Ferramentas -->
+        <% if (user.role !== 'Aluno') { %>
+          <div class="admin-card">
+            <h3>Acessar as Ferramentas</h3>
+            <p>Acesse as ferramentas disponíveis em nossa plataforma.</p>
+            <a href="/admin/tools" class="admin-card-btn">Acessar</a>
+          </div>
+        <% } %>
+    
+        <!-- Card 8: Configurações Globais -->
+        <% if (user.role === 'Master') { %>
+          <div class="admin-card">
+            <h3>Configurações Globais</h3>
+            <p>Altere as configurações do sistema e permissões gerais.</p>
+            <a href="/admin/settings" class="admin-card-btn">Acessar</a>
+          </div>
+        <% } %>
+    
+      </section>
+  </main>      
+</section>

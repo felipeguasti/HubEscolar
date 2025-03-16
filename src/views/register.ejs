@@ -1,0 +1,103 @@
+<section class="form-container">
+    <div class="form-section">
+        <h2>Crie sua conta</h2>
+        <p>Preencha os campos abaixo para se registrar.</p>
+        <form action="/auth/register" method="POST" class="form" id="multi-step-form" onsubmit="handleRegister(event)">
+            <!-- Página 1: Dados Pessoais -->
+            <div class="form-page" id="page-1">
+                <div class="form-group">
+                    <label for="name">Nome Completo</label>
+                    <input type="text" id="name" name="name" placeholder="Digite seu nome completo" required autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required autocomplete="email">
+                </div>
+                <div class="form-group password-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" name="password" placeholder="Digite sua senha" required autocomplete="current-password">
+                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password')">Mostrar</button>
+                </div>
+                <div class="form-group password-group">
+                    <label for="confirm-password">Confirmar Senha</label>
+                    <input type="password" id="confirm-password" name="confirm-password" placeholder="Confirme sua senha" required>
+                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility('confirm-password')">Mostrar</button>
+                </div>
+            </div>
+
+            <!-- Página 2: Dados Residenciais -->
+            <div class="form-page hidden" id="page-2">
+                <div class="form-group">
+                    <label for="address">Endereço</label>
+                    <input type="text" id="address" name="address" placeholder="Digite seu endereço" required autocomplete="address-line1">
+                </div>
+                <div class="form-group">
+                    <label for="city">Cidade</label>
+                    <input type="text" id="city" name="city" placeholder="Digite sua cidade" required autocomplete="address-level2">
+                </div>
+                <div class="form-group">
+                    <label for="state">Estado</label>
+                    <input type="text" id="state" name="state" placeholder="Digite seu estado" required autocomplete="address-level1">
+                </div>
+                <div class="form-group">
+                    <label for="zip">CEP</label>
+                    <input type="text" id="zip" name="zip" placeholder="Digite seu CEP" required autocomplete="postal-code">
+                </div>
+            </div>
+
+            <!-- Página 3: Dados Profissionais -->
+            <div class="form-page hidden" id="page-3">
+                <div class="form-group">
+                    <label for="school-name">Nome da Escola</label>
+                    <input type="text" id="school-name" name="schoolName" placeholder="Digite o nome da escola" required autocomplete="organization">
+                </div>
+                <div class="form-group">
+                    <label for="school-type">Autarquia</label>
+                    <select id="school-type" name="schoolType" required>
+                        <option value="Federal">Federal</option>
+                        <option value="Estadual">Estadual</option>
+                        <option value="Municipal">Municipal</option>
+                        <option value="Particular">Particular</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="school-state">Estado</label>
+                    <input type="text" id="school-state" name="schoolState" placeholder="Digite o estado da escola" required autocomplete="address-level1">
+                </div>
+                <div class="form-group">
+                    <label for="school-city">Município</label>
+                    <input type="text" id="school-city" name="schoolCity" placeholder="Digite o município da escola" required autocomplete="address-level2">
+                </div>
+            </div>
+
+            <!-- Botões de Navegação -->
+            <div class="form-navigation">
+                <button type="button" class="btn btn-prev hidden" id="prev-btn">Voltar</button>
+                <button type="button" class="btn btn-next" id="next-btn">Próximo</button>
+                <button type="submit" class="btn btn-submit hidden" id="submit-btn">Cadastrar</button>
+            </div>
+        </form>
+        <p id="message" class="form-message"></p>
+        <div class="form-footer">
+            <p>Já possui uma conta? <a href="/login" class="link">Faça login aqui</a></p>
+        </div>
+    </div>
+</section>
+<!-- Popup  -->
+<div id="generic-popup" class="popup-overlay hidden">
+    <div class="popup-content">
+      <div class="popup-message"></div>
+      <button class="popup-ok-button">OK</button>
+    </div>
+</div>
+<script>
+    function togglePasswordVisibility(inputId) {
+        const input = document.getElementById(inputId);
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+
+        // Atualiza o texto do botão
+        const button = input.nextElementSibling; // Botão ao lado do campo
+        button.textContent = isPassword ? 'Ocultar' : 'Mostrar';
+    }
+</script>

@@ -1,0 +1,24 @@
+<section class="form-reset">
+    <div class="form-section">
+        <h2>Esqueceu sua senha?</h2>
+        <p>Informe seu e-mail para receber o link de recuperação de senha.</p>
+        <form action="/auth/request-password-reset" method="POST" class="form">
+            <div class="form-group">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required>
+            </div>
+            <button type="submit" class="btn">Enviar</button>
+        </form>
+        <div class="form-footer">
+            <p>Lembrou sua senha? <a href="/login" class="link">Faça login aqui</a></p>
+        </div>
+    </div>
+</section>
+<!-- Popup  -->
+<div id="generic-popup" class="popup-overlay hidden">
+    <div class="popup-content">
+      <div class="popup-message"></div>
+      <button class="popup-ok-button">OK</button>
+    </div>
+</div>
+  

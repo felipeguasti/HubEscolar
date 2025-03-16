@@ -1,0 +1,397 @@
+<section class="admin-master-container">
+    <!-- Incluir o Menu Lateral (Partial) -->
+    <%- include('partials/admin-sidebar') %>
+
+    <!-- Conteúdo Principal -->
+    <main class="admin-master-content">
+        <header class="admin-master-header">
+            <h1>Administração de Usuários</h1>
+            <p>Gerenciamento dos usuários do sistema.</p>
+        </header>
+
+        <% if (users.some(user => user.status === 'inactive')) { %> 
+            <!-- Apenas um div invisível com a mensagem -->
+            <div id="inactiveUsersMessage" data-message="Existem usuários com status inativo aguardando aprovação." class="hidden"></div>
+        <% } %>            
+        
+        <div class="topPageElements">
+            <!-- Botão para adicionar novo usuário -->
+            <button id="addUsers" class="btn btn-addUsers">➕ Adicionar usuário</button>
+        
+            <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Coordenador' || user.role === 'Pedagogo') { %>
+                <div class="user-filter">
+                    <% if (user.role === 'Master' || user.role === 'Inspetor') { %>
+                        <!-- Dropdown para selecionar o district -->
+                        <div>
+                            <label for="district">Distrito:</label>
+                            <select id="districtFilter" <%= user.role === 'Inspetor' ? 'disabled' : '' %>>
+                                <% if (user.role === 'Master') { %>
+                                    <option value="">Selecione um distrito</option>
+                                    <% [...new Set(users.map(user => user.district))].filter(d => d).forEach(district => { %>
+                                        <option value="<%= district %>"><%= district %></option>
+                                    <% }) %>
+                                <% } else { %>
+                                    <option value="<%= user.district %>" selected><%= user.district %></option>
+                                <% } %>
+                            </select>
+                        </div>
+                    <% } %>
+        
+                    <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Coordenador' || user.role === 'Pedagogo') { %>
+                        <!-- Dropdown para selecionar a escola -->
+                        <div>
+                            <label for="school">Escola:</label>
+                            <select id="schoolFilter" <%= ['Diretor', 'Coordenador', 'Pedagogo'].includes(user.role) ? 'disabled' : '' %>>
+                                <% if (user.role === 'Master' || user.role === 'Inspetor') { %>
+                                    <option value="">Selecione uma escola</option>
+                                <% } %>
+                                <% if (['Diretor', 'Coordenador', 'Pedagogo'].includes(user.role)) { %>
+                                    <option value="<%= user.school %>" selected><%= user.school %></option>
+                                <% } %>
+                            </select>
+                        </div>
+                    <% } %>
+        
+                    <!-- Dropdown para selecionar o cargo -->
+                    <div>
+                        <label for="role">Cargo:</label>
+                        <select id="roleFilter">
+                            <option value="">Selecione um cargo</option>
+                            <option value="Master">Master</option>
+                            <option value="Inspetor">Inspetor</option>
+                            <option value="Diretor">Diretor</option>
+                            <option value="Secretario">Secretário</option>
+                            <option value="Coordenador">Coordenador</option>
+                            <option value="Pedagogo">Pedagogo</option>
+                            <option value="Professor">Professor</option>
+                            <option value="Aluno">Aluno</option>
+                        </select>
+                    </div>
+                    <!-- Dropdown para selecionar o conteúdo -->
+                    <div>
+                        <label for="content">Conteúdo:</label>
+                        <select id="contentFilter">
+                            <option value="">Selecione um conteúdo</option>
+                            <option value="Matemática">Matemática</option>
+                            <option value="Português">Português</option>
+                        </select>
+                    </div>
+        
+                    <!-- Dropdown para selecionar a turma -->
+                    <div>
+                        <label for="userClass">Turma:</label>
+                        <select id="classFilter">
+                            <option value="">Selecione uma turma</option>
+                            <option value="6º Ano">6º Ano</option>
+                            <option value="7º Ano">7º Ano</option>
+                        </select>
+                    </div>
+                    <!-- Botão de filtro -->
+                    <button id="filterUsers">Filtrar</button>
+                    <!-- Botão de Limpar -->
+                    <button id="cleanFilter">Limpar</button>
+                </div>
+            <% } %>
+        </div>
+                                        
+        <!-- Tabela de Usuários -->
+        <section class="admin-users-section">
+            <table class="table">
+                <thead>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>E-mail</th>
+                            <th>Cargo</th>
+                            <th>Status</th>
+                            <th>Criado Em</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>                    
+                </thead>
+                <tbody>
+                    <% 
+                    // Filtrando e ordenando os usuários para que inativos apareçam primeiro e depois os ativos, ordenados por data
+                    const sortedUsers = users.sort((a, b) => {
+                        if (a.status === 'inactive' && b.status !== 'inactive') return -1;
+                        if (a.status !== 'inactive' && b.status === 'inactive') return 1;
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                    });
+                    %>
+
+                    <% sortedUsers.forEach(user => { %>
+                        <tr class="<%= user.status === 'inactive' ? 'inactive-user' : '' %>">
+                            <td><%= user.name %></td>
+                            <td><%= user.email %></td>
+                            <td><%= user.role %></td>
+                            <td class="<%= user.status === 'inactive' ? 'inactive-text' : '' %>"><%= user.status === 'inactive' ? 'Inativo' : 'Ativo' %></td> 
+                            <td><%= new Date(user.createdAt).toLocaleDateString('pt-BR') %></td>
+                            <td>
+                                <button class="btn btn-edit" data-user-id="<%= user.id %>">Editar</button>
+                                <button class="btn btn-delete" data-user-id="<%= user.id %>" data-user-name="<%= user.name %>" data-user-email="<%= user.email %>" data-user-role="<%= user.role %>" data-user-status="<%= user.status %>" data-user-createdAt="<%= user.createdAt.toISOString() %>">Excluir</button>
+                                <button class="btn btn-reset-password" data-user-id="<%= user.id %>">Reiniciar Senha</button>
+                            </td>
+                        </tr>
+                    <% }) %>                                  
+                </tbody>
+            </table>
+        </section>
+        <div class="modalContainer" hidden>
+            <!-- Modal de Cadastro -->
+            <div id="registerModal" class="modal" hidden>
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Cadastrar Usuário</h2>
+                    <form id="registerForm">
+                        <input type="hidden" name="userId" id="registerUserId">
+                    
+                        <!-- Nome -->
+                        <label for="registerName">Nome:</label>
+                        <input type="text" id="registerName" name="name" value="<%= user.name %>">
+                    
+                        <!-- E-mail -->
+                        <label for="registerEmail">Email:</label>
+                        <input type="email" id="registerEmail" name="email" value="<%= user.email %>">
+                    
+                        <!-- Cargo -->
+                        <label for="registerRole">Cargo:</label>
+                        <select id="registerRole" name="role">
+                            <% if (user.role === 'Master') { %>
+                                <!-- Se for Master, exibe todas as opções -->
+                                <option value="Master" <%= user.role === 'Master' ? 'selected' : '' %>>Master</option>
+                                <option value="Inspetor" <%= user.role === 'Inspetor' ? 'selected' : '' %>>Inspetor</option>
+                                <option value="Diretor" <%= user.role === 'Diretor' ? 'selected' : '' %>>Diretor</option>
+                                <option value="Secretario" <%= user.role === 'Secretario' ? 'selected' : '' %>>Secretário</option>
+                                <option value="Coordenador" <%= user.role === 'Coordenador' ? 'selected' : '' %>>Coordenador</option>
+                                <option value="Pedagogo" <%= user.role === 'Pedagogo' ? 'selected' : '' %>>Pedagogo</option>
+                                <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
+                                <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
+                            <% } else if (user.role === 'Inspetor') { %>
+                                <!-- Se for Inspetor, exibe apenas Inspetor e inferiores -->
+                                <option value="Inspetor" <%= user.role === 'Inspetor' ? 'selected' : '' %>>Inspetor</option>
+                                <option value="Diretor" <%= user.role === 'Diretor' ? 'selected' : '' %>>Diretor</option>
+                                <option value="Coordenador" <%= user.role === 'Coordenador' ? 'selected' : '' %>>Coordenador</option>
+                                <option value="Pedagogo" <%= user.role === 'Pedagogo' ? 'selected' : '' %>>Pedagogo</option>
+                                <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
+                                <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
+                            <% } else if (user.role === 'Diretor') { %>
+                                <!-- Se for Diretor, exibe apenas Diretor e inferiores -->
+                                <option value="Diretor" <%= user.role === 'Diretor' ? 'selected' : '' %>>Diretor</option>
+                                <option value="Coordenador" <%= user.role === 'Coordenador' ? 'selected' : '' %>>Coordenador</option>
+                                <option value="Pedagogo" <%= user.role === 'Pedagogo' ? 'selected' : '' %>>Pedagogo</option>
+                                <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
+                                <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
+                            <% } else if (user.role === 'Coordenador' || user.role === 'Pedagogo') { %>
+                                <!-- Se for Coordenador ou Pedagogo, exibe apenas Professor e Aluno -->
+                                <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
+                                <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
+                            <% } else if (user.role === 'Aluno') { %>
+                                <!-- Se for Aluno, apenas Aluno, e ele não pode mudar -->
+                                <option value="Aluno" selected disabled>Aluno</option>
+                            <% } %>
+                        </select>            
+                    
+                        <!-- Status -->
+                        <label for="registerStatus">Status:</label>
+                        <select id="registerStatus" name="status">
+                            <option value="active" <%= user.status === 'active' ? 'selected' : '' %>>Ativo</option>
+                            <option value="inactive" <%= user.status === 'inactive' ? 'selected' : '' %>>Inativo</option>
+                        </select>                
+
+                        <div>
+                            <label for="registerContent">Conteúdo:</label>
+                            <input type="text" id="registerContent" name="content" value="<%= user.content %>">
+                        </div>
+                        <div>
+                            <label for="registerClass">Turma:</label>
+                            <input type="text" id="registerClass" name="userClass" value="<%= user.class %>">
+                        </div>
+                    
+                        <!-- Campos gerais -->
+                        <label for="registerCpf">CPF:</label>
+                        <input type="text" id="registerCpf" name="cpf" value="<%= user.cpf %>">
+                    
+                        <label for="registerPhone">Telefone:</label>
+                        <input type="text" id="registerPhone" name="phone" value="<%= user.phone %>">
+                    
+                        <label for="registerDateOfBirth">Data de Nascimento:</label>
+                        <input type="date" id="registerDateOfBirth" name="dateOfBirth" value="<%= user.dateOfBirth %>">
+                    
+                        <label for="registerGender">Gênero:</label>
+                        <select id="registerGender" name="gender">
+                            <option value="Masculino" <%= user.gender === 'Masculino' ? 'selected' : '' %>>Masculino</option>
+                            <option value="Feminino" <%= user.gender === 'Feminino' ? 'selected' : '' %>>Feminino</option>
+                            <option value="Outro" <%= user.gender === 'Outro' ? 'selected' : '' %>>Outro</option>
+                            <option value="Prefiro não dizer" <%= user.gender === 'Prefiro não dizer' ? 'selected' : '' %>>Prefiro não dizer</option>
+                        </select>
+                    
+                        <!-- Turno -->
+                        <label for="registerSchool">Escola:</label>
+                        <input type="text" id="registerSchool" name="school" value="<%= user.school %>">
+                        <label for="registerDistrict">Escola:</label>
+                        <input type="text" id="registerDistrict" name="district" value="<%= user.district %>">
+
+                        <label for="registerHorario">Turno:</label>
+                        <select id="registerHorario" name="horario">
+                            <option value="Manhã" <%= user.horario === 'Manhã' ? 'selected' : '' %>>Manhã</option>
+                            <option value="Tarde" <%= user.horario === 'Tarde' ? 'selected' : '' %>>Tarde</option>
+                            <option value="Noite" <%= user.horario === 'Noite' ? 'selected' : '' %>>Noite</option>
+                            <option value="Integral" <%= user.horario === 'Integral' ? 'selected' : '' %>>Integral</option>
+                        </select>
+                    
+                        <!-- Endereço -->
+                        <label for="registerAddress">Endereço:</label>
+                        <input type="text" id="registerAddress" name="address" value="<%= user.address %>">
+                    
+                        <label for="registerCity">Cidade:</label>
+                        <input type="text" id="registerCity" name="city" value="<%= user.city %>">
+                    
+                        <label for="registerState">Estado:</label>
+                        <input type="text" id="registerState" name="state" value="<%= user.state %>">
+                    
+                        <label for="registerZip">CEP:</label>
+                        <input type="text" id="registerZip" name="zip" value="<%= user.zip %>">
+
+                        <!-- Botões -->
+                        <button type="submit" class="btn btn-save">Salvar</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </form>                                
+                </div>
+            </div>        
+
+            <div id="deleteModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Excluir Usuário</h2>
+                    <p>Deseja excluir o usuário <strong id="deleteName"></strong>?</p>
+                    <p><strong>Email:</strong> <span id="deleteEmail"></span></p>
+                    <p><strong>Cargo:</strong> <span id="deleteRole"></span></p>
+                    <p><strong>Status:</strong> <span id="deleteStatus"></span></p>
+                    <p><strong>Criado em:</strong> <span id="deleteCreatedAt"></span></p>
+                    <form id="deleteForm">
+                        <input type="hidden" name="userId" id="deleteUserId">
+                        <button type="submit" class="btn btn-confirm">Excluir</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal de Edição -->
+            <div id="editModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Editar Usuário</h2>
+                    <form id="editForm">
+                        <input type="hidden" name="userId" id="editUserId">
+                    
+                        <!-- Nome -->
+                        <label for="editName">Nome:</label>
+                        <input type="text" id="editName" name="name" value="<%= user.name %>">
+                    
+                        <!-- E-mail -->
+                        <label for="editEmail">Email:</label>
+                        <input type="email" id="editEmail" name="email" value="<%= user.email %>">
+                    
+                        <!-- Cargo -->
+                        <label for="editRole">Cargo:</label>
+                        <select id="editRole" name="role">
+                            <option value="Master" <%= user.role === 'Master' ? 'selected' : '' %>>Master</option>
+                            <option value="Inspetor" <%= user.role === 'Inspetor' ? 'selected' : '' %>>Inspetor</option>
+                            <option value="Diretor" <%= user.role === 'Diretor' ? 'selected' : '' %>>Diretor</option>
+                            <option value="Secretario" <%= user.role === 'Secretario' ? 'selected' : '' %>>Secretário</option>
+                            <option value="Coordenador" <%= user.role === 'Coordenador' ? 'selected' : '' %>>Coordenador</option>
+                            <option value="Pedagogo" <%= user.role === 'Pedagogo' ? 'selected' : '' %>>Pedagogo</option>
+                            <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
+                            <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
+                        </select>
+                    
+                        <!-- Status -->
+                        <label for="editStatus">Status:</label>
+                        <select id="editStatus" name="status">
+                            <option value="active" <%= user.status === 'active' ? 'selected' : '' %>>Ativo</option>
+                            <option value="inactive" <%= user.status === 'inactive' ? 'selected' : '' %>>Inativo</option>
+                        </select>                
+                        <div>
+                            <label for="editContent">Conteúdo:</label>
+                            <input type="text" id="editContent" name="content" value="<%= user.content %>">
+                        </div>
+                        <div>
+                            <label for="editClass">Turma:</label>
+                            <input type="text" id="editClass" name="userClass" value="<%= user.class %>">
+                        </div>
+                    
+                        <!-- Campos gerais -->
+                        <label for="editCpf">CPF:</label>
+                        <input type="text" id="editCpf" name="cpf" value="<%= user.cpf %>">
+                    
+                        <label for="editPhone">Telefone:</label>
+                        <input type="text" id="editPhone" name="phone" value="<%= user.phone %>">
+                    
+                        <label for="editDateOfBirth">Data de Nascimento:</label>
+                        <input type="date" id="editDateOfBirth" name="dateOfBirth" value="<%= user.dateOfBirth %>">
+                    
+                        <label for="editGender">Gênero:</label>
+                        <select id="editGender" name="gender">
+                            <option value="Masculino" <%= user.gender === 'Masculino' ? 'selected' : '' %>>Masculino</option>
+                            <option value="Feminino" <%= user.gender === 'Feminino' ? 'selected' : '' %>>Feminino</option>
+                            <option value="Outro" <%= user.gender === 'Outro' ? 'selected' : '' %>>Outro</option>
+                            <option value="Prefiro não dizer" <%= user.gender === 'Prefiro não dizer' ? 'selected' : '' %>>Prefiro não dizer</option>
+                        </select>
+                    
+                        <!-- Turno -->
+                        <label for="editDistrict">Secretaria:</label>
+                        <input type="text" id="editDistrict" name="district" value="<%= user.district %>">                
+                        
+                        <label for="editSchool">Escola:</label>
+                        <input type="text" id="editSchool" name="school" value="<%= user.school %>">
+
+                        <label for="editHorario">Turno:</label>
+                        <select id="editHorario" name="horario">
+                            <option value="Manhã" <%= user.horario === 'Manhã' ? 'selected' : '' %>>Manhã</option>
+                            <option value="Tarde" <%= user.horario === 'Tarde' ? 'selected' : '' %>>Tarde</option>
+                            <option value="Noite" <%= user.horario === 'Noite' ? 'selected' : '' %>>Noite</option>
+                            <option value="Integral" <%= user.horario === 'Integral' ? 'selected' : '' %>>Integral</option>
+                        </select>
+                    
+                        <!-- Endereço -->
+                        <label for="editAddress">Endereço:</label>
+                        <input type="text" id="editAddress" name="address" value="<%= user.address %>">
+                    
+                        <label for="editCity">Cidade:</label>
+                        <input type="text" id="editCity" name="city" value="<%= user.city %>">
+                    
+                        <label for="editState">Estado:</label>
+                        <input type="text" id="editState" name="state" value="<%= user.state %>">
+                    
+                        <label for="editZip">CEP:</label>
+                        <input type="text" id="editZip" name="zip" value="<%= user.zip %>">
+                        
+                        <!-- Botões -->
+                        <button type="submit" class="btn btn-save-edit">Salvar</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </form>                                
+                </div>
+            </div>
+
+            <!-- Modal de Reiniciar Senha -->
+            <div id="resetPasswordModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Reiniciar Senha</h2>
+                    <form id="resetPasswordForm">
+                        <input type="hidden" name="userId" id="resetPasswordUserId">
+                        <p>Tem certeza de que deseja reiniciar a senha do usuário?</p>
+                        <button type="submit" class="btn btn-confirm-reset">Reiniciar Senha</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div id="generic-popup" class="hidden popup-overlay">
+            <div class="popup-content">
+                <div class="popup-message"></div>
+                <button class="popup-ok-button">OK</button>
+            </div>
+        </div>        
+    </main>
+</section>

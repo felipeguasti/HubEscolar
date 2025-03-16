@@ -1,0 +1,2173 @@
+/* Variáveis Globais */
+:root {
+    --bg-color: #f3f4f6;
+    --form-bg: #ffffff;
+    --text-color: #333333;
+    --subtext-color: #666666;
+    --border-color: #cccccc;
+    --focus-color: #B9FF66;
+    --primary-color: #191A23;
+    --primary-hover: #A8D84E;
+    --font-family: Arial, sans-serif;
+    --heading-font: 'Space Grotesk', sans-serif;
+}
+
+/* Estilo geral */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #FFFFFF;
+    color: #000000;
+}
+
+h2 {
+    font-family: "Space Grotesk", Nunito, sans-serif;
+}
+
+/* Estilizando o Header */
+header {
+    border-bottom: 3px solid #B9FF66; /* Cor de fundo */
+    padding: 0px 20px;
+    display: flex;
+    justify-content: space-between; /* Alinha o título e o menu em lados opostos */
+    align-items: center; /* Centraliza verticalmente os itens */
+    height: 100px; /* Altura fixa para o header */
+}
+
+.header-container {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header img {
+    width: 200px; /* Ajuste a largura conforme necessário */
+    height: auto; /* Mantém a proporção da imagem */
+    margin-left: 20%;
+}
+
+.site-name h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #000000; /* Cor do texto do nome do site */
+}
+
+nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center; /* Alinha todos os itens verticalmente */
+    gap: 20px; /* Espaçamento entre os itens do menu */
+}
+
+
+nav ul li {
+    margin: 0;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #000000;
+    font-weight: normal;
+    padding: 7px 15px; /* Espaçamento interno */
+    border: 1px solid transparent; /* Borda transparente */
+    transition: border 0.3s ease, color 0.3s ease; /* Transição suave */
+}
+
+nav ul li a:hover {
+    color: #B9FF66; /* Cor dos links ao passar o mouse */
+    border: 1px solid black; /* Borda preta */
+}
+
+
+/* Seção de Apresentação */
+.presentation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;  /* Alinha verticalmente */
+    padding: 30px 100px;
+    background-color: #F5F5F5;
+}
+
+.presentation-text {
+    width: 50%;
+    margin-bottom: 30px;
+}
+
+.presentation-text h2 {
+    font-size: 36px;
+    font-family: 'Oswald', sans-serif;
+    margin-bottom: 20px;
+}
+
+.presentation-text p {
+    font-size: 18px;
+    margin-bottom: 30px;
+    text-align: justify;
+}
+
+.btn-sobre {
+    padding: 10px 20px;
+    background-color: #B9FF66;
+    color: #000000;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 5px;
+}
+
+.btn-sobre:hover,
+.btn-comprar:hover {
+    background-color: #A8D84E; /* Um tom um pouco mais escuro */
+    color: #000000;
+}
+
+
+.presentation-image {
+    display: flex;
+    justify-content: center; /* Centraliza horizontalmente */
+    align-items: center; /* Centraliza verticalmente */
+    width: 50%;
+}
+
+.presentation-image img {
+    max-width: 70%;
+    height: auto;
+}
+
+/* Painel de Ferramentas */
+
+.tools-header {
+    display: flex;
+    align-items: center;
+    gap: 25px; 
+    margin-bottom: 80px; 
+    width: 70%; /* Define que ocupará 70% da tela */
+}
+
+
+.section-title {
+    font-size: 2em;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    margin: 0;
+}
+
+.section-subtitle {
+    font-size: 0.8em;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 400;
+    color: #666; /* Cor de texto mais suave para o subtítulo */
+    margin: 0;
+}
+
+.tools-panel {
+    padding: 50px;
+    background-color: #FFFFFF;
+}
+
+.tools-panel h2 {
+    font-size: 28px;
+    background-color: #B9FF66;
+    padding: 10px;
+    border-radius: 7px;
+    font-family: 'Space Grotesk', sans-serif;
+    display: inline;
+}
+
+/* Container de Cards */
+.tools-container {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px; 
+    margin-top: 40px;
+}
+
+/* Remover decoração de links nos títulos dos cartões */
+.tools-container a {
+    text-decoration: none; /* Remove o sublinhado */
+    color: inherit; /* Herda a cor do elemento pai */
+}
+
+/* Garantir que o título não muda de cor ao ser clicado ou focado */
+.tools-container a:focus, 
+.tools-containere a:hover {
+    color: inherit; /* Mantém a cor do texto do link */
+    outline: none; /* Remove o contorno de foco padrão */
+}
+
+/* Card da Ferramenta */
+.tool-card {
+    width: 28%; /* Aumenta a largura dos cards */
+    padding: 25px; /* Aumenta o padding dentro do card */
+    background: #F3F3F3; /* Cor padrão */
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    display: flex;
+    align-items: center; /* Alinha verticalmente no centro */
+    justify-content: space-between; /* Espaço entre texto e imagem */
+    gap: 15px; /* Espaçamento entre o texto e a imagem */
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Transição suave para efeito de hover */
+}
+
+/* Efeito de hover para os cartões */
+.tool-card:hover {
+    transform: scale(1.05) rotate(2deg); /* Aumenta ligeiramente o tamanho e aplica rotação */
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.3); /* Intensifica a sombra */
+}
+
+/* Aplicar cores alternadas */
+.tool-card:nth-child(1) { background: #F3F3F3; }
+.tool-card:nth-child(2) { background: #B9FF66; }
+.tool-card:nth-child(3) { 
+    background: #191A23;
+    color: #F3F3F3; 
+}
+.tool-card:nth-child(4) { background: #B9FF66; }
+.tool-card:nth-child(5) { 
+    background: #191A23; 
+    color: #F3F3F3;
+}
+.tool-card:nth-child(6) { background: #F3F3F3; }
+
+/* Informações da Ferramenta */
+.tool-info {
+    text-align: left; /* Alinha o texto à esquerda */
+    margin-bottom: 15px;
+    flex: 1; /* Permite que o texto use o espaço disponível */
+}
+
+/* Título da Ferramenta */
+.tool-title {
+    margin-bottom: 10px;
+}
+
+.title-badge {
+    padding: 8px; /* Aumenta o padding da badge */
+    background: #B9FF66;
+    border-radius: 5px;
+    color: black;
+    font-size: 20px; /* Aumenta o tamanho da fonte */
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 500;
+}
+
+/* Para alternar a cor do texto nas badges */
+.tool-card:nth-child(1) .title-badge { background: #B9FF66; color: black; }
+.tool-card:nth-child(2) .title-badge { background: #191A23; color: #F3F3F3; }
+.tool-card:nth-child(3) .title-badge { background: #F3F3F3; color: black; }
+.tool-card:nth-child(4) .title-badge { background: #191A23; color: #F3F3F3; }
+.tool-card:nth-child(5) .title-badge { background: #F3F3F3; color: black; }
+.tool-card:nth-child(6) .title-badge { background: #B9FF66; color: black; }
+
+/* Link da Ferramenta */
+.tool-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tool-icon {
+    position: relative;
+    width: 35px; /* Tamanho do ícone */
+    height: 35px;
+}
+
+.icon-circle {
+    width: 35px; /* Tamanho do círculo */
+    height: 35px;
+    background-color: #191A23; /* Cor do círculo */
+    border-radius: 50%;
+    position: relative;
+}
+
+.tool-card:nth-child(3) .icon-circle {
+    background-color: #F3F3F3; /* Cores alternadas */
+}
+.tool-card:nth-child(5) .icon-circle {
+    background-color: #F3F3F3;
+}
+
+/* Seta usando SVG como background */
+.icon-arrow {
+    width: 20px;
+    height: 20px;
+    background-image: url('/medias/images/arrow.svg'); /* Caminho para o SVG */
+    background-size: contain;
+    background-repeat: no-repeat;
+    position: absolute;
+    top: 50%;  /* Centraliza verticalmente */
+    left: 50%; /* Centraliza horizontalmente */
+    transform: translate(-50%, -50%); /* Ajusta a posição ao centro */
+}
+
+.tool-card:nth-child(3) .icon-arrow {
+    background-image: url('/medias/images/arrow2.svg'); /* Outro SVG para o 3º card */
+}
+.tool-card:nth-child(5) .icon-arrow {
+    background-image: url('/medias/images/arrow2.svg'); /* Outro SVG para o 5º card */
+}
+
+/* Texto do Link */
+.link-text {
+    color: black;
+    font-size: 18px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 400;
+    line-height: 24px;
+}
+
+.tool-card:nth-child(3) .link-text {
+    color: #F3F3F3;
+}
+.tool-card:nth-child(5) .link-text {
+    color: #F3F3F3;
+}
+
+
+/* Ilustração da Ferramenta */
+.tool-illustration {
+    flex-shrink: 0; /* Impede que a imagem seja reduzida */
+}
+
+.tool-illustration img {
+    width: 150px; /* Ajusta o tamanho da imagem */
+    height: auto;
+    border-radius: 10px;
+}
+
+/* Reviews dos Usuários */
+.reviews {
+    padding: 10px 50px;
+    color: #FFFFFF;
+    margin: 0;
+}
+
+.reviews h2 {
+    font-size: 28px;
+    padding: 20px 0 15px 0;
+    margin: unset;
+}
+
+.reviews-container {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 20px;
+}
+
+.review {
+    background-color: #2C2F39;
+    padding: 20px;
+    border-radius: 5px;
+    width: 30%;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.review img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 15px;
+    object-fit: cover;
+}
+
+.review p {
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+.review span {
+    font-size: 14px;
+    color: #B9FF66; /* Destaque para o nome do usuário */
+}
+
+/* Planos de Acesso */
+.plans {
+    padding: 50px;
+    background-color: #FFFFFF;
+}
+
+.plans h2 {
+    font-size: 28px;
+    background-color: #B9FF66;
+    padding: 10px;
+}
+
+.plans-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.plan {
+    width: 30%;
+    padding: 20px;
+    border: 1px solid #B9FF66;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.plan h3 {
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.plan p {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.btn-comprar {
+    padding: 10px 20px;
+    background-color: #B9FF66;
+    color: #000000;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 5px;
+}
+
+/* Estilização do Formulário de contato */
+
+/* Seção de Contato */
+.contact-page {
+    padding: 30px 20px;
+    max-width: 800px;
+    margin: 20px auto;
+    background-color: #F5F5F5; /* Cor de fundo leve para contraste com o resto do site */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.contact-page h2 {
+    font-family: 'Space Grotesk', Nunito, sans-serif;
+    font-size: 28px;
+    color: #000000;
+    margin-bottom: 20px;
+}
+
+.contact-form-group {
+    margin-bottom: 15px;
+}
+
+.contact-form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-family: 'Space Grotesk', sans-serif;
+    color: #333;
+    font-weight: bold;
+}
+
+.contact-form-group input,
+.contact-form-group textarea,
+.contact-form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+.contact-form-group input:focus,
+.contact-form-group textarea:focus,
+.contact-form-group select:focus {
+    border-color: #B9FF66; /* Cor do foco */
+    outline: none; /* Remove o contorno padrão do navegador */
+}
+
+.contact-form-group input[type="tel"] {
+    font-size: 16px;
+}
+
+.contact-form-group textarea {
+    resize: vertical; /* Permite redimensionar verticalmente */
+}
+
+.btn-submit {
+    background-color: #B9FF66;
+    color: #000000;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.btn-submit:hover {
+    background-color: #A8D84E; /* Tom um pouco mais escuro no hover */
+    color: #000000;
+}
+
+/* Página sobre*/
+
+.sobre-container {
+    background-color: #F3F3F3;
+    padding: 40px;
+    margin: 20px auto;
+    max-width: 900px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sobre-container h1 {
+    font-size: 2.5rem;
+    color: #191A23;
+    text-align: center;
+    margin-bottom: 20px;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.sobre-container p {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    color: #191A23;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.sobre-container section {
+    background-color: #B9FF66;
+    padding: 40px;
+    margin: 20px auto;
+    max-width: 900px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sobre-container section h2 {
+    font-size: 2rem;
+    color: #191A23;
+    margin-bottom: 15px;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.sobre-container section p, 
+.sobre-container section li {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    color: #191A23;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.sobre-container section ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.sobre-container section li {
+    margin-bottom: 10px;
+}
+
+.sobre-container strong {
+    font-weight: bold;
+    color: #191A23;
+}
+
+/* Rodapé */
+
+footer {
+    background-color: #000000;
+    color: #F3F3F3;
+    text-align: center;
+    padding-top: 30px;
+}
+
+.footer-content {
+    display: flex; /* Usa flexbox para criar layout de colunas */
+    justify-content: space-between; /* Espaço entre as colunas */
+    align-items: flex-start; /* Alinha itens à esquerda */
+    padding: 20px 0; /* Adiciona padding vertical ao conteúdo do rodapé */
+}
+
+.footer-section {
+    flex: 1; /* Permite que cada seção ocupe uma parte igual do espaço */
+    padding: 0 20px; /* Espaçamento interno */
+    margin: 0 10px; /* Aumente a margem para adicionar mais espaço entre as seções */
+    text-align: left; /* Alinha o texto à esquerda */
+}
+
+.footer-section h3 {
+    margin-top: 0; /* Remove a margem superior do título da seção */
+    color: #B9FF66;
+}
+
+.footer-section ul {
+    list-style: none; /* Remove os bullets */
+    padding: 0; /* Remove o padding padrão */
+    margin: 0; /* Remove a margem padrão */
+}
+
+.footer-section ul li a {
+    color: inherit;
+    text-decoration: none; /* Remove sublinhado */
+}
+
+.footer-section ul li a:hover {
+    text-decoration: underline; /* Sublinha ao passar o mouse */
+    color:white;
+}
+
+.footer-section.links ul li {
+    border-bottom: 1px solid #F3F3F3; /* Adiciona uma linha na parte inferior de cada item da lista */
+    padding-bottom: 5px; /* Adiciona um pouco de espaço entre o texto e a linha */
+    margin-bottom: 5px; /* Adiciona um pouco de espaço após cada item da lista */
+}
+
+.footer-section.links ul li:last-child {
+    border-bottom: none; /* Remove a linha do último item para evitar uma linha dupla */
+}
+
+.pencil-icon {
+    background: url('/medias/images/link.png') no-repeat; /* Caminho para o ícone de lápis na pasta images */
+    background-size: 13px 13px; /* Define o tamanho do ícone */
+    padding-left: 20px; /* Espaço à esquerda do texto para acomodar o ícone */
+    margin-right: 10px; /* Espaço entre o ícone e o texto */
+}
+
+.footer-section a {
+    color: inherit;
+    text-decoration: none;
+}
+.footer-section a:hover {
+    color: darkgray; /* Cor do texto cinza claro */
+}
+
+
+/* Estilos para a parte de baixo do rodapé com direitos autorais */
+.footer-bottom {
+    background-color: #B9FF66; /* Cor de fundo cinza azulado */
+    color: #2C2F39; /* Cor do texto cinza claro */
+    text-align: left; /* Alinha o texto à esquerda */
+    padding: 30px; /* Adiciona padding horizontal */
+    font-size: 1em; /* Tamanho da fonte menor */
+}
+
+.footer-bottom a {
+    color:rgb(92, 92, 92);
+    text-decoration: none; /* Remove sublinhado */
+}
+
+.footer-bottom a:hover {
+    text-decoration: underline; /* Sublinha ao passar o mouse */
+    color:white;
+}
+
+footer {
+    clear: both; /* Clear floats */
+}
+
+.footer-section.about button {
+    background-color: #000000; /* Fundo do botão */
+    color: #d6e6e8; /* Cor do texto do botão */
+    border: 1px solid #d6e6e8; /* Borda do botão */
+    padding: 10px 20px; /* Espaçamento interno do botão */
+    border-radius: 5px; /* Bordas arredondadas */
+    cursor: pointer; /* Cursor do mouse como ponteiro */
+    margin-top: 10px; /* Espaço acima do botão */
+    text-align: center; /* Texto centralizado */
+}
+
+.footer-section.about button:hover {
+    background-color: #d6e6e8; /* Fundo do botão no hover */
+    color: #000000; /* Cor do texto no hover */
+    border: 1px solid #000000; /* Borda no hover */
+}
+
+.footer-section.contact img {
+    width: 35px; /* Ou o tamanho que preferir */
+    height: auto;
+    margin: 5px;
+}
+
+/* INÍCIO DOS FORMULÁRIOS DE LOGIN, CADASTRO E FORGOT */
+
+/* Container Principal */
+.form-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 40px;
+    background-color: var(--bg-color);
+    font-family: var(--font-family);
+}
+
+/* Seção do Formulário */
+.form-section {
+    flex: 1 1 100%;
+    max-width: 600px;
+    padding: 30px;
+    background-color: var(--form-bg);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Título */
+.form-section h2 {
+    font-family: var(--font-family);
+    font-size: 28px;
+    color: var(--text-color);
+    margin-bottom: 0;
+}
+
+/* Subtítulo */
+.form-section p {
+    font-size: 16px;
+    color: var(--subtext-color);
+    margin-bottom: 30px;
+    margin-top:0;
+}
+
+/* Formulário */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px; 
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.form-group label {
+    font-size: 14px;
+    color: var(--text-color);
+    margin-bottom: 5px;
+}
+
+/* Garante que o box-sizing seja aplicado corretamente */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* Campos do formulário */
+.form-group input {
+    display: block;
+    width: 100%; 
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: #fff;
+    color: var(--text-color);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Ajuste no foco do input */
+.form-group input:focus {
+    outline: none;
+    border-color: var(--focus-color);
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+}
+
+/* Botão */
+.btn, #addSchoolButton {
+    display: block; 
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.btn:hover, #addSchoolButton:hover {
+    background-color: var(--primary-hover);
+    color: var(--primary-color);
+}
+
+/* Rodapé do Formulário */
+.form-footer {
+    margin-top: 20px;
+    font-size: 14px;
+    color: var(--subtext-color);
+    text-align: center;
+}
+
+.form-footer .link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.form-footer .link:hover {
+    color: var(--primary-hover);
+}
+
+/* Ilustrações (Opcional) */
+.form-illustration {
+    display: none;
+    max-width: 400px;
+    text-align: center;
+}
+
+.form-illustration img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+/* Ocultar as páginas não ativas */
+.form-page {
+    display: none;
+}
+
+.form-page:not(.hidden) {
+    display: block;
+}
+
+/* Botões de Navegação */
+.form-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.btn-prev, .btn-next, .btn-submit {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-prev:hover, .btn-next:hover, .btn-submit:hover {
+    background-color: var(--primary-hover);
+}
+
+.hidden {
+    display: none;
+}
+
+/* Dropdown (select) estilizado */
+form select {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: #fff;
+    color: var(--text-color);
+    appearance: none; /* Remove a seta padrão do navegador */
+    background-image: url('data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjNjY2IiB2aWV3Qm94PSIwIDAgMTIgMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTUuMjkxIDMuMjE5YS43NS43NSAwIDAgMSAxLjQxMiAwbDMuNzUgMy43NWEuNzUuNzUgMCAwIDEtMS40MTIgMS40MTJMMTYuNzUgM3oiIC8+PC9zdmc+');
+    background-repeat: no-repeat;
+    background-position: calc(100% - 10px) center;
+    background-size: 16px;
+}
+
+form select:focus {
+    outline: none;
+    border-color: var(--focus-color);
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+}
+
+.password-group {
+    position: relative;
+}
+
+.password-group input {
+    width: 100%;
+    padding-right: 40px; /* Espaço para o botão de visualização */
+}
+
+.password-group label {
+    display: block;
+    margin-bottom: 8px; /* Espaçamento entre o título e o campo */
+    text-align: left; /* Garante alinhamento à esquerda */
+}
+
+.password-group {
+    position: relative; /* Adiciona posição relativa ao grupo de senha */
+}
+
+.toggle-password {
+    background: none;
+    border: none;
+    color: #000; /* Cor preta ou qualquer cor de texto que combine com seu design */
+    cursor: pointer;
+    font-size: 14px;
+    position: absolute; /* Faz o botão ficar posicionado dentro do campo */
+    right: 10px; /* Distância do lado direito */
+    top: 50%; /* Centraliza verticalmente */
+    transform: translateY(20%); /* Ajusta para centralizar exatamente no meio */
+    padding: 0;
+    text-decoration: none; /* Remove o sublinhado */
+}
+
+.toggle-password:hover {
+    color: #333; /* Cor mais escura ao passar o mouse */
+}
+
+
+/* FIM DO ESTILO PARA AS PÁGINAS DE LOGIN, REGISTER E FORGOT */
+
+/* INÍCIO DO ESTILO DO BLOG */
+/* Container principal */
+.blog-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Conteúdo principal */
+.blog-content {
+    flex: 3;
+}
+
+.blog-post {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.blog-post header h1 {
+    font-size: 32px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.blog-meta {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.blog-meta .tag-link {
+    color: #247e49;
+    text-decoration: none;
+}
+
+.blog-meta .tag-link:hover {
+    text-decoration: underline;
+}
+
+.post-content p {
+    margin-bottom: 15px;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Navegação de postagens */
+.banner-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.banner {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    width: 48%;
+    height: 150px;
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+}
+
+.banner.previous-post {
+    background-image: url('/medias/images/previous-post.jpg');
+}
+
+.banner.next-post {
+    background-image: url('/medias/images/next-post.jpg');
+}
+
+.banner-content {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    width: 100%;
+}
+
+.banner-content span {
+    font-size: 12px;
+    color: #ddd;
+}
+
+.banner-content h3 {
+    font-size: 18px;
+    color: #fff;
+    margin: 0;
+}
+
+/* Barra lateral */
+.blog-sidebar {
+    flex: 1;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.blog-sidebar h3 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.related-posts {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.related-posts li {
+    margin-bottom: 10px;
+}
+
+.related-posts a {
+    color: #247e49;
+    text-decoration: none;
+}
+
+.related-posts a:hover {
+    text-decoration: underline;
+}
+/* FIM DO ESTILO PARA AS PÁGINAS DO BLOG */
+/* INÍCIO DO ESTILO PARA AS PÁGINAS DA ÁREA ADMINISTRATIVA */
+/* Ocultar o menu principal */
+header .menu-principal {
+    display: none !important;
+}
+
+/* Estilo para o container principal */
+.admin-master-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f9f9f9;
+    font-family: Arial, sans-serif;
+}
+
+/* Menu Lateral */
+.admin-master-sidebar {
+    width: 250px;
+    background-color: var(--primary-color);
+    padding: 20px;
+    color: #ffffff;
+}
+
+.admin-master-sidebar .sidebar-logo img {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 20px;
+}
+
+.admin-master-sidebar .sidebar-menu {
+    list-style: none;
+    padding: 0;
+}
+
+.admin-master-sidebar .sidebar-menu li {
+    margin-bottom: 15px;
+}
+
+.admin-master-sidebar .sidebar-menu li a {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 16px;
+    transition: color 0.3s ease;
+}
+
+.admin-master-sidebar .sidebar-menu li a:hover {
+    color: #B9FF66;
+}
+
+/* Conteúdo Principal */
+.admin-master-content {
+    flex: 1;
+    padding: 20px;
+}
+
+.admin-master-header h1 {
+    
+    font-size: 28px;
+    margin-top:0;
+    margin: 10px 0;
+    color: var(--primary-color);
+}
+
+.admin-master-header p {
+    color: #475569;
+    font-size: 16px;
+}
+
+/* Cards */
+.admin-master-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.admin-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.admin-card h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #1e293b;
+}
+
+.admin-card p {
+    font-size: 14px;
+    color: #475569;
+    margin-bottom: 15px;
+}
+
+.admin-card .admin-card-btn {
+    display: inline-block;
+    padding: 10px 15px;
+    color: #ffffff;
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.admin-card .admin-card-btn:hover {
+    background-color: #B9FF66;
+    color: #1e293b;
+}
+
+/* FIM DO ESTILO PARA AS PÁGINAS DA ÁREA ADMINISTRATIVA */
+
+/* INÍCIO DO LAYOUT DO POPUP */
+/* Popup Overlay */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+/* Conteúdo do Popup */
+.popup-content {
+background: #fff;
+padding: 20px;
+border-radius: 8px;
+text-align: center;
+max-width: 400px;
+width: 90%;
+box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Mensagem do Popup */
+.popup-message {
+margin-bottom: 20px;
+font-size: 16px;
+}
+
+/* Botão OK */
+.popup-ok-button {
+padding: 10px 20px;
+background-color: #007BFF;
+color: white;
+border: none;
+border-radius: 5px;
+cursor: pointer;
+}
+
+/* Botão ao passar o mouse */
+.popup-ok-button:hover {
+background-color: #0056b3;
+}
+
+/* Classe para esconder o popup */
+.hidden {
+display: none;
+}
+
+/* Estilo do ícone de menu (hamburguer) */
+.menu-toggle {
+    display: none;
+    cursor: pointer;
+    padding: 10px;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+}
+
+.menu-bar {
+    display: block;
+    width: 25px;
+    height: 4px;
+    margin: 5px auto;
+    background-color: #000;
+    border-radius: 5px;
+}
+
+#login-button {
+    border: 1px solid #000000; /* Borda preta bem fina */
+    padding: 8px 16px; /* Ajuste de espaçamento */
+}
+
+#logout-btn {
+    background-color: #FF4C4C;  /* Fundo vermelho */
+    color: white;  /* Texto branco */
+    border-radius: 5px;  /* Bordas arredondadas */
+    font-size: 16px;  /* Tamanho da fonte */
+    text-decoration: none;  /* Remove sublinhado */
+    display: flex;  /* Para alinhar corretamente */
+    align-items: center;  /* Centraliza verticalmente */
+    justify-content: center;  /* Centraliza horizontalmente */
+    height: 100%;  /* Garante alinhamento no menu */
+}
+
+#logout-btn:hover {
+    background-color: #FF1F1F;  /* Tom mais escuro no hover */
+}
+
+
+#logout-btn:focus {
+    outline: none;  /* Remove o contorno de foco */
+}
+/* FIM DO LAYOUT DO POPUP */
+/* INÍCIO DO ESTILO USUÁRIOS */
+/* Layout principal */
+.admin-master-content {
+    flex: 1;
+    padding: 20px;
+    background-color: var(--bg-color);
+}
+
+/* Cabeçalho */
+.admin-master-header {
+    margin-bottom: 20px;
+}
+
+.admin-master-header h1 {
+    font-size: 24px;
+    font-family: var(--heading-font);
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+/* Cards informativos */
+.admin-master-cards {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.admin-card {
+    background: var(--form-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    flex: 1;
+    min-width: 200px;
+}
+
+.admin-card h3 {
+    font-size: 18px;
+    font-family: var(--heading-font);
+    color: var(--text-color);
+    margin-bottom: 10px;
+}
+
+.admin-card-btn {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.3s;
+}
+
+.admin-card-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+/* Tabela de usuários */
+.admin-users-section, .admin-district-section {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: var(--form-bg);
+}
+
+.table th,
+.table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+    font-family: var(--font-family);
+}
+
+.table th {
+    background-color: var(--focus-color);
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.table tr:nth-child(even) {
+    background-color: var(--bg-color);
+}
+
+.inactive-user, .inactive-district {
+    background-color: #ffcccc; /* Vermelho claro */
+    color: #a00; /* Texto vermelho escuro */
+}
+
+/* Fundo diferente para usuários inativos */
+.inactive-user, .inactive-district {
+    background-color: #ffcccc; /* Vermelho claro */
+}
+
+/* Texto dos usuários inativos em vermelho escuro */
+.inactive-text {
+    color: #a00;
+    font-weight: bold;
+}
+
+/* Botões de Ação */
+.btn {
+    padding: 6px 12px; /* Tamanho mais compacto */
+    border: none;
+    border-radius: 5px; /* Arredondamento suave */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: normal;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+/* Estilo do Botão de Edição */
+.btn-edit {
+    background-color: #f0f0f0; /* Cor neutra e suave */
+    color: #333; /* Cor mais discreta */
+    border: 1px solid #ccc; /* Borda suave */
+}
+
+.btn-edit:hover {
+    background-color: #e0e0e0; /* Leve mudança na cor */
+    border-color: #bbb; /* Suaviza o destaque */
+}
+
+/* Estilo do Botão de Exclusão */
+.btn-delete {
+    background-color: #f8d7da; /* Cor suave para exclusão */
+    color: #721c24; /* Cor mais suave para texto */
+    border: 1px solid #f5c6cb; /* Borda discreta */
+}
+
+.btn-delete:hover {
+    background-color: #f5c6cb; /* Leve mudança no hover */
+    border-color: #f1a7b1; /* Suaviza o destaque no hover */
+}
+
+/* Estilo do Botão de Reiniciar Senha */
+.btn-reset-password {
+    background-color: #fff3cd; /* Cor suave para ação neutra */
+    color: #856404; /* Texto em cor mais discreta */
+    border: 1px solid #ffecb5; /* Borda suave */
+}
+
+.btn-reset-password:hover {
+    background-color: #ffecb5; /* Leve mudança no hover */
+    border-color: #ffeeba; /* Suaviza a borda no hover */
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed; /* Modal posicionado em relação à viewport */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh; /* Ocupa 100% da altura da tela */
+    background: rgba(0, 0, 0, 0.5); /* Fundo escurecido */
+    z-index: 1000; /* Fica acima de outros elementos */
+    display: flex; /* Flexbox para centralizar */
+    justify-content: center;
+    align-items: center;
+    padding: 20px; /* Espaçamento para não ficar encostado nas bordas */
+}
+
+/* Conteúdo do Modal */
+.modal-content {
+    width: 80%; /* Largura ajustada para 80% da tela */
+    max-width: 1200px; /* Definindo um limite máximo de largura */
+    max-height: 90%; /* Altura máxima do conteúdo do modal */
+    overflow-y: auto; /* Permite rolar verticalmente */
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    position: relative;
+}
+
+/* Certifique-se de que o conteúdo do modal tenha a rolagem quando for grande */
+.modal-content::-webkit-scrollbar {
+    width: 10px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+}
+
+/* Estiliza especificamente o campo de Data de Nascimento no modal */
+.modalDate {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    color: #333;
+    outline: none;
+    transition: border-color 0.3s ease-in-out;
+}
+
+/* Efeito ao focar no campo */
+.modalDate:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+/* Ajusta o ícone do calendário */
+.modalDate::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(50%);
+}
+
+/* Estiliza especificamente o campo de Data de Nascimento no modal */
+#editDateOfBirth, .defaultDate, #registerYear, #registerDescription {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    color: #333;
+    outline: none;
+    transition: border-color 0.3s ease-in-out;
+}
+
+/* Efeito ao focar no campo */
+#editDateOfBirth:focus, .defaultDate:focus, #registerYear:focus, #registerDescription:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+/* Ajusta o ícone do calendário */
+#editDateOfBirth::-webkit-calendar-picker-indicator, .defaultDate::-webkit-calendar-picker-indicator, #registerYear::-webkit-calendar-picker-indicator, #registerDescription::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(50%);
+}
+
+
+/* Estiliza especificamente o campo de Data de Nascimento no modal */
+#registerDateOfBirth {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    color: #333;
+    outline: none;
+    transition: border-color 0.3s ease-in-out;
+}
+
+/* Efeito ao focar no campo */
+#registerDateOfBirth:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+/* Ajusta o ícone do calendário */
+#registerDateOfBirth::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(50%);
+}
+
+
+
+/* Animação de entrada */
+@keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+}
+
+/* Botão de fechar */
+.modal-content .close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    color: var(--subtext-color);
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+.modal-content .close:hover {
+    color: var(--text-color);
+}
+
+/* Título do modal */
+.modal-content h2 {
+    margin-top: 0;
+    font-size: 24px;
+    color: var(--text-color);
+    margin-bottom: 20px;
+    font-family: var(--heading-font);
+}
+
+/* Estilo dos parágrafos */
+.modal-content p {
+    color: var(--subtext-color);
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+/* Labels */
+.modal-content label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+/* Inputs e selects */
+.modal-content input[type="text"],
+.modal-content input[type="email"],
+.modal-content select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+/* Botões */
+.modal-content .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: var(--font-family);
+}
+
+/* Botões de confirmação e salvamento */
+.modal-content .btn-confirm,
+.modal-content .btn-save {
+    background-color: var(--primary-color);
+    color: var(--form-bg);
+    transition: background-color 0.3s ease;
+}
+.modal-content .btn-confirm:hover,
+.modal-content .btn-save:hover {
+    background-color: var(--primary-hover);
+}
+
+/* Botão de cancelamento */
+.modal-content .btn-cancel {
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+.modal-content .btn-cancel:hover {
+    background-color: var(--primary-color);
+    color: var(--form-bg);
+}
+
+/* Espaçamento entre botões no formulário */
+.modal-content form button {
+    margin-right: 10px;
+}
+.modal-content form button:last-child {
+    margin-right: 0;
+}
+
+.btn-addUsers, .btn-addDistrict, .btn-addGrade {
+    font-size: 14px;
+    display: inline-flex;  /* Faz o botão ocupar somente o espaço do texto */
+    padding: 8px 15px;     /* Ajusta o espaçamento ao redor do texto */
+    margin: 0;
+    width:fit-content;  
+}
+
+/* Fechar o modal */
+.close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Ocultar a tabela quando o modal estiver aberto */
+.modal-active .admin-master-container {
+    display: none;
+}
+
+.topPageElements {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
+    justify-content: flex-start;
+    box-sizing: border-box;  
+}
+
+/* Esconde os labels, mas mantém acessibilidade */
+.user-filter label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+/* Container dos filtros */
+.user-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Dropdown estilizado */
+.user-filter select {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    cursor: pointer;
+    height: 38px;
+    min-width: 180px; /* Para o comportamento correto em telas grandes */
+    flex-grow: 1; /* Permite que eles ocupem o máximo de espaço possível */
+}
+
+/* Ajuste do botão de filtro */
+#filterUsers, #cleanFilter {
+    padding: 8px 15px;
+    font-size: 14px;
+    border: none;
+    color: #fff;
+    background-color: var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    height: 38px;
+    display: flex;
+    align-items: center;
+}
+
+#filterUsers:hover, #cleanFilter:hover {
+    background-color: var(--primary-hover);
+    color: var(--primary-color);
+}
+
+/* FIM DO LAYOUT DO USUÁRIOS */
+
+/* INÍCIO DA ESTILIZAÇÃO apenas dentro da lista de escolas associadas */
+/* Estilizando os títulos dentro da div associada */
+#associatedSchools h3 {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 5px;
+}
+
+#associatedSchools h4 {
+    font-size: 18px;
+    font-weight: bold;
+    color: #34495e;
+    margin-top: 10px;
+}
+
+/* Estilizando a lista de escolas */
+#associatedSchools ul {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+/* Cada item da escola */
+#associatedSchools ul li {
+    background: #ecf0f1;
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.3s ease;
+}
+
+#associatedSchools ul li:hover {
+    background: #d5dbdb;
+}
+
+/* Nome da escola */
+#associatedSchools .school-name {
+    font-weight: bold;
+    color: #2c3e50;
+    flex-grow: 1;
+}
+
+/* Input de edição */
+#associatedSchools .edit-input {
+    width: 60%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    display: none;
+}
+
+/* Estilizando os botões */
+#associatedSchools button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 8px;
+    padding: 5px;
+    transition: transform 0.2s;
+}
+
+/* Animação nos botões */
+#associatedSchools button:active {
+    transform: scale(0.9);
+}
+
+/* Botão de editar */
+#associatedSchools .edit-icon {
+    color: #f1c40f;
+}
+
+/* Botão de confirmar edição */
+#associatedSchools .confirm-edit {
+    color: #2ecc71;
+    display: none;
+}
+
+/* Botão de cancelar edição */
+#associatedSchools .cancel-edit {
+    color: #e74c3c;
+    display: none;
+}
+
+/* Botão de excluir */
+#associatedSchools .delete-icon {
+    color: #e74c3c;
+}
+
+/* INÍCIO DO ESTILO RESPONSIVO */
+@media (min-width: 768px) {
+    .form-container {
+        flex-direction: row;
+        gap: 40px;
+    }
+
+    .form-illustration {
+        display: block;
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        flex-direction: column; /* Alinhar verticalmente quando a tela for menor */
+        text-align: center;
+        height: auto;
+    }
+    
+    nav ul {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .presentation {
+        flex-direction: column;
+        padding: 20px;
+    }
+    
+    .presentation-text, .presentation-image {
+        width: 100%;
+    }
+    
+    .tools-container, .reviews-container, .plans-container {
+        flex-direction: column;
+    }
+    
+    .tool, .review, .plan {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .tool-card {
+        width: 100%; 
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .tools-panel {
+        padding: 10px;
+    }
+    
+    .tools-panel h2 {
+        display: block;
+        margin-bottom: 20px;
+    }
+
+    .tools-header {
+        display: block;
+        margin-bottom: 40px;
+    }
+
+    .blog-container {
+        flex-direction: column;
+    }
+
+    .banner-navigation {
+        flex-direction: column;
+    }
+
+    .banner {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .blog-sidebar {
+        margin-top: 20px;
+    }
+
+    .admin-master-cards {
+        flex-direction: column;
+    }
+
+    .modal-content {
+        width: 100%;
+    }
+
+    /* Resetando a estilização para dispositivos pequenos */
+    .topPageElements {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%; /* Para garantir que ocupe toda a largura da tela */
+    }
+
+    #addUsers, #addDistrict {
+        width: 100%; /* Adiciona a largura total para o botão */
+        margin-bottom: 10px; /* Espaço entre os elementos */
+    }
+
+    /* Filtros ocupando toda a largura disponível */
+    .user-filter {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        align-items: stretch;
+    }
+
+    /* Resetando e estilizando os dropdowns de novo */
+    .user-filter select {
+        width: 100% !important; /* Forçando a largura total */
+        height: 40px; /* Aumentando a altura dos dropdowns */
+        padding: 10px; /* Mais espaço dentro do dropdown */
+        margin-bottom: 10px; /* Espaço entre os filtros */
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        box-sizing: border-box; /* Garante que o padding não interfira no tamanho */
+    }
+
+    /* Botão de filtro */
+    #filterUsers, #cleanFilter {
+        width: 100%; /* Ocupa a largura total */
+        padding: 10px;
+        font-size: 14px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+}
+
+/* Responsividade dashboard (telas de até 768px) */
+@media (max-width: 768px) {
+    /* Exibe o ícone de menu (hamburguer) */
+    .menu-toggle {
+        display: block;
+    }
+
+    /* Esconde o menu por padrão */
+    .menu {
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+        position: absolute;
+        top: 60px;
+        right: 0;
+        background-color: #fff;  /* Fundo branco */
+        width: 100%;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px 10px;
+        margin: 0;
+        list-style: none;
+        z-index: 9999; /* Garantir que o menu fique sobre o conteúdo */
+    }
+
+    /* Torna o menu visível quando a classe "active" for adicionada */
+    .menu.active {
+        display: flex;
+    }
+
+    /* Responsividade do conteúdo */
+    header {
+        position: relative;
+    }
+
+    .menu li {
+        font-size: 16px;
+        text-align: center;
+        padding: 10px;
+        width: 100%;
+    }
+
+    .menu li a {
+        text-decoration: none;
+        color: #000;
+        font-size: 16px;
+    }
+    .menu li button {
+        text-decoration: none;
+        color: #000;
+        font-size: 14px;
+    }
+}
+
+/* Estilo para o menu do dashboard em telas maiores */
+@media (min-width: 769px) {
+    .menu-toggle {
+        display: none; /* Esconde o ícone de hambúrguer em telas grandes */
+    }
+
+    .menu {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+    }
+
+    .menu li {
+        font-size: 16px;
+        text-align: left;
+    }
+}
+
+/* Responsividade dashboard (telas de até 480px) */
+@media (max-width: 480px) {
+    .admin-master-container {
+        padding: 5px;
+    }
+
+    .admin-master-sidebar {
+        display: none;
+    }
+
+    .admin-master-content {
+        padding: 10px;
+    }
+
+    .sidebar-menu li {
+        font-size: 12px;
+    }
+
+    .admin-master-header h1 {
+        font-size: 1.3em;
+    }
+
+    .admin-master-header p {
+        font-size: 0.9em;
+    }
+
+    .admin-card-btn {
+        padding: 8px;
+        font-size: 0.9em;
+    }
+}
+
+/* Responsividade do Rodapé (telas pequenas) */
+@media (max-width: 768px) {
+    /* Container do rodapé */
+    .footer-container {
+        padding: 20px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .footer-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        width: 100%;
+    }
+
+    /* Seções do rodapé */
+    .footer-section {
+        width: 100%;
+        text-align: center;
+    }
+
+    .footer-section.about,
+    .footer-section.contact,
+    .footer-section.links {
+        padding: 0;
+    }
+
+    /* Links úteis no rodapé */
+    .footer-section.links ul {
+        padding: 0;
+        margin: 0;
+        list-style-type: none;
+    }
+
+    .footer-section.links ul li {
+        margin-bottom: 10px;
+    }
+
+    .footer-section.links ul li a {
+        text-decoration: none;
+        font-size: 14px;
+        color: inherit; /* Garante que a cor original seja mantida */
+    }
+
+    .footer-section.links ul li button {
+        text-decoration: none;
+        font-size: 14px;
+        color: inherit; /* Garante que a cor original seja mantida */
+    }
+
+    /* Ajustar as imagens do contato */
+    .imageContact {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .imageContact a img {
+        width: 30px;
+        height: 30px;
+    }
+
+    /* Rodapé inferior */
+    .footer-bottom {
+        text-align: center;
+        font-size: 12px;
+        padding-top: 20px;
+        margin-top: 20px;
+        width: 100%;
+    }
+
+    /* Reduzir o tamanho do texto no rodapé em telas pequenas */
+    .footer-bottom a {
+        font-size: 12px;
+    }
+}
+
+/* Responsividade do Rodapé (telas ainda menores, até 480px) */
+@media (max-width: 480px) {
+    /* Ajustar o padding */
+    .footer-container {
+        padding: 15px;
+    }
+
+    .footer-section h3 {
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+
+    .footer-section p {
+        font-size: 14px;
+    }
+
+    /* Ajuste dos botões */
+    .footer-section.about button {
+        font-size: 14px;
+        padding: 8px 20px;
+    }
+
+    /* Ajustar a largura das imagens */
+    .imageContact a img {
+        width: 25px;
+        height: 25px;
+    }
+
+    /* Ajustar a largura dos links úteis */
+    .footer-section.links ul li a {
+        font-size: 13px;
+        color: inherit; /* Garante que a cor original seja mantida */
+    }
+}

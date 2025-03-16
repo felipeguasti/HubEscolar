@@ -1,0 +1,189 @@
+<section class="admin-master-container">
+    <!-- Incluir o Menu Lateral (Partial) -->
+    <%- include('partials/admin-sidebar') %>
+    <!-- Conteúdo Principal -->
+    <main class="admin-master-content">
+        <header class="admin-master-header">
+            <h1>Administração de Distritos e Escolas</h1>
+            <p>Gerenciamento dos Distritos e Escolas do sistema.</p>
+        </header>     
+        <% if (districts.some(district => district.status === 'inactive')) { %> 
+            <!-- Apenas um div invisível com a mensagem -->
+            <div id="inactiveDistrictsMessage" data-message="Existem distritos com status inativo aguardando aprovação." class="hidden"></div>
+        <% } %>                 
+        
+        <% if (user && user.role === 'Master') { %>
+            <div class="topPageElements">
+                <!-- Botão para adicionar novo distrito, visível somente para usuários Master -->
+                <button id="addDistrict" class="btn btn-addDistrict">➕ Adicionar Distrito</button>
+            </div>
+        <% } %>        
+        <!-- Tabela de Distritos -->
+        <section class="admin-district-section">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Distrito</th>
+                        <th>Status</th>
+                        <th>Criado em</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% 
+                    // Filtrando e ordenando os Distritos para que inativos apareçam primeiro e depois os ativos, ordenados por data
+                    const sortedDistricts = districts.sort((a, b) => {
+                        if (a.status === 'inactive' && b.status !== 'inactive') return -1;
+                        if (a.status !== 'inactive' && b.status === 'inactive') return 1;
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                    });
+                    %>
+
+                    <% sortedDistricts.forEach(district => { %>
+                        <tr class="<%= district.status === 'inactive' ? 'inactive-district' : '' %>">
+                            <td><%= district.name %></td>
+                            <td class="<%= district.status === 'inactive' ? 'inactive-text' : '' %>">
+                                <%= district.status === 'inactive' ? 'Inativo' : 'Ativo' %>
+                            </td>
+                            <td><%= new Date(district.createdAt).toLocaleDateString('pt-BR') %></td>
+                            <td>
+                                <button class="btn btn-edit" data-district-id="<%= district.id %>">Editar</button>
+                                <% if (user.role === 'Master') { %>
+                                    <button class="btn btn-delete" data-district-id="<%= district.id %>" data-district-name="<%= district.name %>" data-district-status="<%= district.status %>" data-district-createdAt="<%= district.createdAt.toISOString() %>">Excluir</button>
+                                <% } %>                                
+                            </td>
+                        </tr>
+                    <% }) %>                                  
+                </tbody>
+            </table>
+        </section>
+        <div class="modalContainer" hidden>
+            <!-- Modal de Cadastro -->
+            <div id="registerModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Cadastrar Distrito</h2>
+                    <form id="registerForm" class="modalForms">
+                        <input type="hidden" name="districtId" id="registerdistrictId">
+                    
+                        <!-- Nome -->
+                        <label for="registerName">Nome do Distrito:</label>
+                        <input type="text" id="registerName" name="name" value="<%= districts.name %>">                
+                        <!-- Status -->
+                        <label for="registerStatus">Status:</label>
+                        <select id="registerStatus" name="status">
+                            <option value="active" <%= districts.status === 'active' ? 'selected' : '' %>>Ativo</option>
+                            <option value="inactive" <%= districts.status === 'inactive' ? 'selected' : '' %>>Inativo</option>
+                        </select>                
+                        <!-- Botões -->
+                        <button type="submit" class="btn btn-save">Salvar</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </form>                                
+                </div>
+            </div>        
+
+            <!-- Modal de Exclusão -->
+            <div id="deleteModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Excluir Usuário</h2>
+                    <p>Deseja excluir o distrito <strong id="deleteName"></strong>?</p>
+                    <p><strong>Status:</strong> <span id="deleteStatus"></span></p>
+                    <p><strong>Criado em:</strong> <span id="deleteCreatedAt"></span></p>
+                    <form id="deleteForm" class="modalForms">
+                        <input type="hidden" name="districtId" id="deletedistrictId">
+                        <button type="submit" class="btn btn-confirm">Excluir</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal de Edição -->
+            <div id="editModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Editar Distrito</h2>
+                    <form id="editForm" class="modalForms">
+                        <input type="hidden" name="districtId" id="editdistrictId">
+
+                        <!-- Nome -->
+                        <label for="editName">Nome do distrito:</label>
+                        <input type="text" id="editName" name="name" value="<%= districts.name %>" 
+                            <% if (user.role !== 'Master') { %> 
+                                readonly 
+                            <% } %> 
+                        >
+
+                        <!-- Status (Editável somente para usuários Master) -->
+                        <% if (user.role === 'Master') { %>
+                            <label for="editStatus">Status:</label>
+                            <select id="editStatus" name="status">
+                                <option value="active" <%= districts.status === 'active' ? 'selected' : '' %>>Ativo</option>
+                                <option value="inactive" <%= districts.status === 'inactive' ? 'selected' : '' %>>Inativo</option>
+                            </select> 
+                        <% } else { %>
+                            <!-- Se não for Master, o campo Status é apenas exibido e não editável -->
+                            <label for="editStatus">Status:</label>
+                            <input type="text" id="editStatus" name="status" value="<%= districts.status === 'active' ? 'Ativo' : 'Inativo' %>" disabled>
+                        <% } %>
+
+
+                        <!-- Adicionar nova escola -->
+                        <div id="schoolContainer">
+                            <label for="newSchool">Adicionar Escola:</label>
+                            <input type="text" id="newSchool" name="newSchool" placeholder="Nome da Escola">
+                            <button type="button" id="addSchoolButton">Adicionar Escola</button>
+                        </div>
+                        <div id="associatedSchools">
+                            <% districts.forEach(district => { %>
+                                <h3><%= district.name %></h3>
+
+                                <h4>Escolas Associadas:</h4>
+                                <ul>
+                                    <% 
+                                        let associatedSchools = schools.filter(school => school.district === district.name);
+                                        
+                                        // Ordenando as escolas pela data de criação (da mais recente para a mais antiga)
+                                        associatedSchools.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                                    %>
+                                    
+                                    <% if (associatedSchools.length > 0) { %>
+                                        <% associatedSchools.forEach(school => { %>
+                                            <li>
+                                                <span class="school-name" data-id="<%= school.id %>"><%= school.name %></span>
+                                                <input type="text" class="edit-input" data-id="<%= school.id %>" value="<%= school.name %>" style="display: none;">
+                                                
+                                                <!-- Botões de ação -->
+                                                <button class="edit-icon" data-id="<%= school.id %>">✏️</button>
+                                                <button class="confirm-edit" data-id="<%= school.id %>" style="display: none;">✔️</button>
+                                                <button class="cancel-edit" data-id="<%= school.id %>" style="display: none;">❌</button>
+
+                                                <!-- Ícone de excluir -->
+                                                <button class="delete-icon" data-id="<%= school.id %>">🗑️</button>
+                                            </li>
+                                        <% }) %>
+                                    <% } else { %>
+                                        <li>Nenhuma escola associada.</li>
+                                    <% } %>
+                                </ul>
+                            <% }) %>
+                        </div>                        
+                        
+                        <!-- Botões -->
+                        <% if (user.role === 'Master') { %>
+                            <button type="submit" class="btn btn-save-edit">Salvar</button>
+                            <button type="button" class="btn btn-cancel">Cancelar</button>
+                        <% } %>
+                    </form>                                
+                </div>
+            </div>
+
+        </div>
+        <div id="generic-popup" class="hidden popup-overlay">
+            <div class="popup-content">
+                <div class="popup-message"></div>
+                <button class="popup-ok-button">OK</button>
+            </div>
+        </div>        
+    </main>
+</section>

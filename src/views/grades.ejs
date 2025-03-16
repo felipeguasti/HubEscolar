@@ -1,0 +1,179 @@
+<section class="admin-master-container">
+    <!-- Incluir o Menu Lateral (Partial) -->
+    <%- include('partials/admin-sidebar') %>  
+
+    <!-- Conteúdo Principal -->
+    <main class="admin-master-content">
+        <header class="admin-master-header">
+            <h1>Administração de Turmas</h1>
+            <p>Gerenciamento das turmas do sistema.</p>
+        </header>
+        
+        <% if (grades.some(grade => grade.status === 'inactive')) { %> 
+            <div id="inactiveGradesMessage" data-message="Existem turmas com status inativo aguardando aprovação." class="hidden"></div>
+        <% } %>
+        
+        <% if (user && user.role === 'Master') { %>
+            <div class="topPageElements">
+                <button id="addGrade" class="btn btn-addGrade">➕ Adicionar Turma</button>
+            </div>
+        <% } %>
+        
+        <!-- Tabela de Turmas -->
+        <section class="admin-grade-section">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Distrito</th>
+                        <th>Ano</th>
+                        <th>Turno</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% grades.sort((a, b) => (a.status === 'inactive' && b.status !== 'inactive') ? -1 : 1).forEach(grade => { %>
+                        <tr class="<%= grade.status === 'inactive' ? 'inactive-grade' : '' %>">
+                            <td><%= grade.name %></td>
+                            <td><%= grade.district %></td>
+                            <td><%= grade.year %></td>
+                            <td><%= grade.shift %></td>
+                            <td class="<%= grade.status === 'inactive' ? 'inactive-text' : '' %>">
+                                <%= grade.status === 'inactive' ? 'Inativo' : 'Ativo' %>
+                            </td>
+                            <td>
+                                <button class="btn btn-edit" data-grade-id="<%= grade.id %>">Editar</button>
+                                <% if (user.role === 'Master') { %>
+                                    <button class="btn btn-delete" data-grade-id="<%= grade.id %>">Excluir</button>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Modais -->
+        <div class="modalContainer" hidden>
+            <!-- Modal de Cadastro -->
+            <div id="registerModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Cadastrar Turma</h2>
+                    <form id="registerForm">
+                        <label for="registerName">Nome da Turma:</label>
+                        <input type="text" id="registerName" name="name" required>
+                        
+                        <label for="registerDistrict">Distrito:</label>
+                        <input type="text" id="registerDistrict" name="district" required>
+                        
+                        <label for="registerYear">Ano:</label>
+                        <input type="number" id="registerYear" name="year" required min="2024" step="1">
+                        
+                        <label for="registerShift">Turno:</label>
+                        <select id="registerShift" name="shift">
+                            <option value="Manhã">Manhã</option>
+                            <option value="Tarde">Tarde</option>
+                            <option value="Noite">Noite</option>
+                            <option value="Integral">Integral</option>
+                        </select>
+                    
+                        <label for="registerStartDate">Data de Início:</label>
+                        <input type="date" class="defaultDate" id="registerStartDate" name="startDate" required>
+                    
+                        <label for="registerEndDate">Data de Término:</label>
+                        <input type="date" class="defaultDate" id="registerEndDate" name="endDate">
+                    
+                        <label for="registerStatus">Status:</label>
+                        <select id="registerStatus" name="status">
+                            <option value="active">Ativo</option>
+                            <option value="inactive">Inativo</option>
+                        </select>
+                    
+                        <label for="registerDescription">Descrição:</label>
+                        <textarea id="registerDescription" name="description"></textarea>
+                    
+                        <button type="submit" class="btn btn-save">Salvar</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </form>                    
+                </div>
+            </div>
+
+            <!-- Modal de Edição -->
+            <div id="editModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Editar Turma</h2>
+                    <form id="editForm">
+                        <input type="hidden" id="editGradeId" name="id">
+
+                        <label for="editName">Nome da Turma:</label>
+                        <input type="text" id="editName" name="name" required>
+
+                        <label for="editDistrict">Distrito:</label>
+                        <input type="text" id="editDistrict" name="district" required>
+
+                        <label for="editYear">Ano:</label>
+                        <input type="number" class="modalDate" id="editYear" name="year" required min="2024" step="1">
+
+                        <label for="editShift">Turno:</label>
+                        <select id="editShift" name="shift">
+                            <option value="Manhã">Manhã</option>
+                            <option value="Tarde">Tarde</option>
+                            <option value="Noite">Noite</option>
+                            <option value="Integral">Integral</option>
+                        </select>
+
+                        <label for="editStartDate">Data de Início:</label>
+                        <input type="date" class="modalDate" id="editStartDate" name="startDate" required>
+
+                        <label for="editEndDate">Data de Término:</label>
+                        <input type="date" class="modalDate" id="editEndDate" name="endDate">
+
+                        <label for="editStatus">Status:</label>
+                        <select id="editStatus" name="status">
+                            <option value="active">Ativo</option>
+                            <option value="inactive">Inativo</option>
+                        </select>
+
+                        <label for="editDescription">Descrição:</label>
+                        <textarea class="modalDate" id="editDescription" name="description"></textarea>
+
+                        <button type="submit" class="btn btn-save-edit">Salvar</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </form>
+                </div>
+            </div>
+
+
+            <!-- Modal de Exclusão -->
+            <div id="deleteModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Excluir Turma</h2>
+                    <p>Deseja excluir a turma <strong id="deleteName"></strong>?</p>
+                    <form id="deleteForm">
+                        <input type="hidden" name="gradeId" id="deleteGradeId">
+                        <button type="submit" class="btn btn-confirm">Excluir</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div id="generic-popup" class="hidden popup-overlay">
+        <div class="popup-content">
+            <div class="popup-message"></div>
+            <button class="popup-ok-button">OK</button>
+        </div>
+    </div>        
+</section>
+<script>
+    window.onload = function () {
+        const yearInput = document.getElementById("registerYear");
+        if (yearInput) {
+            yearInput.value = new Date().getFullYear(); // Define o ano atual
+        }
+    };
+</script>

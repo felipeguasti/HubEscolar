@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área Administrativa</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.0-rc.4/dist/quill.snow.css" rel="stylesheet">
+
+</head>
+<body>
+    <header>
+        <h1>Área Administrativa - Gestão de Anúncios</h1>
+        <h3>EEEFM Coronel Olímpio Cunha</h3>
+        <a href="/" class="btn-voltar">← Voltar</a>       
+        <nav>
+            <ul>
+                <li><a id="linkAnuncios" class="active" href="#">Anúncios</a></li>
+                <li><a id="linkRefeitorio" href="#">Refeitório</a></li>
+            <!-- Adicione outros links conforme necessário -->
+            </ul>
+        </nav>
+    </header>
+    <div id="loadingIndicator">Carregando...</div>
+    <div id="adminContentSection"></div>
+    <footer>
+        <div class="container-footer">
+            <div class="footer-content">
+                <div class="footer-section about">
+                    <h3>Sistema de Reserva de Equipamentos e Espaços</h3>
+                    <p>Este sistema é utilizado para a reserva de equipamentos e espaços da escola EEEFM Coronel Olímpio Cunha. Acesse as funcionalidades através dos menus principais.</p>
+                    <button onclick="location.href='/sobre'">Saiba mais</button>
+                </div>
+                <div class="footer-section links">
+                    <h3>Links Úteis</h3>
+                    <ul>
+                        <li><a href="/" class="pencil-icon">Página Inicial</a></li>
+                        <li><a href="/reserva?recurso=Tablets" class="pencil-icon">Reserva de Tablets</a></li>
+                        <li><a href="/reserva?recurso=Chromebooks" class="pencil-icon">Reserva de Chromebooks</a></li>
+                        <li><a href="/reserva?recurso=QuadroInterativo" class="pencil-icon">Reserva de Quadro Interativo</a></li>
+                        <li><a href="/reserva?recurso=Biblioteca" class="pencil-icon">Reserva da Biblioteca</a></li>
+                        <li><a href="/reserva?recurso=SalaRecursos" class="pencil-icon">Reserva da Sala de Recursos</a></li>
+                        <li><a href="/painel" class="pencil-icon">Exibir o painel de reserva</a></li>
+                        <li><a href="/refeitorio" class="pencil-icon">Exibir o painel do refeitório</a></li>    
+                        <!-- Adicione mais links conforme necessário -->
+                    </ul>
+                </div>
+                <div class="footer-section contact">
+                    <h3>Contato</h3>
+                    <p>Para suporte ou informações, entre em contato:</p>
+                    <div class="imageContact">
+                        <a href="https://www.instagram.com/" target="_blank">
+                            <img src="/images/insta.png" alt="Instagram">
+                        </a>
+                        <a href="mailto:contato@felipeguasti.com.br">
+                            <img src="/images/email.png" alt="Email">
+                        </a>
+                        <a href="https://wa.me/5527998873776" target="_blank">
+                            <img src="/images/whatsapp.png" alt="WhatsApp">
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                 Sistema de Reserva | Designed by <a href="http://www.felipeguasti.com.br">Felipe Guasti</a> &#169; All rights reserved
+            </div>
+        </div>
+    </footer>    
+    <script src="/js/admin.js" type="module" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.0-rc.3/dist/quill.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+</body>
+</html>

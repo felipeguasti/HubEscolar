@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | HubEscolar</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+
+</head>
+<body>
+    <!-- Header com o nome do site e menu -->
+    <header>
+        <div class="header-container">
+            <div class="site-name">
+                <a href="/">
+                    <img src="/medias/images/logo.png" alt="Logo HubEscolar">
+                </a>                
+            </div>
+            <nav>
+                <!-- Ícone de Menu Hambúrguer -->
+                <div class="menu-toggle" id="menu-toggle">
+                    <span class="menu-bar"></span>
+                    <span class="menu-bar"></span>
+                    <span class="menu-bar"></span>
+                </div>
+                <ul class="menu">
+                    <li><a href="/">Início</a></li>
+                    <li><a href="/recursos">Recursos</a></li>
+                    <!-- <li><a href="/planos">Planos</a></li> -->
+                    <li><a href="/blog">Blog</a></li>
+                    <li><a href="/sobre">Sobre</a></li>
+                    <li><a href="/contato">Contato</a></li>
+                    <li><a id="login-button" href="/login">Login</a></li>
+                    <li><a id="logout-btn" class="logout-button" style="display: none;">Logout</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    
+
+    <main>
+        <%- body %>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section about">
+                    <h3>HubEscolar</h3>
+                    <p>Esta é uma plataforma digital voltada para a gestão escolar, oferecendo recursos que facilitam o controle de atividades acadêmicas e administrativas, como comunicação entre escola e alunos, monitoramento de desempenho, e gerenciamento de recursos educacionais.</p>
+                    <button onclick="location.href='/sobre'">Saiba mais</button>
+                </div>
+                <div class="footer-section links">
+                    <h3>Links Úteis</h3>
+                    <ul>
+                        <li><a href="/" class="pencil-icon">Página inicial</a></li>
+                        <li><a href="/recursos" class="pencil-icon">Conheça nossos recursos</a></li>
+                        <li><a href="/planos" class="pencil-icon">Conheça nossos planos</a></li>
+                        <li><a href="/blog" class="pencil-icon">Fique por dentro das novidades</a></li>
+                        <li><a href="/sobre" class="pencil-icon">Conheça melhor o nosso trabalho</a></li>
+                        <li><a href="/contato" class="pencil-icon">Mande uma mensagem</a></li>
+                        <!-- Adicione mais links conforme necessário -->
+                    </ul>
+                </div>
+                <div class="footer-section contact">
+                    <h3>Contato</h3>
+                    <p>Se preferir, mande sua dúvida pelas redes sociais.</p>
+                    <div class="imageContact">
+                        <a href="https://www.instagram.com/" target="_blank">
+                            <img src="/medias/images/insta.png" alt="Instagram">
+                        </a>
+                        <a href="mailto:contato@felipeguasti.com.br">
+                            <img src="/medias/images/email.png" alt="Email">
+                        </a>
+                        <a href="https://wa.me/5527998873776" target="_blank">
+                            <img src="/medias/images/whatsapp.png" alt="WhatsApp">
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                 HubEscolar - Sistema de Gestão Escolar | Designed by <a href="http://www.felipeguasti.com.br">Felipe Guasti</a> &#169; All rights reserved
+            </div>
+        </div>
+    </footer>
+    <script src="/js/script.js"></script>
+</body>
+</html>
