@@ -1,4 +1,5 @@
 const User = require('../models/User'); 
+const School = require('../models/School'); 
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 
@@ -21,8 +22,8 @@ exports.adicionarUsuario = async (req, res) => {
             state, 
             zip, 
             status, 
-            school,    // Nova entrada para a Escola
-            district   // Nova entrada para a Secretaria
+            schoolId,    // Nova entrada para a Escola
+            districtId   // Nova entrada para a Secretaria
         } = req.body;
 
         // Verificar se o usuário já existe
@@ -32,6 +33,8 @@ exports.adicionarUsuario = async (req, res) => {
         }
 
         const defaultPassword = process.env.DEFAULT_PASSWORD; 
+
+        // Criando o novo usuário
         const newUser = await User.create({
             name,
             email,
@@ -49,8 +52,8 @@ exports.adicionarUsuario = async (req, res) => {
             state,
             zip,
             status,
-            school,    // Adicionando a Escola
-            district   // Adicionando a Secretaria
+            schoolId,    // Agora associamos a escola com o schoolId
+            districtId   // Associando a Secretaria
         });
 
         res.status(201).json({ message: 'Usuário criado com sucesso.' });
@@ -131,8 +134,8 @@ exports.atualizarUsuario = async (req, res) => {
             profilePic: usuarioAtualizado.profilePic,
             content: usuarioAtualizado.content,
             userClass: usuarioAtualizado.userClass,
-            school: usuarioAtualizado.school,    // Nova entrada para a Escola
-            district: usuarioAtualizado.district, // Nova entrada para a Secretaria
+            schoolId: usuarioAtualizado.schoolId,    // Nova entrada para a Escola
+            districtId: usuarioAtualizado.districtId, // Nova entrada para a Secretaria
             updatedAt: usuarioAtualizado.updatedAt
         };
 
@@ -176,18 +179,20 @@ exports.deletarUsuario = async (req, res) => {
 
 exports.buscarUsuario = async (req, res) => {
     try {
-        const { id } = req.params;  // Pegando o ID do parâmetro da URL
-        
-        // Encontrar o usuário no banco de dados
-        const usuario = await User.findByPk(id); // Supondo que você está usando Sequelize (findByPk para buscar por ID)
+        const { id } = req.params; // Pegando o ID do usuário
+
+        // Buscar usuário pelo ID no banco, incluindo a escola associada
+        const usuario = await User.findByPk(id, {
+            attributes: { exclude: ['password'] }, // Exclui o password da resposta
+        });
 
         if (!usuario) {
             return res.status(404).send('Usuário não encontrado.');
         }
 
-        res.json(usuario);  // Retorna o usuário em formato JSON
+        res.json(usuario); // Retorna o usuário sem o password
     } catch (error) {
-        res.status(500).send(error.message);  // Se houver erro, retorna um erro 500
+        res.status(500).send(error.message); // Retorna erro 500 em caso de falha
     }
 };
 
@@ -250,54 +255,51 @@ exports.filterUsers = async (req, res) => {
             return res.status(401).json({ error: 'Usuário não autenticado' });
         }
 
-        const user = await User.findByPk(req.user.id); // Obtém o usuário atual
-        // Captura os filtros da requisição GET
-        const { district, school, role, subject, userClass, status } = req.query;
+        const user = await User.findByPk(req.user.id);
+        const { districtId, school, role, subject, userClass, status } = req.query;
         let whereClause = {};
 
         if (user.role === 'Master') {
-            // Master pode ver tudo
             whereClause = {};
         } else if (user.role === 'Inspetor') {
-            // Inspetor vê todos do mesmo district
-            whereClause.district = user.district;
-        } else if (user.role === 'Diretor') {
-            // Diretor vê Pedagogo, Coordenador, Professor e Aluno da mesma school e district
-            whereClause.district = user.district;
-            whereClause.school = user.school;
-        } else if (user.role === 'Coordenador' || user.role === 'Pedagogo') {
-            // Coordenador e Pedagogo veem Professor e Aluno da mesma school e district
-            whereClause.district = user.district;
+            whereClause.districtId = user.districtId;
+        } else if (['Diretor', 'Coordenador', 'Pedagogo'].includes(user.role)) {
+            whereClause.districtId = user.districtId;
             whereClause.school = user.school;
         } else {
-            // Professor e Aluno veem apenas dados próprios (mesma school e district)
-            whereClause.district = user.district;
+            whereClause.districtId = user.districtId;
             whereClause.school = user.school;
         }
 
         // Ajusta a cláusula WHERE conforme os filtros, se fornecidos
-        if (district) whereClause.district = district;
-        if (school) whereClause.school = school;
+        if (districtId) whereClause.districtId = districtId;
+        if (school) whereClause.schoolId = school;
         if (role) whereClause.role = role;
         if (subject) whereClause.subject = subject;
         if (userClass) whereClause.userClass = userClass;
         if (status) whereClause.status = status;
 
-        // Busca os usuários com base na cláusula WHERE ajustada
-        const users = await User.findAll({
-            where: whereClause
-        });
 
-        // Ordenando os usuários
+        const users = await User.findAll({ where: whereClause });
+
         const sortedUsers = users.sort((a, b) => {
             if (a.status === 'inactive' && b.status !== 'inactive') return -1;
             if (a.status !== 'inactive' && b.status === 'inactive') return 1;
             return new Date(b.createdAt) - new Date(a.createdAt);
         });
 
-        // Retorna os usuários filtrados
+        // Buscar todas as escolas do distrito filtrado
+        let schools = [];
+        if (districtId) {
+            schools = await School.findAll({
+                where: { districtId },
+                attributes: ['id', 'name'] // Pegamos apenas ID e nome da escola
+            });
+        }
+
         res.json({
-            users: sortedUsers
+            users: sortedUsers,
+            schools // Agora a resposta contém um array de escolas no formato [{ id, name }]
         });
     } catch (err) {
         console.error('Erro ao buscar usuários:', err);

@@ -79,15 +79,15 @@ User.init({
   },
 
   // Novas entradas: Escola e Secretaria
-  school: {
-    type: DataTypes.STRING,
+  schoolId: {
+    type: DataTypes.INTEGER,
     allowNull: true,
-    comment: 'Nome da escola do usuário'
+    comment: 'Id da escola do usuário'
   },
-  district: {
-    type: DataTypes.STRING,
+  districtId: {
+    type: DataTypes.INTEGER,
     allowNull: true,
-    comment: 'Nome da secretaria do usuário'
+    comment: 'Id da secretaria do usuário'
   },
 
   // Endereço

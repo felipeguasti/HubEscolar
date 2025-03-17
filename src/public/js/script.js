@@ -426,41 +426,47 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         }
 
-        const btnEdit = document.querySelectorAll('.btn-edit');
-        if(btnEdit){
-            btnEdit.forEach(button => {
-                button.addEventListener('click', function() {
-                    const userId = button.getAttribute('data-user-id');
-                    openEditModal(userId);
+        function ListenerBtnEdit(){
+            const btnEdit = document.querySelectorAll('.btn-edit');
+            if(btnEdit){
+                btnEdit.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const userId = button.getAttribute('data-user-id');
+                        openEditModal(userId);
+                    });
                 });
-            });
+            }
         }
         
-        const btnDelete = document.querySelectorAll('.btn-delete');
-        if(btnDelete) {
-            document.querySelectorAll('.btn-delete').forEach(button => {
-                button.addEventListener('click', function() {
-                    const userId = button.getAttribute('data-user-id');
-                    const name = button.getAttribute('data-name');
-                    const email = button.getAttribute('data-email');
-                    const role = button.getAttribute('data-role');
-                    const status = button.getAttribute('data-status');
-                    const createdAt = button.getAttribute('data-created-at');
-                    openDeleteModal(userId, name, email, role, status, createdAt);
+        function ListenerBtnDelete(){
+            const btnDelete = document.querySelectorAll('.btn-delete');
+            if(btnDelete) {
+                document.querySelectorAll('.btn-delete').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const userId = button.getAttribute('data-user-id');
+                        const name = button.getAttribute('data-name');
+                        const email = button.getAttribute('data-email');
+                        const role = button.getAttribute('data-role');
+                        const status = button.getAttribute('data-status');
+                        const createdAt = button.getAttribute('data-created-at');
+                        openDeleteModal(userId, name, email, role, status, createdAt);
+                    });
                 });
-            });
+            }
         }
         
-        const btnReset = document.querySelectorAll('.btn-reset-password');
-        if (btnReset) {
-            btnReset.forEach(button => {
-                button.addEventListener('click', function () {
-                    const userId = button.getAttribute('data-user-id');
-                    openResetPasswordModal(userId);
+        function listenerBtnReset(){
+            const btnReset = document.querySelectorAll('.btn-reset-password');
+            if (btnReset) {
+                btnReset.forEach(button => {
+                    button.addEventListener('click', function () {
+                        const userId = button.getAttribute('data-user-id');
+                        openResetPasswordModal(userId);
+                    });
                 });
-            });
+            }
         }
-        
+
         const btnClose = document.querySelectorAll('.close');
         if (btnClose) {
             btnClose.forEach(button => {
@@ -492,7 +498,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     const role = document.getElementById("roleFilter")?.value || "";
                     const content = document.getElementById("contentFilter")?.value || "";
                     const classValue = document.getElementById("classFilter")?.value || "";
-
                     const queryParams = new URLSearchParams();
 
                     // Adicionando apenas os campos com valores
@@ -560,26 +565,30 @@ document.addEventListener("DOMContentLoaded", function() {
                     tbody.appendChild(tr);
                 });
             }
+            ListenerBtnEdit();
+            ListenerBtnDelete();
+            listenerBtnReset();
         }
 
         //Busca escolas pelo distrito e preenche o select de escolas.
         async function loadSchools(district) {
             const schoolSelect = document.getElementById("schoolFilter");
-
+        
             if (!district) {
                 schoolSelect.innerHTML = `<option value="">Selecione um distrito primeiro</option>`;
                 return;
             }
-
+        
             try {
-                const response = await fetch(`/users/filter?district=${encodeURIComponent(district)}`);
+                const response = await fetch(`/users/filter?districtId=${encodeURIComponent(district)}`);
                 const data = await response.json();
-                
-                const uniqueSchools = [...new Set(data.users.map(user => user.school))].filter(s => s);
-
+        
+                // Garantir que estamos pegando escolas do jeito certo
+                const uniqueSchools = [...new Map(data.schools.map(school => [school.id, school])).values()];
+        
                 if (uniqueSchools.length > 0) {
                     schoolSelect.innerHTML = `<option value="">Selecione uma escola</option>` +
-                        uniqueSchools.map(school => `<option value="${school}">${school}</option>`).join("");
+                        uniqueSchools.map(school => `<option value="${school.id}">${school.name}</option>`).join("");
                 } else {
                     schoolSelect.innerHTML = `<option value="">Nenhuma escola encontrada</option>`;
                 }
@@ -587,6 +596,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error("Erro ao buscar escolas:", error);
             }
         }
+        
 
         //Busca turmas baseadas no distrito e escola selecionados e preenche o select de turmas.
 
@@ -974,9 +984,10 @@ document.addEventListener("DOMContentLoaded", function() {
                     updateFieldsVisibility(this.value);
                 });
             }
-        
+            const districtId = document.getElementById('registerDistrict').value;
             // Abrir o modal de cadastro
             openModal('registerModal');
+            fetchSchoolsByDistrict(districtId);
             hideLoading();
         
             document.addEventListener('click', function (event) {
@@ -1035,12 +1046,49 @@ document.addEventListener("DOMContentLoaded", function() {
                 alert('Erro ao tentar criar o usuário. Tente novamente.');
             });
         }
-                
+        
+        const districtSelect = document.getElementById('registerDistrict');
+        const schoolSelect = document.getElementById('registerSchool');
+    
+        async function fetchSchoolsByDistrict(districtId) {
+            try {
+                schoolSelect.innerHTML = '<option>Carregando escolas...</option>'; // Exibe mensagem temporária
+                const response = await fetch(`/schools/list?districtId=${districtId}`);
+                if (!response.ok) throw new Error('Erro ao buscar escolas');
+    
+                const schools = await response.json();
+                schoolSelect.innerHTML = ''; // Limpa as opções anteriores
+    
+                if (schools.length === 0) {
+                    schoolSelect.innerHTML = '<option value="">Nenhuma escola encontrada</option>';
+                    return;
+                }
+    
+                schools.forEach(school => {
+                    const option = document.createElement('option');
+                    option.value = school.id;
+                    option.textContent = school.name;
+                    schoolSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error(error);
+                schoolSelect.innerHTML = '<option value="">Erro ao carregar escolas</option>';
+            }
+        }
+    
+        districtSelect.addEventListener('blur', function() {
+            const selectedDistrictId = districtSelect.value;
+            if (selectedDistrictId) {
+                fetchSchoolsByDistrict(selectedDistrictId);
+            } else {
+                schoolSelect.innerHTML = '<option value="">Selecione um distrito primeiro</option>';
+            }
+        });
 
         function openEditModal(userId) {
             showLoading();
             // Requisição para buscar os dados do usuário
-            fetch(`/users/${userId}`)
+            fetch(`/users/${userId}`)  // Certifique-se de que está usando a rota correta
                 .then(response => response.json())
                 .then(data => {
                     // Preencher os campos do modal com os dados do usuário
@@ -1058,9 +1106,9 @@ document.addEventListener("DOMContentLoaded", function() {
                     document.getElementById('editCity').value = data.city || '';
                     document.getElementById('editState').value = data.state || '';
                     document.getElementById('editZip').value = data.zip || '';
-                    document.getElementById('editSchool').value = data.school || '';
-                    document.getElementById('editDistrict').value = data.district || '';
-        
+                    document.getElementById('editSchool').value = data.schoolId || '';
+                    document.getElementById('editDistrict').value = data.districtId || '';
+            
                     // Selecionar os campos de Conteúdo e Classe
                     const contentField = document.getElementById('editContent')?.parentElement;
                     const classField = document.getElementById('editClass')?.parentElement;
@@ -1080,10 +1128,10 @@ document.addEventListener("DOMContentLoaded", function() {
                             classField.style.display = 'none';
                         }
                     }
-        
+                    console.log(data);
                     // Atualizar os campos conforme o papel do usuário carregado
                     updateFieldsVisibility(data.role);
-        
+            
                     // Adicionar listener para atualizar ao mudar o papel
                     const roleSelect = document.getElementById('editRole');
                     if (roleSelect) {
@@ -1091,7 +1139,11 @@ document.addEventListener("DOMContentLoaded", function() {
                             updateFieldsVisibility(this.value);
                         });
                     }
-        
+
+                    // Chama a função para carregar as escolas após preencher os dados do usuário
+                    const districtId = document.getElementById('editDistrict').value; // Pega o districtId
+                    fetchSchoolsBySchool(districtId); // Chama para carregar as escolas baseadas no distrito
+
                     // Abrir o modal de edição
                     openModal('editModal');
                     hideLoading();
@@ -1099,7 +1151,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 .catch(error => {
                     console.error('Erro ao buscar os dados do usuário:', error);
                     hideLoadingWithMessage('Erro ao carregar os dados do usuário');
-            });
+                });
 
             // Garante que o botão Cancelar fecha o modal corretamente
             document.querySelectorAll('.btn-cancel').forEach(button => {
@@ -1116,11 +1168,50 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.log("Botão save apertado");
                 editUser(userId);
             });
+        }    
+
+        const editDistrictSelect = document.getElementById('editDistrict');
+        const editSchoolSelect = document.getElementById('editSchool');
+        async function fetchSchoolsBySchool(districtId, schoolId) {
+            try {
+                editSchoolSelect.innerHTML = '<option>Carregando escolas...</option>'; // Mensagem temporária
+                const response = await fetch(`/schools/list?districtId=${districtId}`);
+                if (!response.ok) throw new Error('Erro ao buscar escolas');
+        
+                const schools = await response.json();
+                editSchoolSelect.innerHTML = ''; // Limpa as opções anteriores
+        
+                if (schools.length === 0) {
+                    editSchoolSelect.innerHTML = '<option value="">Nenhuma escola encontrada</option>';
+                    return;
+                }
+        
+                schools.forEach(school => {
+                    const option = document.createElement('option');
+                    option.value = school.id;
+                    option.textContent = school.name;
+                    if (school.id == schoolId) {
+                        option.selected = true; // Seleciona a escola correta
+                    }
+                    editSchoolSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error(error);
+                editSchoolSelect.innerHTML = '<option value="">Erro ao carregar escolas</option>';
+            }
         }        
+    
+        editDistrictSelect.addEventListener('blur', function() {
+            const selectedDistrictId = editDistrictSelect.value;
+            if (selectedDistrictId) {
+                fetchSchoolsBySchool(selectedDistrictId);
+            } else {
+                editSchoolSelect.innerHTML = '<option value="">Selecione um distrito primeiro</option>';
+            }
+        });
 
         // Função para editar um usuário
         function editUser(userId) {
-            console.log('Função editUser chamada');
             const name = document.getElementById('editName').value;
             const email = document.getElementById('editEmail').value;
             const cpf = document.getElementById('editCpf').value;  // CPF
@@ -1134,8 +1225,8 @@ document.addEventListener("DOMContentLoaded", function() {
             const city = document.getElementById('editCity').value;  // Cidade
             const state = document.getElementById('editState').value;  // Estado
             const zip = document.getElementById('editZip').value;  // CEP
-            const school = document.getElementById('editSchool').value;  // CEP
-            const district = document.getElementById('editDistrict').value;  // CEP
+            const schoolId = document.getElementById('editSchool').value;  // CEP
+            const districtId = document.getElementById('editDistrict').value;  // CEP
             const content = document.getElementById('editContent') ? document.getElementById('editContent').value : '';  // Conteúdo (se for professor)
             const userClass = document.getElementById('editClass') ? document.getElementById('editClass').value : '';  // Turma (se for aluno)
             // Exibir popup de loading
@@ -1161,8 +1252,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     city,
                     state,
                     zip,
-                    school,
-                    district,
+                    schoolId,
+                    districtId,
                     content,  // Incluindo conteúdo se for professor
                     userClass: userClass  // Incluindo turma se for aluno
                 })
@@ -1170,7 +1261,6 @@ document.addEventListener("DOMContentLoaded", function() {
             .then(response => {
                 if (response.ok) {
                     hideLoadingWithMessage('Usuário atualizado com sucesso!', () => {
-                        console.log("Usuário atualizado");
                         location.reload();  // Recarregar a página após a atualização
                     });
                 } else {
@@ -1223,6 +1313,9 @@ document.addEventListener("DOMContentLoaded", function() {
         addClearTableListeners();
         addRoleChangeListener();
         addClearFilterListener();
+        ListenerBtnEdit();
+        ListenerBtnDelete();
+        listenerBtnReset();
     }
     
     if(isDistrict){

@@ -14,8 +14,8 @@ async function createMasterUser() {
             horario: 'Manhã',                  // Turno (horário)
             class: null,                          // Classe (opcional)
             content: null,                        // Conteúdo (opcional)
-            school: 'EEEFM João Crisostomo Belesa',
-            district: 'SRE Cariacica',
+            schoolId: 1,
+            districtId: 1,
             address: null,                        // Endereço (opcional)
             city: null,                           // Cidade (opcional)
             state: null,                          // Estado (opcional)

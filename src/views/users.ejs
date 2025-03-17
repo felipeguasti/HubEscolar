@@ -18,31 +18,31 @@
             <!-- Botão para adicionar novo usuário -->
             <button id="addUsers" class="btn btn-addUsers">➕ Adicionar usuário</button>
         
-            <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Coordenador' || user.role === 'Pedagogo') { %>
+            <% if (['Master', 'Inspetor', 'Diretor', 'Coordenador', 'Pedagogo'].includes(user.role)) { %>
                 <div class="user-filter">
-                    <% if (user.role === 'Master' || user.role === 'Inspetor') { %>
-                        <!-- Dropdown para selecionar o district -->
+                    <% if (['Master', 'Inspetor'].includes(user.role)) { %>
+                        <!-- Dropdown para selecionar o distrito -->
                         <div>
-                            <label for="district">Distrito:</label>
+                            <label for="districtFilter">Distrito:</label>
                             <select id="districtFilter" <%= user.role === 'Inspetor' ? 'disabled' : '' %>>
                                 <% if (user.role === 'Master') { %>
                                     <option value="">Selecione um distrito</option>
-                                    <% [...new Set(users.map(user => user.district))].filter(d => d).forEach(district => { %>
-                                        <option value="<%= district %>"><%= district %></option>
+                                    <% districts.forEach(district => { %>
+                                        <option value="<%= district.id %>"><%= district.name %></option>
                                     <% }) %>
                                 <% } else { %>
-                                    <option value="<%= user.district %>" selected><%= user.district %></option>
+                                    <option value="<%= user.districtId %>" selected><%= user.district %></option>
                                 <% } %>
                             </select>
                         </div>
-                    <% } %>
+                    <% } %>                    
         
-                    <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Coordenador' || user.role === 'Pedagogo') { %>
+                    <% if (['Master', 'Inspetor', 'Diretor', 'Coordenador', 'Pedagogo'].includes(user.role)) { %>
                         <!-- Dropdown para selecionar a escola -->
                         <div>
-                            <label for="school">Escola:</label>
+                            <label for="schoolFilter">Escola:</label>
                             <select id="schoolFilter" <%= ['Diretor', 'Coordenador', 'Pedagogo'].includes(user.role) ? 'disabled' : '' %>>
-                                <% if (user.role === 'Master' || user.role === 'Inspetor') { %>
+                                <% if (['Master', 'Inspetor'].includes(user.role)) { %>
                                     <option value="">Selecione uma escola</option>
                                 <% } %>
                                 <% if (['Diretor', 'Coordenador', 'Pedagogo'].includes(user.role)) { %>
@@ -54,7 +54,7 @@
         
                     <!-- Dropdown para selecionar o cargo -->
                     <div>
-                        <label for="role">Cargo:</label>
+                        <label for="roleFilter">Cargo:</label>
                         <select id="roleFilter">
                             <option value="">Selecione um cargo</option>
                             <option value="Master">Master</option>
@@ -67,9 +67,10 @@
                             <option value="Aluno">Aluno</option>
                         </select>
                     </div>
+        
                     <!-- Dropdown para selecionar o conteúdo -->
                     <div>
-                        <label for="content">Conteúdo:</label>
+                        <label for="contentFilter">Conteúdo:</label>
                         <select id="contentFilter">
                             <option value="">Selecione um conteúdo</option>
                             <option value="Matemática">Matemática</option>
@@ -79,20 +80,21 @@
         
                     <!-- Dropdown para selecionar a turma -->
                     <div>
-                        <label for="userClass">Turma:</label>
+                        <label for="classFilter">Turma:</label>
                         <select id="classFilter">
                             <option value="">Selecione uma turma</option>
                             <option value="6º Ano">6º Ano</option>
                             <option value="7º Ano">7º Ano</option>
                         </select>
                     </div>
+        
                     <!-- Botão de filtro -->
                     <button id="filterUsers">Filtrar</button>
                     <!-- Botão de Limpar -->
                     <button id="cleanFilter">Limpar</button>
                 </div>
             <% } %>
-        </div>
+        </div>        
                                         
         <!-- Tabela de Usuários -->
         <section class="admin-users-section">
@@ -167,7 +169,6 @@
                                 <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
                                 <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
                             <% } else if (user.role === 'Inspetor') { %>
-                                <!-- Se for Inspetor, exibe apenas Inspetor e inferiores -->
                                 <option value="Inspetor" <%= user.role === 'Inspetor' ? 'selected' : '' %>>Inspetor</option>
                                 <option value="Diretor" <%= user.role === 'Diretor' ? 'selected' : '' %>>Diretor</option>
                                 <option value="Coordenador" <%= user.role === 'Coordenador' ? 'selected' : '' %>>Coordenador</option>
@@ -175,18 +176,15 @@
                                 <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
                                 <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
                             <% } else if (user.role === 'Diretor') { %>
-                                <!-- Se for Diretor, exibe apenas Diretor e inferiores -->
                                 <option value="Diretor" <%= user.role === 'Diretor' ? 'selected' : '' %>>Diretor</option>
                                 <option value="Coordenador" <%= user.role === 'Coordenador' ? 'selected' : '' %>>Coordenador</option>
                                 <option value="Pedagogo" <%= user.role === 'Pedagogo' ? 'selected' : '' %>>Pedagogo</option>
                                 <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
                                 <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
                             <% } else if (user.role === 'Coordenador' || user.role === 'Pedagogo') { %>
-                                <!-- Se for Coordenador ou Pedagogo, exibe apenas Professor e Aluno -->
                                 <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
                                 <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
                             <% } else if (user.role === 'Aluno') { %>
-                                <!-- Se for Aluno, apenas Aluno, e ele não pode mudar -->
                                 <option value="Aluno" selected disabled>Aluno</option>
                             <% } %>
                         </select>            
@@ -196,8 +194,8 @@
                         <select id="registerStatus" name="status">
                             <option value="active" <%= user.status === 'active' ? 'selected' : '' %>>Ativo</option>
                             <option value="inactive" <%= user.status === 'inactive' ? 'selected' : '' %>>Inativo</option>
-                        </select>                
-
+                        </select>                 
+            
                         <div>
                             <label for="registerContent">Conteúdo:</label>
                             <input type="text" id="registerContent" name="content" value="<%= user.content %>">
@@ -224,13 +222,24 @@
                             <option value="Outro" <%= user.gender === 'Outro' ? 'selected' : '' %>>Outro</option>
                             <option value="Prefiro não dizer" <%= user.gender === 'Prefiro não dizer' ? 'selected' : '' %>>Prefiro não dizer</option>
                         </select>
-                    
-                        <!-- Turno -->
-                        <label for="registerSchool">Escola:</label>
-                        <input type="text" id="registerSchool" name="school" value="<%= user.school %>">
-                        <label for="registerDistrict">Escola:</label>
-                        <input type="text" id="registerDistrict" name="district" value="<%= user.district %>">
+            
+                        <!-- Seleção de Distrito -->
+                        <label for="registerDistrict">Secretaria:</label>
+                        <select id="registerDistrict" name="districtId">
+                            <% districts.forEach(function(district) { %>
+                                <option value="<%= district.id %>" <%= user.districtId === district.id ? 'selected' : '' %>><%= district.name %></option>
+                            <% }); %>
+                        </select>
 
+                        <!-- Escola -->
+                        <label for="registerSchool">Escola:</label>
+                        <select id="registerSchool" name="schoolId">
+                            <% schools.forEach(function(school) { %>
+                                <option value="<%= school.id %>" <%= user.school === school.id ? 'selected' : '' %>><%= school.name %></option>
+                            <% }); %>
+                        </select>
+            
+                        <!-- Turno -->
                         <label for="registerHorario">Turno:</label>
                         <select id="registerHorario" name="horario">
                             <option value="Manhã" <%= user.horario === 'Manhã' ? 'selected' : '' %>>Manhã</option>
@@ -251,14 +260,14 @@
                     
                         <label for="registerZip">CEP:</label>
                         <input type="text" id="registerZip" name="zip" value="<%= user.zip %>">
-
+            
                         <!-- Botões -->
                         <button type="submit" class="btn btn-save">Salvar</button>
                         <button type="button" class="btn btn-cancel">Cancelar</button>
-                    </form>                                
+                    </form>                                  
                 </div>
-            </div>        
-
+            </div>           
+    
             <div id="deleteModal" class="modal">
                 <div class="modal-content">
                     <span class="close">&times;</span>
@@ -337,13 +346,23 @@
                             <option value="Outro" <%= user.gender === 'Outro' ? 'selected' : '' %>>Outro</option>
                             <option value="Prefiro não dizer" <%= user.gender === 'Prefiro não dizer' ? 'selected' : '' %>>Prefiro não dizer</option>
                         </select>
-                    
-                        <!-- Turno -->
+
+                        <!-- Seleção de Distrito -->
                         <label for="editDistrict">Secretaria:</label>
-                        <input type="text" id="editDistrict" name="district" value="<%= user.district %>">                
-                        
+                        <select id="editDistrict" name="districtId">
+                            <% districts.forEach(function(district) { %>
+                                <option value="<%= district.id %>" <%= user.districtId === district.id ? 'selected' : '' %>><%= district.name %></option>
+                            <% }); %>
+                        </select>
+
+                        <!-- Escola -->
                         <label for="editSchool">Escola:</label>
-                        <input type="text" id="editSchool" name="school" value="<%= user.school %>">
+                        <select id="editSchool" name="schoolId">
+                            <% schools.forEach(function(school) { %>
+                                <option value="<%= school.id %>" <%= user.schoolId === school.id ? 'selected' : '' %>><%= school.name %></option>
+                            <% }); %>
+                        </select>
+
 
                         <label for="editHorario">Turno:</label>
                         <select id="editHorario" name="horario">

@@ -2,10 +2,10 @@ const sequelize = require('./src/config/db'); // Importe a instância do Sequeli
 //const Reserva = require('./src/models/reserva');
 //const Recado = require('./src/models/recado');
 //const Anuncio = require('./src/models/anuncio');
-//const Usuario = require('./src/models/User');
+const Usuario = require('./src/models/User');
 //const District = require('./src/models/District');
 //const Refeitorio = require('./src/models/refeitorio');
-const School = require('./src/models/School');
+//const School = require('./src/models/School');
 //const Grade = require('./src/models/Grade');
 
 
