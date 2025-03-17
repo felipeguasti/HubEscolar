@@ -1477,6 +1477,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     statusInput.dataset.originalValue = data.status;
 
                     // Habilita a adição de múltiplas escolas
+                    updateSchoolList(districtId);
                     enableMultipleSchoolAddition();
 
                     // Abrir o modal de edição
@@ -1566,10 +1567,10 @@ document.addEventListener("DOMContentLoaded", function() {
         
             // Lógica para adicionar a escola
             showLoading();
-            const district = document.getElementById('editName').value;
+            const districtId = document.getElementById('editdistrictId').value;  // Usando o ID do distrito agora
             
             // Chama diretamente a função addSchool
-            addSchool(district, schoolName)
+            addSchool(districtId, schoolName)  // Passando o districtId ao invés do nome
                 .then(response => {
                     hideLoading();
                     if (response.success) {
@@ -1588,18 +1589,18 @@ document.addEventListener("DOMContentLoaded", function() {
                     console.error('Erro ao adicionar escola:', error);
                     showPopup('Erro ao adicionar escola');
                 });
-        }
+        }        
         
-        function updateSchoolList(districtName) {
-            fetch(`/schools/list?district=${districtName}`)
+        function updateSchoolList(districtId) {
+            fetch(`/schools/list?districtId=${districtId}`)
                 .then(response => response.json())
                 .then(data => {
                     const schoolContainer = document.querySelector('#associatedSchools');
                     schoolContainer.innerHTML = '';
-        
-                    // Criar título do distrito
+                    const district = document.getElementById('editName').value;
+                    // Criar título do distrito com o districtId (se necessário, você pode mapear o id para o nome posteriormente)
                     const districtTitle = document.createElement('h3');
-                    districtTitle.textContent = districtName;
+                    districtTitle.textContent = district;  // Você pode alterar para um mapeamento do id para nome, se necessário
                     schoolContainer.appendChild(districtTitle);
         
                     // Criar subtítulo "Escolas Associadas:"
@@ -1612,7 +1613,7 @@ document.addEventListener("DOMContentLoaded", function() {
         
                     if (Array.isArray(data) && data.length > 0) {
                         data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
+        
                         data.forEach(school => {
                             const li = document.createElement('li');
         
@@ -1628,7 +1629,6 @@ document.addEventListener("DOMContentLoaded", function() {
                             editInput.dataset.id = school.id;
                             editInput.value = school.name;
                             editInput.style.display = 'none';
-
         
                             const editButton = document.createElement('button');
                             editButton.className = 'edit-icon';
@@ -1659,6 +1659,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 })
                 .catch(error => console.error('Erro ao atualizar a lista de escolas:', error));
         }
+        
         function attachDeleteListeners() {
             document.querySelectorAll('.delete-icon').forEach(button => {
                 button.removeEventListener('click', handleDeleteClick);
@@ -1751,7 +1752,6 @@ document.addEventListener("DOMContentLoaded", function() {
             editButton.style.display = 'inline-block';
         }                         
         function resetSchoolFields() {
-            console.log('resetSchoolFields foi chamada');
             const schoolContainer = document.getElementById('schoolContainer');
         
             // Remove todos os inputs extras de escolas
@@ -1784,9 +1784,9 @@ document.addEventListener("DOMContentLoaded", function() {
             setupAddSchoolButton();
         }        
            
-        function addSchool(district, schoolName) {
+        function addSchool(districtId, schoolName) {
             const schoolData = {
-                district: district,
+                districtId: districtId,  // Agora passamos o ID do distrito
                 name: schoolName,     
             };
         
@@ -1799,7 +1799,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .then(response => response.json())
             .then(data => {
                 hideLoading();
-                updateSchoolList(district);
+                updateSchoolList(districtId);
                 resetSchoolFields();
                 
                 // Não chamar closeModal aqui para evitar fechamento automático
@@ -1811,7 +1811,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error('Erro ao adicionar a escola:', error);
                 throw error; // Lança o erro para ser capturado no .catch da função chamadora
             });
-        }        
+        }
+          
         function editSchool(schoolId, event) {
             event.preventDefault();
         
@@ -1838,12 +1839,12 @@ document.addEventListener("DOMContentLoaded", function() {
                     event.preventDefault();
         
                     const newSchoolName = input.value;
-                    const district = document.getElementById('editName').value;
+                    const districtId = document.getElementById('editdistrictId').value;
         
                     // Envia a requisição para o backend para editar a escola
                     const schoolData = {
                         name: newSchoolName,
-                        district: district,
+                        districtId,
                         status: 'active'
                     };
         
@@ -1862,7 +1863,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             schoolNameCell.textContent = newSchoolName;
                             alert('Escola editada com sucesso!');
                     
-                            updateSchoolList(district);
+                            updateSchoolList(districtId);
                         } else {
                             alert(data.message || 'Erro ao editar a escola');
                             schoolNameCell.textContent = oldSchoolName;

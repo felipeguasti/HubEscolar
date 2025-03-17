@@ -6,9 +6,9 @@ const School = sequelize.define('School', {
     type: DataTypes.STRING,
     allowNull: false, // O nome é obrigatório
   },
-  district: {
-    type: DataTypes.STRING,
-    allowNull: false, // O distrito é obrigatório
+  districtId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
   },
   address: {
     type: DataTypes.STRING,

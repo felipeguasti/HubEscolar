@@ -1,4 +1,5 @@
 const School = require("../models/School");
+const District = require("../models/District");
 
 // Renderizar página com todas as escolas
 exports.renderSchoolPage = async (req, res) => {
@@ -17,11 +18,17 @@ exports.createSchool = async (req, res) => {
         return res.status(403).json({ error: "Acesso negado" });
     }
 
-    const { name, district, address, city, state, cep, telephone, status } = req.body;
+    const { name, districtId, address, city, state, cep, telephone, status } = req.body;
 
     try {
+        // Verifica se o distrito existe com o ID fornecido
+        const districtExists = await District.findByPk(districtId); // Assumindo que você tem um modelo District
+        if (!districtExists) {
+            return res.status(400).json({ error: "Distrito não encontrado" });
+        }
+
         // Verifica se já existe uma escola com o mesmo nome dentro do mesmo distrito
-        const existingSchool = await School.findOne({ where: { name, district } });
+        const existingSchool = await School.findOne({ where: { name, districtId: districtId } });
 
         if (existingSchool) {
             return res.status(400).json({ error: "Já existe uma escola com este nome neste distrito." });
@@ -30,7 +37,7 @@ exports.createSchool = async (req, res) => {
         // Criação da escola
         const school = await School.create({
             name,
-            district,
+            districtId: districtId,  // Associando o ID do distrito
             address,
             city,
             state,
@@ -46,16 +53,29 @@ exports.createSchool = async (req, res) => {
     }
 };
 
-// Obter todas as escolas
+// Obter todas as escolas ou filtrar por districtId
 exports.getAllSchool = async (req, res) => {
     try {
-        const schools = await School.findAll();
+        const { districtId } = req.query; // Pegando o 'district' da query
+
+        let schools;
+        if (districtId) {
+            // Se o 'districtId' for passado, filtra as escolas pelo 'districtId'
+            schools = await School.findAll({
+                where: { districtId: districtId } // Supondo que 'districtId' seja a coluna associada no modelo School
+            });
+        } else {
+            // Caso contrário, retorna todas as escolas
+            schools = await School.findAll();
+        }
+
         res.json(schools);
     } catch (err) {
         console.error("Erro ao buscar escolas:", err);
         res.status(500).json({ error: "Erro ao buscar as escolas" });
     }
 };
+
 
 // Obter uma escola específica pelo ID
 exports.getSchoolById = async (req, res) => {
@@ -80,15 +100,21 @@ exports.updateSchool = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { name, district, address, city, state, cep, telephone, status } = req.body;
+    const { name, districtId, address, city, state, cep, telephone, status } = req.body;
 
     try {
         const school = await School.findByPk(id);
         if (!school) return res.status(404).json({ error: "Escola não encontrada" });
 
+        // Verifica se o distrito existe com o ID fornecido
+        const districtExists = await District.findByPk(districtId); // Assumindo que você tem um modelo District
+        if (!districtExists) {
+            return res.status(400).json({ error: "Distrito não encontrado" });
+        }
+
         // Atualiza os campos
         school.name = name;
-        school.district = district;
+        school.districtId = districtId; // Atualizando o distrito com o novo ID
         school.address = address;
         school.city = city;
         school.state = state;
