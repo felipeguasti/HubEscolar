@@ -10,6 +10,11 @@ const expressLayouts = require('express-ejs-layouts');
 const flash = require('connect-flash');
 const authMiddleware = require('./src/middlewares/auth');
 require('dotenv').config();
+const moment = require('moment-timezone'); // Adicione esta linha
+
+// Configuração do fuso horário
+process.env.TZ = 'America/Sao_Paulo'; // Define a variável de ambiente TZ
+moment.tz.setDefault('America/Sao_Paulo'); // Define o fuso horário padrão do moment-timezone
 
 // Importação de módulos
 const studentsRoutes = require('./src/modules/manager/routes/students');

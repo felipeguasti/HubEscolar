@@ -4,38 +4,36 @@ const School = require('../models/School');
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/auth');
-
+const Grade = require('../models/Grade');
 
 const renderUsersPage = async (req, res) => {
     try {
         const user = await User.findByPk(req.user.id);
-
-        // Recupera todos os distritos
-        const districts = await District.findAll(); 
-
-        // Recupera todas as escolas (ajuste conforme a sua necessidade)
-        const schools = await School.findAll(); 
+        const districts = await District.findAll();
+        const schools = await School.findAll();
+        const grades = await Grade.findAll();
 
         let whereClause = {};
 
-        if (user.role === 'Master') {
-            whereClause = {};
-        } else if (user.role === 'Inspetor') {
-            whereClause.district = user.district;
-        } else if (user.role === 'Diretor') {
-            whereClause.district = user.district;
-            whereClause.school = user.school;
-        } else if (user.role === 'Coordenador' || user.role === 'Pedagogo') {
-            whereClause.district = user.district;
-            whereClause.school = user.school;
-        } else {
-            whereClause.district = user.district;
-            whereClause.school = user.school;
+        if (user.role !== 'Master') {
+            if (user.role === 'Inspetor') {
+                whereClause.districtId = user.districtId;
+            } else if (['Diretor', 'Secretario'].includes(user.role)) {
+                whereClause.schoolId = user.schoolId;
+            } else if (['Pedagogo', 'Coordenador'].includes(user.role)) {
+                whereClause.role = ['Professor', 'Aluno'];
+                whereClause.schoolId = user.schoolId;
+            } else if (user.role === 'Professor') {
+                whereClause.role = 'Aluno';
+                whereClause.schoolId = user.schoolId;
+            } else if (user.role === 'Aluno') {
+                whereClause.id = null; // Alunos não veem ninguém
+            } else {
+                whereClause.id = null; // Outros papéis não veem ninguém
+            }
         }
 
-        const users = await User.findAll({
-            where: whereClause
-        });
+        const users = await User.findAll({ where: whereClause });
 
         const sortedUsers = users.sort((a, b) => {
             if (a.status === 'inactive' && b.status !== 'inactive') return -1;
@@ -43,14 +41,17 @@ const renderUsersPage = async (req, res) => {
             return new Date(b.createdAt) - new Date(a.createdAt);
         });
 
-        // Renderiza a página e passa também os distritos e escolas
         res.render('users', {
             title: 'Usuários',
             user: user,
             users: sortedUsers,
             districts: districts,
-            schools: schools, // Passando escolas para o EJS
-            selectedDistrict: user.district
+            schools: schools,
+            grades: grades,
+            selectedDistrict: user.districtId,
+            selectedSchool: user.schoolId,
+            userRole: user.role,
+            currentUserId: user.id
         });
     } catch (err) {
         console.error('Erro ao buscar usuários:', err);

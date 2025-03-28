@@ -32,4 +32,8 @@ const District = sequelize.define("District", {
     timestamps: false
 });
 
+District.associate = (models) => {
+    District.hasMany(models.User, { foreignKey: 'districtId' });
+};
+
 module.exports = District;

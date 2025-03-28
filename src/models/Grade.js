@@ -19,9 +19,21 @@ Grade.init({
       }
     }
   },  
-  district: {
-    type: DataTypes.STRING,
+  districtId: {
+    type: DataTypes.INTEGER,
     allowNull: false,
+    references: {
+      model: 'Districts',
+      key: 'id'
+    }
+  },
+  schoolId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Schools',
+      key: 'id'
+    }
   },
   year: {
     type: DataTypes.INTEGER,
