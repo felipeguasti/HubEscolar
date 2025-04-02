@@ -1,0 +1,30 @@
+# Arquivos de log
+*.log
+
+# Diretório node_modules
+node_modules
+
+# Diretório dist (se você tiver um build)
+dist
+
+# Arquivos de depuração
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Diretório de cache
+.cache
+
+# Diretório de documentação
+docs
+
+# Arquivos de teste
+test
+tests
+*.test.js
+
+# Outros arquivos e diretórios que você deseja ignorar

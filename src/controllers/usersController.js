@@ -265,10 +265,14 @@ exports.filterUsers = async (req, res) => {
             whereClause.districtId = user.districtId;
         } else if (['Diretor', 'Coordenador', 'Pedagogo'].includes(user.role)) {
             whereClause.districtId = user.districtId;
-            whereClause.school = user.school;
+            if (user.schoolId !== undefined) { // Adiciona a verificação
+                whereClause.schoolId = user.schoolId; // Usa schoolId
+            }
         } else {
             whereClause.districtId = user.districtId;
-            whereClause.school = user.school;
+            if (user.schoolId !== undefined) { // Adiciona a verificação
+                whereClause.schoolId = user.schoolId; // Usa schoolId
+            }
         }
 
         // Ajusta a cláusula WHERE conforme os filtros, se fornecidos
@@ -278,7 +282,6 @@ exports.filterUsers = async (req, res) => {
         if (subject) whereClause.subject = subject;
         if (userClass) whereClause.userClass = userClass;
         if (status) whereClause.status = status;
-
 
         const users = await User.findAll({ where: whereClause });
 

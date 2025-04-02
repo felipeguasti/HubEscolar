@@ -5,36 +5,29 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/auth');
 
-
 const renderUsersPage = async (req, res) => {
     try {
         const user = await User.findByPk(req.user.id);
 
-        // Recupera todos os distritos
-        const districts = await District.findAll(); 
-
-        // Recupera todas as escolas (ajuste conforme a sua necessidade)
-        const schools = await School.findAll(); 
+        const districts = await District.findAll();
+        const schools = await School.findAll();
 
         let whereClause = {};
 
         if (user.role === 'Master') {
             whereClause = {};
         } else if (user.role === 'Inspetor') {
-            whereClause.district = user.district;
-        } else if (user.role === 'Diretor') {
-            whereClause.district = user.district;
-            whereClause.school = user.school;
-        } else if (user.role === 'Coordenador' || user.role === 'Pedagogo') {
-            whereClause.district = user.district;
-            whereClause.school = user.school;
+            whereClause.districtId = user.districtId;
+        } else if (user.role === 'Diretor' || user.role === 'Coordenador' || user.role === 'Pedagogo') {
+            whereClause.districtId = user.districtId;
+            whereClause.schoolId = user.schoolId;
         } else {
-            whereClause.district = user.district;
-            whereClause.school = user.school;
+            whereClause.districtId = user.districtId;
+            whereClause.schoolId = user.schoolId;
         }
 
         const users = await User.findAll({
-            where: whereClause
+            where: whereClause,
         });
 
         const sortedUsers = users.sort((a, b) => {
@@ -43,14 +36,20 @@ const renderUsersPage = async (req, res) => {
             return new Date(b.createdAt) - new Date(a.createdAt);
         });
 
-        // Renderiza a página e passa também os distritos e escolas
+        // Buscar o usuário a ser editado (se o userId for fornecido)
+        let editingUser = null;
+        if (req.query.userId) {
+            editingUser = await User.findByPk(req.query.userId);
+        }
+
         res.render('users', {
             title: 'Usuários',
             user: user,
             users: sortedUsers,
             districts: districts,
-            schools: schools, // Passando escolas para o EJS
-            selectedDistrict: user.district
+            schools: schools,
+            editingUser: editingUser, // Adicionado editingUser
+            selectedDistrict: user.districtId,
         });
     } catch (err) {
         console.error('Erro ao buscar usuários:', err);

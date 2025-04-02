@@ -18,41 +18,9 @@
             <!-- Botão para adicionar novo usuário -->
             <button id="addUsers" class="btn btn-addUsers">➕ Adicionar usuário</button>
         
-            <% if (['Master', 'Inspetor', 'Diretor', 'Coordenador', 'Pedagogo'].includes(user.role)) { %>
+            <% if (['Master', 'Inspetor', 'Diretor', 'Coordenador', 'Pedagogo', 'Secretario'].includes(user.role)) { %>
                 <div class="user-filter">
-                    <% if (['Master', 'Inspetor'].includes(user.role)) { %>
-                        <!-- Dropdown para selecionar o distrito -->
-                        <div>
-                            <label for="districtFilter">Distrito:</label>
-                            <select id="districtFilter" <%= user.role === 'Inspetor' ? 'disabled' : '' %>>
-                                <% if (user.role === 'Master') { %>
-                                    <option value="">Selecione um distrito</option>
-                                    <% districts.forEach(district => { %>
-                                        <option value="<%= district.id %>"><%= district.name %></option>
-                                    <% }) %>
-                                <% } else { %>
-                                    <option value="<%= user.districtId %>" selected><%= user.district %></option>
-                                <% } %>
-                            </select>
-                        </div>
-                    <% } %>                    
-        
-                    <% if (['Master', 'Inspetor', 'Diretor', 'Coordenador', 'Pedagogo'].includes(user.role)) { %>
-                        <!-- Dropdown para selecionar a escola -->
-                        <div>
-                            <label for="schoolFilter">Escola:</label>
-                            <select id="schoolFilter" <%= ['Diretor', 'Coordenador', 'Pedagogo'].includes(user.role) ? 'disabled' : '' %>>
-                                <% if (['Master', 'Inspetor'].includes(user.role)) { %>
-                                    <option value="">Selecione uma escola</option>
-                                <% } %>
-                                <% if (['Diretor', 'Coordenador', 'Pedagogo'].includes(user.role)) { %>
-                                    <option value="<%= user.school %>" selected><%= user.school %></option>
-                                <% } %>
-                            </select>
-                        </div>
-                    <% } %>
-        
-                    <!-- Dropdown para selecionar o cargo -->
+
                     <div>
                         <label for="roleFilter">Cargo:</label>
                         <select id="roleFilter">
@@ -67,8 +35,46 @@
                             <option value="Aluno">Aluno</option>
                         </select>
                     </div>
-        
-                    <!-- Dropdown para selecionar o conteúdo -->
+                    
+                    <% if (['Master', 'Inspetor', 'Diretor', 'Secretario'].includes(user.role)) { %>
+                        <div>
+                            <label for="districtFilter">Distrito:</label>
+                            <select id="districtFilter" <%= user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Secretario' ? 'disabled' : '' %>>
+                                <% if (user.role === 'Master') { %>
+                                    <option value="">Selecione um distrito</option>
+                                    <% districts.forEach(district => { %>
+                                        <option value="<%= district.id %>"><%= district.name %></option>
+                                    <% }) %>
+                                <% } else { %>
+                                    <% const userDistrict = districts.find(district => district.id === user.districtId); %>
+                                    <option value="<%= user.districtId %>" selected><%= userDistrict ? userDistrict.name : 'Distrito não encontrado' %></option>
+                                <% } %>
+                            </select>
+                        </div>
+                    <% } %>
+            
+                    <div>
+                        <label for="schoolFilter">Escola:</label>
+                        <select id="schoolFilter" <%= ['Diretor', 'Coordenador', 'Pedagogo', 'Secretario'].includes(user.role) ? 'disabled' : '' %>>
+                            <% if (['Master', 'Inspetor'].includes(user.role)) { %>
+                                <option value="">Selecione uma escola</option>
+                                <% if (schools) { %>
+                                    <% schools.forEach(school => { %>
+                                        <option value="<%= school.id %>"><%= school.name %></option>
+                                    <% }) %>
+                                <% } %>
+                            <% } %>
+                            <% if (['Diretor', 'Coordenador', 'Pedagogo', 'Secretario'].includes(user.role)) { %>
+                                <% if (user.schoolId !== undefined && schools) { %>
+                                    <% const userSchool = schools.find(school => school.id === user.schoolId); %>
+                                    <option value="<%= user.schoolId %>" selected><%= userSchool ? userSchool.name : 'Escola não encontrada' %></option>
+                                <% } else { %>
+                                    <option value="">Escola não disponível</option>
+                                <% } %>
+                            <% } %>
+                        </select>
+                    </div>
+            
                     <div>
                         <label for="contentFilter">Conteúdo:</label>
                         <select id="contentFilter">
@@ -77,8 +83,7 @@
                             <option value="Português">Português</option>
                         </select>
                     </div>
-        
-                    <!-- Dropdown para selecionar a turma -->
+            
                     <div>
                         <label for="classFilter">Turma:</label>
                         <select id="classFilter">
@@ -87,10 +92,8 @@
                             <option value="7º Ano">7º Ano</option>
                         </select>
                     </div>
-        
-                    <!-- Botão de filtro -->
+            
                     <button id="filterUsers">Filtrar</button>
-                    <!-- Botão de Limpar -->
                     <button id="cleanFilter">Limpar</button>
                 </div>
             <% } %>
@@ -359,7 +362,7 @@
                         <label for="editSchool">Escola:</label>
                         <select id="editSchool" name="schoolId">
                             <% schools.forEach(function(school) { %>
-                                <option value="<%= school.id %>" <%= user.schoolId === school.id ? 'selected' : '' %>><%= school.name %></option>
+                                <option value="<%= school.id %>" <%= editingUser && editingUser.schoolId === school.id ? 'selected' : '' %>><%= school.name %></option>
                             <% }); %>
                         </select>
 

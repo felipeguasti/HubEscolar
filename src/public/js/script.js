@@ -685,36 +685,41 @@ document.addEventListener("DOMContentLoaded", function() {
                     if (role === "Master") {
                         // Esconder todos os campos e limpar seus valores
                         if (districtField) {
-                            districtField.value = ""; // Limpa o valor
                             districtField.style.display = "none"; // Esconde
                         }
                         if (schoolField) {
-                            schoolField.value = ""; // Limpa o valor
                             schoolField.style.display = "none"; // Esconde
                         }
                         if (contentField) {
-                            contentField.value = ""; // Limpa o valor
                             contentField.style.display = "none"; // Esconde
                         }
                         if (classField) {
-                            classField.value = ""; // Limpa o valor
                             classField.style.display = "none"; // Esconde
                         }
                     } else if (role === "Inspetor") {
                         // Esconder e limpar o campo "school" para o cargo "Inspetor"
                         if (schoolField) {
-                            schoolField.value = ""; // Limpa o valor
                             schoolField.style.display = "none"; // Esconde
                         }
                         // Apenas mostrar Distrito e Cargo para o Inspetor
-                        if (districtField) districtField.style.display = "block";
+                        if (districtField) {
+                            districtField.style.display = "block";
+                        }
                         if (roleField) roleField.style.display = "block";
 
                         // Esconder os campos de Conteúdo e Turma
                         if (contentField) contentField.style.display = "none";
                         if (classField) classField.style.display = "none";
+                    } else if (role === "Diretor") {
+                        // Apenas mostrar Distrito e Cargo para o Inspetor
+                        if (districtField) {
+                            districtField.style.display = "block";
+                        }
+                        if (roleField) roleField.style.display = "block";
+                        if (schoolField) schoolField.style.display = "block";
+                        if (contentField) contentField.style.display = "none";
+                        if (classField) classField.style.display = "none";
                     } else {
-                        // Mostrar/ocultar campos com base na seleção do cargo
                         if (role === "Professor") {
                             // Mostrar Conteúdo e esconder Turma
                             if (contentField) contentField.style.display = "block";
@@ -750,10 +755,10 @@ document.addEventListener("DOMContentLoaded", function() {
                     const contentFilter = document.getElementById("contentFilter");
                     const classFilter = document.getElementById("classFilter");
                     const statusFilter = document.getElementById("statusFilter");
-        
+                    
                     // Verifica se os campos existem antes de alterar
-                    if (districtFilter) districtFilter.value = "";
-                    if (schoolFilter) schoolFilter.value = "";
+                    //if (districtFilter) districtFilter.value = "";
+                    //if (schoolFilter) schoolFilter.value = "";
                     if (roleFilter) roleFilter.value = "";
                     if (contentFilter) contentFilter.value = "";
                     if (classFilter) classFilter.value = "";
@@ -1087,8 +1092,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         function openEditModal(userId) {
             showLoading();
-            // Requisição para buscar os dados do usuário
-            fetch(`/users/${userId}`)  // Certifique-se de que está usando a rota correta
+            fetch(`/users/${userId}`)
                 .then(response => response.json())
                 .then(data => {
                     // Preencher os campos do modal com os dados do usuário
@@ -1106,13 +1110,15 @@ document.addEventListener("DOMContentLoaded", function() {
                     document.getElementById('editCity').value = data.city || '';
                     document.getElementById('editState').value = data.state || '';
                     document.getElementById('editZip').value = data.zip || '';
-                    document.getElementById('editSchool').value = data.schoolId || '';
                     document.getElementById('editDistrict').value = data.districtId || '';
-            
+        
                     // Selecionar os campos de Conteúdo e Classe
                     const contentField = document.getElementById('editContent')?.parentElement;
                     const classField = document.getElementById('editClass')?.parentElement;
-
+        
+                    console.log('data.schoolId:', data.schoolId);
+                    console.log('editSchool.value:', document.getElementById('editSchool').value);
+        
                     // Função para atualizar a visibilidade dos campos
                     function updateFieldsVisibility(role) {
                         if (role === 'Professor') {
@@ -1131,7 +1137,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     console.log(data);
                     // Atualizar os campos conforme o papel do usuário carregado
                     updateFieldsVisibility(data.role);
-            
+        
                     // Adicionar listener para atualizar ao mudar o papel
                     const roleSelect = document.getElementById('editRole');
                     if (roleSelect) {
@@ -1139,11 +1145,11 @@ document.addEventListener("DOMContentLoaded", function() {
                             updateFieldsVisibility(this.value);
                         });
                     }
-
+        
                     // Chama a função para carregar as escolas após preencher os dados do usuário
-                    const districtId = document.getElementById('editDistrict').value; // Pega o districtId
-                    fetchSchoolsBySchool(districtId); // Chama para carregar as escolas baseadas no distrito
-
+                    const districtId = document.getElementById('editDistrict').value;
+                    fetchSchoolsBySchool(districtId, data.schoolId); // Passa o schoolId
+        
                     // Abrir o modal de edição
                     openModal('editModal');
                     hideLoading();
@@ -1152,12 +1158,12 @@ document.addEventListener("DOMContentLoaded", function() {
                     console.error('Erro ao buscar os dados do usuário:', error);
                     hideLoadingWithMessage('Erro ao carregar os dados do usuário');
                 });
-
+        
             // Garante que o botão Cancelar fecha o modal corretamente
             document.querySelectorAll('.btn-cancel').forEach(button => {
                 button.addEventListener('click', function (e) {
-                    e.stopPropagation(); // Impede que o clique propague para o modal
-                    closeModal(); // Fecha o modal ao clicar em Cancelar
+                    e.stopPropagation();
+                    closeModal();
                 });
             });
 
@@ -1172,26 +1178,27 @@ document.addEventListener("DOMContentLoaded", function() {
 
         const editDistrictSelect = document.getElementById('editDistrict');
         const editSchoolSelect = document.getElementById('editSchool');
+
         async function fetchSchoolsBySchool(districtId, schoolId) {
             try {
-                editSchoolSelect.innerHTML = '<option>Carregando escolas...</option>'; // Mensagem temporária
+                editSchoolSelect.innerHTML = '<option>Carregando escolas...</option>';
                 const response = await fetch(`/schools/list?districtId=${districtId}`);
                 if (!response.ok) throw new Error('Erro ao buscar escolas');
-        
+
                 const schools = await response.json();
-                editSchoolSelect.innerHTML = ''; // Limpa as opções anteriores
-        
+                editSchoolSelect.innerHTML = '';
+
                 if (schools.length === 0) {
                     editSchoolSelect.innerHTML = '<option value="">Nenhuma escola encontrada</option>';
                     return;
                 }
-        
+
                 schools.forEach(school => {
                     const option = document.createElement('option');
                     option.value = school.id;
                     option.textContent = school.name;
-                    if (school.id == schoolId) {
-                        option.selected = true; // Seleciona a escola correta
+                    if (schoolId && school.id == schoolId) { // Adicionamos a verificação schoolId &&
+                        option.selected = true;
                     }
                     editSchoolSelect.appendChild(option);
                 });
@@ -1199,7 +1206,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error(error);
                 editSchoolSelect.innerHTML = '<option value="">Erro ao carregar escolas</option>';
             }
-        }        
+        }
     
         editDistrictSelect.addEventListener('blur', function() {
             const selectedDistrictId = editDistrictSelect.value;

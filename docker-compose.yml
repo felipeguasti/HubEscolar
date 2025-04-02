@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      MYSQL_HOST: host.docker.internal
+      MYSQL_USER: u612973268_broadcast
+      MYSQL_PASSWORD: E1=iTrLXsvk
+      MYSQL_DATABASE: u612973268_broadcast
