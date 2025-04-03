@@ -1,0 +1,11 @@
+    # Ignorar a pasta node_modules
+    node_modules/
+
+    # Ignorar o ficheiro package-lock.json
+    package-lock.json
+
+    # Ignorar ficheiros de cache e temporários
+    .DS_Store
+    *.log
+    *.tmp
+    .env

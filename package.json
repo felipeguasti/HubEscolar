@@ -16,6 +16,8 @@
     "nodemailer": "^6.9.16",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "sequelize": "^6.37.5"
   }
 }
