@@ -3,14 +3,15 @@ const router = express.Router();
 const gradeController = require("../controllers/gradeController");
 const authMiddleware = require('../middlewares/auth');
 
+
+// Rota para listar todos as turmas
+router.get("/", authMiddleware(), gradeController.getAllGrades);
+
 // Rota para listar todos as turmas
 router.get("/", authMiddleware(), gradeController.renderGradesPage);
 
 // Rota para criar um novo turmas
 router.post("/create", authMiddleware(["Master", "Inspetor", "Secretario"]), gradeController.createGrade);
-
-// Rota para listar todos as turmas
-router.get("/", authMiddleware(), gradeController.getAllGrades);
 
 // Rota para obter um distrito específico pelo ID
 router.get("/:id", authMiddleware(), gradeController.getGradeById);

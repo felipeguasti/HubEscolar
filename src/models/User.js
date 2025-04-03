@@ -63,8 +63,8 @@ User.init({
   },
   horario: {
     type: DataTypes.ENUM('Manhã', 'Tarde', 'Noite', 'Integral'),
-    defaultValue: 'Manhã',
-    allowNull: false
+    defaultValue: 'Integral',
+    allowNull: true
   },
 
   // Dados Acadêmicos/Profissionais
@@ -153,5 +153,10 @@ User.init({
     }
   }
 });
+
+User.associate = (models) => {
+  User.belongsTo(models.District, { foreignKey: 'districtId', as: 'district' });
+  User.belongsTo(models.School, { foreignKey: 'schoolId', as: 'school' });
+};
 
 module.exports = User;

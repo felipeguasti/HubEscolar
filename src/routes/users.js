@@ -11,7 +11,7 @@ router.put('/edit/:id', usersController.atualizarUsuario);
 router.get('/:id', usersController.buscarUsuario);
 router.delete('/delete/:id', usersController.deletarUsuario);
 // Rota para adicionar um novo usuário
-router.post('/', usersController.adicionarUsuario);
+router.post('/', authMiddleware(), usersController.adicionarUsuario);
 // Rota para listar todos os usuários
 router.get('/', usersController.listarUsuarios);
 // Rota para resetar a senha

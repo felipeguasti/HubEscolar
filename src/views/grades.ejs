@@ -8,37 +8,69 @@
             <h1>Administração de Turmas</h1>
             <p>Gerenciamento das turmas do sistema.</p>
         </header>
-        
+
         <% if (grades.some(grade => grade.status === 'inactive')) { %> 
             <div id="inactiveGradesMessage" data-message="Existem turmas com status inativo aguardando aprovação." class="hidden"></div>
         <% } %>
-        
-        <% if (user && user.role === 'Master') { %>
+
+        <% if (user && (user.role === 'Diretor' || user.role === 'Secretario')) { %>
+            <!-- Botão para adicionar turmas, visível apenas para Diretor e Secretário -->
             <div class="topPageElements">
                 <button id="addGrade" class="btn btn-addGrade">➕ Adicionar Turma</button>
             </div>
         <% } %>
-        
-        <!-- Tabela de Turmas -->
+
+        <% if (user && user.role === 'Master') { %>
+            <!-- O Master vê as escolas de todos os distritos, escolhe um distrito -->
+            <div class="district-dropdown">
+                <label for="districtSelect">Escolher Distrito:</label>
+                <select id="districtSelect" class="form-control">
+                    <option value="">Selecione um distrito</option>
+                    <% districts.forEach(district => { %>
+                        <option value="<%= district.id %>"><%= district.name %></option>
+                    <% }) %>
+                </select>
+            </div>
+        <% } %>
+
+        <% if (user.role === 'Inspetor') { %>
+            <!-- O Inspetor tem um campo oculto com o id e nome do seu distrito -->
+            <input type="hidden" id="districtId" value="<%= user.districtId %>">
+            <input type="hidden" id="districtName" value="<%= districtMap[user.districtId] %>">
+        <% } %>
+        <% if (user.role === 'Inspetor' || user.role === 'Inspetor') { %>
+        <!-- Tabela de Escolas (para Master e Inspetor) -->
         <section class="admin-grade-section">
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Nome</th>
+                        <th>Escola</th>
                         <th>Distrito</th>
-                        <th>Ano</th>
-                        <th>Turno</th>
                         <th>Status</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <% grades.sort((a, b) => (a.status === 'inactive' && b.status !== 'inactive') ? -1 : 1).forEach(grade => { %>
+                <tbody id="gradeTableBody">
+                    <% 
+                    // Filtro para Inspetor: Mostra apenas as escolas do seu distrito
+                    let filteredGrades = grades;
+        
+                    if (user.role === 'Master') {
+                        const selectedDistrictId = districtId || ''; // Agora usando a variável passada
+                        if (selectedDistrictId) {
+                            filteredGrades = filteredGrades.filter(grade => grade.districtId === selectedDistrictId);
+                        }
+                    }
+        
+                    if (user.role === 'Inspetor') {
+                        const inspectorDistrictId = user.districtId;
+                        filteredGrades = filteredGrades.filter(grade => grade.districtId === inspectorDistrictId);
+                    }
+        
+                    filteredGrades.sort((a, b) => (a.status === 'inactive' && b.status !== 'inactive') ? -1 : 1).forEach(grade => { %>
                         <tr class="<%= grade.status === 'inactive' ? 'inactive-grade' : '' %>">
-                            <td><%= grade.name %></td>
-                            <td><%= grade.district %></td>
-                            <td><%= grade.year %></td>
-                            <td><%= grade.shift %></td>
+                            <td><%= grade.schoolName %></td>
+                            <td><%= grade.districtName %></td>
                             <td class="<%= grade.status === 'inactive' ? 'inactive-text' : '' %>">
                                 <%= grade.status === 'inactive' ? 'Inativo' : 'Ativo' %>
                             </td>
@@ -52,7 +84,50 @@
                     <% }) %>
                 </tbody>
             </table>
-        </section>
+        </section>  
+        <% } %>      
+
+        <!-- Tabela de Turmas (para Diretor e Secretário) -->
+        <% if (user.role === 'Diretor' || user.role === 'Secretario') { %>
+        <section class="admin-grade-section">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Distrito</th>
+                        <th>Escola</th>
+                        <th>Ano</th>
+                        <th>Turno</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="gradeTableBody">
+                    <% 
+                    // Filtrando turmas pela escola do usuário
+                    let filteredGrades = grades.filter(grade => grade.schoolId === user.schoolId);
+        
+                    filteredGrades.sort((a, b) => (a.status === 'inactive' && b.status !== 'inactive') ? -1 : 1).forEach(grade => { %>
+                        <tr class="<%= grade.status === 'inactive' ? 'inactive-grade' : '' %>">
+                            <td><%= grade.name %></td>
+                            <td><%= grade.districtName %></td>
+                            <td><%= grade.schoolName %></td>
+                            <td><%= grade.year %></td>
+                            <td><%= grade.shift %></td>
+                            <td class="<%= grade.status === 'inactive' ? 'inactive-text' : '' %>">
+                                <%= grade.status === 'inactive' ? 'Inativo' : 'Ativo' %>
+                            </td>
+                            <td>
+                                <button class="btn btn-edit" data-grade-id="<%= grade.id %>">Editar</button>
+                                <button class="btn btn-delete" data-grade-id="<%= grade.id %>">Excluir</button>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+            <button class="btn btn-addGrade">➕ Adicionar Turma</button>
+        </section> 
+        <% } %> 
 
         <!-- Modais -->
         <div class="modalContainer" hidden>

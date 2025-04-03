@@ -40,5 +40,9 @@ const School = sequelize.define('School', {
   timestamps: true, // Cria os campos createdAt e updatedAt automaticamente
 });
 
+School.associate = (models) => {
+  School.hasMany(models.User, { foreignKey: 'schoolId' });
+};
+
 // Exporta o modelo diretamente
 module.exports = School;

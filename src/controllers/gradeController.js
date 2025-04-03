@@ -5,22 +5,67 @@ const School = require('../models/School'); // Corrigido: Importar School corret
 // Renderiza a página de turmas com os dados necessários
 exports.renderGradesPage = async (req, res) => {
     try {
-        const districts = await District.findAll();
-        const schools = await School.findAll();
-        const grades = await Grade.findAll(); // Buscar as turmas
+        const districts = await District.findAll({ attributes: ["id", "name"] });
+        const schools = await School.findAll({ attributes: ["id", "name", "districtId"] });
+        const grades = await Grade.findAll({ attributes: ["id", "name", "schoolId", "status"] });
+
+        // Criar um dicionário de distritos
+        const districtMap = {};
+        districts.forEach(district => {
+            districtMap[district.id] = district.name;
+        });
+
+        // Criar um dicionário de escolas e associá-las ao distrito
+        const schoolMap = {};
+        schools.forEach(school => {
+            schoolMap[school.id] = {
+                name: school.name,
+                districtId: school.districtId,
+            };
+        });
+
+        // Filtrando as escolas de acordo com o districtId do Inspetor
+        let filteredSchools = schools;
+        if (req.user.districtId) {
+            filteredSchools = schools.filter(school => school.districtId === req.user.districtId);
+        }
+
+        const gradesWithNames = grades.map(grade => {
+            const school = schoolMap[grade.schoolId] || {};
+            return {
+                id: grade.id,
+                name: grade.name,
+                schoolId: grade.schoolId,
+                schoolName: school.name || "Desconhecido", // Pegar o nome da escola
+                districtName: districtMap[school.districtId] || "Desconhecido", // Pegar o distrito da escola
+                districtId: school.districtId || null, // Adicionando o districtId aqui
+            };
+        });
+
+        // Filtrando as turmas com base no districtId do Inspetor
+        let gradesToDisplay = gradesWithNames;
+
+        if (req.user.role === 'Master' && req.query.districtId) {
+            gradesToDisplay = gradesWithNames.filter(grade => grade.districtId === req.query.districtId);
+        } else if (req.user.districtId) {
+            gradesToDisplay = gradesWithNames.filter(grade => grade.districtId === req.user.districtId);
+        }
 
         res.render("grades", {
             title: "Turmas",
             districts,
-            schools,
-            grades, // Passando as turmas para o EJS
+            schools: filteredSchools,  // Exibindo apenas as escolas filtradas
+            grades: gradesToDisplay,  // Exibindo as turmas filtradas
             user: req.user,
+            districtId: req.query.districtId || req.user.districtId,
+            districtMap: districtMap,
         });
     } catch (err) {
         console.error("Erro ao buscar dados para a página de turmas:", err);
         res.status(500).send("Erro ao carregar a página de turmas.");
     }
 };
+
 
 // Buscar uma turma pelo ID
 exports.getGradeById = async (req, res) => {
@@ -37,10 +82,21 @@ exports.getGradeById = async (req, res) => {
     }
 };
 
-// Listar todas as turmas
+// Listar todas as turmas ou turmas por escola
 exports.getAllGrades = async (req, res) => {
+    const schoolId = req.query.schoolId;
+
     try {
-        const grades = await Grade.findAll();
+        let grades;
+        if (schoolId) {
+            // Se schoolId for fornecido, busca turmas por escola
+            grades = await Grade.findAll({
+                where: { schoolId: schoolId }
+            });
+        } else {
+            // Se schoolId não for fornecido, busca todas as turmas
+            grades = await Grade.findAll();
+        }
         res.json(grades);
     } catch (error) {
         console.error("Erro ao buscar turmas:", error);

@@ -13,7 +13,6 @@
             <!-- Apenas um div invisível com a mensagem -->
             <div id="inactiveUsersMessage" data-message="Existem usuários com status inativo aguardando aprovação." class="hidden"></div>
         <% } %>            
-        
         <div class="topPageElements">
             <!-- Botão para adicionar novo usuário -->
             <button id="addUsers" class="btn btn-addUsers">➕ Adicionar usuário</button>
@@ -141,148 +140,121 @@
                 </tbody>
             </table>
         </section>
+        <!-- Modal de Cadastro -->
         <div class="modalContainer" hidden>
-            <!-- Modal de Cadastro -->
             <div id="registerModal" class="modal" hidden>
                 <div class="modal-content">
                     <span class="close">&times;</span>
                     <h2>Cadastrar Usuário</h2>
                     <form id="registerForm">
                         <input type="hidden" name="userId" id="registerUserId">
-                    
-                        <!-- Nome -->
+            
                         <label for="registerName">Nome:</label>
-                        <input type="text" id="registerName" name="name" value="<%= user.name %>">
-                    
-                        <!-- E-mail -->
+                        <input type="text" id="registerName" name="name" value="">
+            
                         <label for="registerEmail">Email:</label>
-                        <input type="email" id="registerEmail" name="email" value="<%= user.email %>">
-                    
-                        <!-- Cargo -->
+                        <input type="email" id="registerEmail" name="email" value="">
+            
                         <label for="registerRole">Cargo:</label>
                         <select id="registerRole" name="role">
                             <% if (user.role === 'Master') { %>
-                                <!-- Se for Master, exibe todas as opções -->
-                                <option value="Master" <%= user.role === 'Master' ? 'selected' : '' %>>Master</option>
-                                <option value="Inspetor" <%= user.role === 'Inspetor' ? 'selected' : '' %>>Inspetor</option>
-                                <option value="Diretor" <%= user.role === 'Diretor' ? 'selected' : '' %>>Diretor</option>
-                                <option value="Secretario" <%= user.role === 'Secretario' ? 'selected' : '' %>>Secretário</option>
-                                <option value="Coordenador" <%= user.role === 'Coordenador' ? 'selected' : '' %>>Coordenador</option>
-                                <option value="Pedagogo" <%= user.role === 'Pedagogo' ? 'selected' : '' %>>Pedagogo</option>
-                                <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
-                                <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
-                            <% } else if (user.role === 'Inspetor') { %>
-                                <option value="Inspetor" <%= user.role === 'Inspetor' ? 'selected' : '' %>>Inspetor</option>
-                                <option value="Diretor" <%= user.role === 'Diretor' ? 'selected' : '' %>>Diretor</option>
-                                <option value="Coordenador" <%= user.role === 'Coordenador' ? 'selected' : '' %>>Coordenador</option>
-                                <option value="Pedagogo" <%= user.role === 'Pedagogo' ? 'selected' : '' %>>Pedagogo</option>
-                                <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
-                                <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
-                            <% } else if (user.role === 'Diretor') { %>
-                                <option value="Diretor" <%= user.role === 'Diretor' ? 'selected' : '' %>>Diretor</option>
-                                <option value="Coordenador" <%= user.role === 'Coordenador' ? 'selected' : '' %>>Coordenador</option>
-                                <option value="Pedagogo" <%= user.role === 'Pedagogo' ? 'selected' : '' %>>Pedagogo</option>
-                                <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
-                                <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
-                            <% } else if (user.role === 'Coordenador' || user.role === 'Pedagogo') { %>
-                                <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
-                                <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
-                            <% } else if (user.role === 'Aluno') { %>
-                                <option value="Aluno" selected disabled>Aluno</option>
+                                <option value="Master">Master</option>
                             <% } %>
-                        </select>            
-                    
-                        <!-- Status -->
+                            <% if (user.role === 'Master' || user.role === 'Inspetor') { %>
+                            <option value="Inspetor">Inspetor</option>
+                            <option value="Diretor">Diretor</option>
+                            <% } %>
+                            <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor') { %>
+                            <option value="Secretario">Secretário</option>
+                            <% } %>
+                            <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Secretario') { %>
+                            <option value="Coordenador">Coordenador</option>
+                            <option value="Pedagogo">Pedagogo</option>
+                            <% } %>
+                            <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Secretario') { %>
+                            <option value="Professor">Professor</option>
+                            <option value="Aluno">Aluno</option>
+                            <% } %>
+                        </select>
+            
                         <label for="registerStatus">Status:</label>
                         <select id="registerStatus" name="status">
-                            <option value="active" <%= user.status === 'active' ? 'selected' : '' %>>Ativo</option>
-                            <option value="inactive" <%= user.status === 'inactive' ? 'selected' : '' %>>Inativo</option>
-                        </select>                 
+                            <option value="active">Ativo</option>
+                            <option value="inactive">Inativo</option>
+                        </select>
+            
+                        <label for="registerCpf">CPF:</label>
+                        <input type="text" id="registerCpf" name="cpf" value="">
+            
+                        <label for="registerPhone">Telefone:</label>
+                        <input type="text" id="registerPhone" name="phone" value="">
+            
+                        <label for="registerDateOfBirth">Data de Nascimento:</label>
+                        <input type="date" id="registerDateOfBirth" name="dateOfBirth" value="">
+            
+                        <label for="registerGender">Gênero:</label>
+                        <select id="registerGender" name="gender">
+                            <option value="Masculino">Masculino</option>
+                            <option value="Feminino">Feminino</option>
+                            <option value="Outro">Outro</option>
+                            <option value="Prefiro não dizer">Prefiro não dizer</option>
+                        </select>
+            
+                        <label for="registerDistrict">Secretaria:</label>
+                        <select id="registerDistrict" name="districtId" <% if (userRole !== 'Master') { %> disabled <% } %>>
+                            <option value="">Selecione uma secretaria</option>
+                            <% districts.forEach(function(district) { %>
+                                <option value="<%= district.id %>" <% if (user.role !== 'Master' && user.districtId === district.id) { %> selected <% } %>><%= district.name %></option>
+                            <% }); %>
+                        </select>
+            
+                        <label for="registerSchool">Escola:</label>
+                        <select id="registerSchool" name="schoolId" <% if (userRole !== 'Master' || userRole !== 'Inspetor') { %> disabled <% } %>>
+                            <option value="">Selecione uma escola</option>
+                            <% schools.forEach(function(school) { %>
+                                <option value="<%= school.id %>" <% if (user.role !== 'Master' || userRole !== 'Inspetor' && user.schoolId === school.id) { %> selected <% } %>><%= school.name %></option>
+                            <% }); %>
+                        </select>
             
                         <div>
                             <label for="registerContent">Conteúdo:</label>
-                            <input type="text" id="registerContent" name="content" value="<%= user.content %>">
+                            <input type="text" id="registerContent" name="content" value="">
                         </div>
+            
                         <div>
                             <label for="registerClass">Turma:</label>
-                            <input type="text" id="registerClass" name="userClass" value="<%= user.class %>">
+                            <select id="registerClass" name="gradeId">
+                                <option value="">Selecione uma turma</option>
+                                <% if (grades && grades.length > 0) { %>
+                                    <% grades.forEach(grade => { %>
+                                        <option value="<%= grade.id %>"><%= grade.name %></option>
+                                    <% }); %>
+                                <% } %>
+                            </select>
                         </div>
-                    
-                        <!-- Campos gerais -->
-                        <label for="registerCpf">CPF:</label>
-                        <input type="text" id="registerCpf" name="cpf" value="<%= user.cpf %>">
-                    
-                        <label for="registerPhone">Telefone:</label>
-                        <input type="text" id="registerPhone" name="phone" value="<%= user.phone %>">
-                    
-                        <label for="registerDateOfBirth">Data de Nascimento:</label>
-                        <input type="date" id="registerDateOfBirth" name="dateOfBirth" value="<%= user.dateOfBirth %>">
-                    
-                        <label for="registerGender">Gênero:</label>
-                        <select id="registerGender" name="gender">
-                            <option value="Masculino" <%= user.gender === 'Masculino' ? 'selected' : '' %>>Masculino</option>
-                            <option value="Feminino" <%= user.gender === 'Feminino' ? 'selected' : '' %>>Feminino</option>
-                            <option value="Outro" <%= user.gender === 'Outro' ? 'selected' : '' %>>Outro</option>
-                            <option value="Prefiro não dizer" <%= user.gender === 'Prefiro não dizer' ? 'selected' : '' %>>Prefiro não dizer</option>
-                        </select>
             
-                        <!-- Seleção de Distrito -->
-                        <label for="registerDistrict">Secretaria:</label>
-                        <select id="registerDistrict" name="districtId">
-                            <% districts.forEach(function(district) { %>
-                                <option value="<%= district.id %>" <%= user.districtId === district.id ? 'selected' : '' %>><%= district.name %></option>
-                            <% }); %>
-                        </select>
-
-                        <!-- Escola -->
-                        <label for="registerSchool">Escola:</label>
-                        <select id="registerSchool" name="schoolId">
-                            <% schools.forEach(function(school) { %>
-                                <option value="<%= school.id %>" <%= user.school === school.id ? 'selected' : '' %>><%= school.name %></option>
-                            <% }); %>
-                        </select>
-            
-                        <!-- Turno -->
                         <label for="registerHorario">Turno:</label>
                         <select id="registerHorario" name="horario">
-                            <option value="Manhã" <%= user.horario === 'Manhã' ? 'selected' : '' %>>Manhã</option>
-                            <option value="Tarde" <%= user.horario === 'Tarde' ? 'selected' : '' %>>Tarde</option>
-                            <option value="Noite" <%= user.horario === 'Noite' ? 'selected' : '' %>>Noite</option>
-                            <option value="Integral" <%= user.horario === 'Integral' ? 'selected' : '' %>>Integral</option>
+                            <option value="">Selecione um turno</option>
+                            <option value="Manhã">Manhã</option>
+                            <option value="Tarde">Tarde</option>
+                            <option value="Noite">Noite</option>
+                            <option value="Integral">Integral</option>
                         </select>
-                    
-                        <!-- Endereço -->
-                        <label for="registerAddress">Endereço:</label>
-                        <input type="text" id="registerAddress" name="address" value="<%= user.address %>">
-                    
-                        <label for="registerCity">Cidade:</label>
-                        <input type="text" id="registerCity" name="city" value="<%= user.city %>">
-                    
-                        <label for="registerState">Estado:</label>
-                        <input type="text" id="registerState" name="state" value="<%= user.state %>">
-                    
-                        <label for="registerZip">CEP:</label>
-                        <input type="text" id="registerZip" name="zip" value="<%= user.zip %>">
             
-                        <!-- Botões -->
+                        <label for="registerAddress">Endereço:</label>
+                        <input type="text" id="registerAddress" name="address" value="">
+            
+                        <label for="registerCity">Cidade:</label>
+                        <input type="text" id="registerCity" name="city" value="">
+            
+                        <label for="registerState">Estado:</label>
+                        <input type="text" id="registerState" name="state" value="">
+            
+                        <label for="registerZip">CEP:</label>
+                        <input type="text" id="registerZip" name="zip" value="">
+            
                         <button type="submit" class="btn btn-save">Salvar</button>
-                        <button type="button" class="btn btn-cancel">Cancelar</button>
-                    </form>                                  
-                </div>
-            </div>           
-    
-            <div id="deleteModal" class="modal">
-                <div class="modal-content">
-                    <span class="close">&times;</span>
-                    <h2>Excluir Usuário</h2>
-                    <p>Deseja excluir o usuário <strong id="deleteName"></strong>?</p>
-                    <p><strong>Email:</strong> <span id="deleteEmail"></span></p>
-                    <p><strong>Cargo:</strong> <span id="deleteRole"></span></p>
-                    <p><strong>Status:</strong> <span id="deleteStatus"></span></p>
-                    <p><strong>Criado em:</strong> <span id="deleteCreatedAt"></span></p>
-                    <form id="deleteForm">
-                        <input type="hidden" name="userId" id="deleteUserId">
-                        <button type="submit" class="btn btn-confirm">Excluir</button>
                         <button type="button" class="btn btn-cancel">Cancelar</button>
                     </form>
                 </div>
@@ -307,14 +279,22 @@
                         <!-- Cargo -->
                         <label for="editRole">Cargo:</label>
                         <select id="editRole" name="role">
-                            <option value="Master" <%= user.role === 'Master' ? 'selected' : '' %>>Master</option>
-                            <option value="Inspetor" <%= user.role === 'Inspetor' ? 'selected' : '' %>>Inspetor</option>
-                            <option value="Diretor" <%= user.role === 'Diretor' ? 'selected' : '' %>>Diretor</option>
-                            <option value="Secretario" <%= user.role === 'Secretario' ? 'selected' : '' %>>Secretário</option>
-                            <option value="Coordenador" <%= user.role === 'Coordenador' ? 'selected' : '' %>>Coordenador</option>
-                            <option value="Pedagogo" <%= user.role === 'Pedagogo' ? 'selected' : '' %>>Pedagogo</option>
-                            <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
-                            <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
+                            <% if (user.role === 'Master') { %>
+                                <option value="Master" <%= user.role === 'Master' ? 'selected' : '' %>>Master</option>
+                            <% } %>
+                            <% if (user.role === 'Master' || user.role === 'Inspetor') { %>
+                                <option value="Inspetor" <%= user.role === 'Inspetor' ? 'selected' : '' %>>Inspetor</option>
+                                <option value="Diretor" <%= user.role === 'Diretor' ? 'selected' : '' %>>Diretor</option>
+                            <% } %>
+                            <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor') { %>
+                                <option value="Secretario" <%= user.role === 'Secretario' ? 'selected' : '' %>>Secretário</option>
+                            <% } %>
+                            <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Secretario') { %>
+                                <option value="Coordenador" <%= user.role === 'Coordenador' ? 'selected' : '' %>>Coordenador</option>
+                                <option value="Pedagogo" <%= user.role === 'Pedagogo' ? 'selected' : '' %>>Pedagogo</option>
+                                <option value="Professor" <%= user.role === 'Professor' ? 'selected' : '' %>>Professor</option>
+                                <option value="Aluno" <%= user.role === 'Aluno' ? 'selected' : '' %>>Aluno</option>
+                            <% } %>
                         </select>
                     
                         <!-- Status -->
@@ -323,14 +303,6 @@
                             <option value="active" <%= user.status === 'active' ? 'selected' : '' %>>Ativo</option>
                             <option value="inactive" <%= user.status === 'inactive' ? 'selected' : '' %>>Inativo</option>
                         </select>                
-                        <div>
-                            <label for="editContent">Conteúdo:</label>
-                            <input type="text" id="editContent" name="content" value="<%= user.content %>">
-                        </div>
-                        <div>
-                            <label for="editClass">Turma:</label>
-                            <input type="text" id="editClass" name="userClass" value="<%= user.class %>">
-                        </div>
                     
                         <!-- Campos gerais -->
                         <label for="editCpf">CPF:</label>
@@ -340,7 +312,7 @@
                         <input type="text" id="editPhone" name="phone" value="<%= user.phone %>">
                     
                         <label for="editDateOfBirth">Data de Nascimento:</label>
-                        <input type="date" id="editDateOfBirth" name="dateOfBirth" value="<%= user.dateOfBirth %>">
+                        <input type="date" id="editDateOfBirth" name="dateOfBirth" value="<%= (user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : '') %>">
                     
                         <label for="editGender">Gênero:</label>
                         <select id="editGender" name="gender">
@@ -353,6 +325,7 @@
                         <!-- Seleção de Distrito -->
                         <label for="editDistrict">Secretaria:</label>
                         <select id="editDistrict" name="districtId">
+                            <option value="">Selecione uma secretaria</option>
                             <% districts.forEach(function(district) { %>
                                 <option value="<%= district.id %>" <%= user.districtId === district.id ? 'selected' : '' %>><%= district.name %></option>
                             <% }); %>
@@ -361,11 +334,30 @@
                         <!-- Escola -->
                         <label for="editSchool">Escola:</label>
                         <select id="editSchool" name="schoolId">
+                            <option value="">Selecione uma escola</option>
                             <% schools.forEach(function(school) { %>
                                 <option value="<%= school.id %>" <%= editingUser && editingUser.schoolId === school.id ? 'selected' : '' %>><%= school.name %></option>
                             <% }); %>
                         </select>
 
+                        <div>
+                            <label for="editContent">Conteúdo:</label>
+                            <input type="text" id="editContent" name="content" value="<%= user.content %>">
+                        </div>
+
+                        <div>
+                            <label for="editClass">Turma:</label>
+                            <select id="editClass" name="gradeId">
+                                <option value="">Selecione uma turma</option>
+                                <% if (grades && grades.length > 0) { %>
+                                    <% grades.forEach(grade => { %>
+                                        <option value="<%= grade.id %>" <%= user.gradeId === grade.id ? 'selected' : '' %>>
+                                            <%= grade.name %>
+                                        </option>
+                                    <% }); %>
+                                <% } %>
+                            </select>
+                        </div>
 
                         <label for="editHorario">Turno:</label>
                         <select id="editHorario" name="horario">
@@ -404,6 +396,24 @@
                         <input type="hidden" name="userId" id="resetPasswordUserId">
                         <p>Tem certeza de que deseja reiniciar a senha do usuário?</p>
                         <button type="submit" class="btn btn-confirm-reset">Reiniciar Senha</button>
+                        <button type="button" class="btn btn-cancel">Cancelar</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal de Exclusão -->
+            <div id="deleteModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Excluir Usuário</h2>
+                    <p>Deseja excluir o usuário <strong id="deleteName"></strong>?</p>
+                    <p><strong>Email:</strong> <span id="deleteEmail"></span></p>
+                    <p><strong>Cargo:</strong> <span id="deleteRole"></span></p>
+                    <p><strong>Status:</strong> <span id="deleteStatus"></span></p>
+                    <p><strong>Criado em:</strong> <span id="deleteCreatedAt"></span></p>
+                    <form id="deleteForm">
+                        <input type="hidden" name="userId" id="deleteUserId">
+                        <button type="submit" class="btn btn-confirm">Excluir</button>
                         <button type="button" class="btn btn-cancel">Cancelar</button>
                     </form>
                 </div>

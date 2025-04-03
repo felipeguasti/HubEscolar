@@ -22,8 +22,8 @@ exports.adicionarUsuario = async (req, res) => {
             state, 
             zip, 
             status, 
-            schoolId,    // Nova entrada para a Escola
-            districtId   // Nova entrada para a Secretaria
+            schoolId,
+            districtId: formDistrictId // Renomear para evitar conflito
         } = req.body;
 
         // Verificar se o usuário já existe
@@ -32,7 +32,34 @@ exports.adicionarUsuario = async (req, res) => {
             return res.status(400).json({ message: 'Usuário já existe.' });
         }
 
-        const defaultPassword = process.env.DEFAULT_PASSWORD; 
+        const defaultPassword = process.env.DEFAULT_PASSWORD;
+
+        // Lógica para tratar o valor de horario
+        let horarioValue = horario;
+        if (!horarioValue) {
+            horarioValue = 'Integral'; // Define "Integral" se o valor estiver vazio
+        } else if (!['Manhã', 'Tarde', 'Noite', 'Integral'].includes(horarioValue)) {
+            return res.status(400).json({ message: 'Valor de horário inválido.' });
+        }
+
+        const zipInt = parseInt(zip);
+
+        let finalDistrictId = formDistrictId; // Usar o valor do formulário por padrão
+
+        // Verifica se o usuário está autenticado (supondo que `req.user` tenha o ID do usuário logado)
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ message: 'Usuário não autenticado.' });
+        }
+
+        // Busca o usuário no banco de dados pelo ID da sessão
+        const usuario = await User.findByPk(req.user.id, {
+            attributes: ['id', 'name', 'email', 'role', 'districtId', 'schoolId']
+        });
+
+        // Atribuir districtId do usuário logado se não for Master
+        if (usuario.role !== 'Master') {
+            finalDistrictId = usuario.districtId;
+        }
 
         // Criando o novo usuário
         const newUser = await User.create({
@@ -44,22 +71,22 @@ exports.adicionarUsuario = async (req, res) => {
             dateOfBirth,
             gender,
             role,
-            horario,
+            horario: horarioValue,
             userClass,
             content,
             address,
             city,
             state,
-            zip,
+            zip: zipInt,
             status,
-            schoolId,    // Agora associamos a escola com o schoolId
-            districtId   // Associando a Secretaria
+            schoolId,
+            districtId: finalDistrictId // Usar o districtId final
         });
 
         res.status(201).json({ message: 'Usuário criado com sucesso.' });
     } catch (error) {
         console.error(error);
-        
+
         // Checar se é erro de validação
         if (error.name === 'SequelizeValidationError') {
             return res.status(400).json({ message: 'Erro de validação', errors: error.errors });
@@ -205,7 +232,7 @@ exports.buscarUsuarioLogado = async (req, res) => {
 
         // Busca o usuário no banco de dados pelo ID da sessão
         const usuario = await User.findByPk(req.user.id, {
-            attributes: ['id', 'name', 'email', 'role', 'district', 'school']
+            attributes: ['id', 'name', 'email', 'role', 'districtId', 'schoolId']
         });
 
         if (!usuario) {
@@ -256,15 +283,16 @@ exports.filterUsers = async (req, res) => {
         }
 
         const user = await User.findByPk(req.user.id);
-        const { districtId, school, role, subject, userClass, status } = req.query;
+        const { districtId, schoolId, role, subject, userClass, status } = req.query; // Mudança para schoolId
         let whereClause = {};
 
         if (user.role === 'Master') {
-            whereClause = {};
+            // Master vê tudo, sem filtros iniciais
         } else if (user.role === 'Inspetor') {
             whereClause.districtId = user.districtId;
         } else if (['Diretor', 'Coordenador', 'Pedagogo'].includes(user.role)) {
             whereClause.districtId = user.districtId;
+          
             if (user.schoolId !== undefined) { // Adiciona a verificação
                 whereClause.schoolId = user.schoolId; // Usa schoolId
             }
@@ -277,7 +305,7 @@ exports.filterUsers = async (req, res) => {
 
         // Ajusta a cláusula WHERE conforme os filtros, se fornecidos
         if (districtId) whereClause.districtId = districtId;
-        if (school) whereClause.schoolId = school;
+        if (schoolId) whereClause.schoolId = schoolId; // Mudança para schoolId
         if (role) whereClause.role = role;
         if (subject) whereClause.subject = subject;
         if (userClass) whereClause.userClass = userClass;
