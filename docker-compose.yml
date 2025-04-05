@@ -1,11 +1,70 @@
 version: '3.8'
+
 services:
   app:
     build: .
+    container_name: main-service
     ports:
       - '3000:3000'
-    environment:
-      MYSQL_HOST: host.docker.internal
-      MYSQL_USER: u612973268_broadcast
-      MYSQL_PASSWORD: E1=iTrLXsvk
-      MYSQL_DATABASE: u612973268_broadcast
+    depends_on:
+      - users-service
+      - school-service
+      - district-service
+    networks:
+      - hubescolar-network
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  users-service:
+    build: ./services/users-service
+    container_name: users-service
+    ports:
+      - '3001:3001'
+    networks:
+      - hubescolar-network
+    volumes:
+      - ./services/users-service/logs:/app/logs
+    restart: unless-stopped
+
+  school-service:
+    build: ./services/school-service
+    container_name: school-service
+    ports:
+      - '3002:3002'
+    networks:
+      - hubescolar-network
+    volumes:
+      - ./services/school-service/logs:/app/logs
+    restart: unless-stopped
+
+  district-service:
+    build: ./services/district-service
+    container_name: district-service
+    ports:
+      - '3003:3003'
+    networks:
+      - hubescolar-network
+    volumes:
+      - ./services/district-service/logs:/app/logs
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-hubescolar
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - hubescolar-network
+    restart: unless-stopped
+
+networks:
+  hubescolar-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local

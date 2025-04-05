@@ -1,0 +1,61 @@
+hubescolar/
+├── src/
+│   ├── config/
+│   │   └── database.js
+│   ├── controllers/
+│   │   ├── adminController.js
+│   │   ├── authController.js
+│   │   ├── districtController.js
+│   │   ├── gradeController.js
+│   │   ├── schoolController.js
+│   │   └── usersController.js
+│   ├── middlewares/
+│   │   └── auth.js
+│   ├── models/
+│   │   ├── District.js
+│   │   ├── Grade.js
+│   │   ├── School.js
+│   │   └── User.js
+│   ├── modules/
+│   ├── public/
+│   │   ├── css/
+│   │   │   └── style.css
+│   │   └── js/
+│   │       └── script.js
+│   ├── routes/
+│   │   ├── admin.js
+│   │   ├── auth.js
+│   │   ├── district.js
+│   │   ├── grade.js
+│   │   ├── school.js
+│   │   └── users.js
+│   ├── utils/
+│   └── views/
+│       ├── partials/
+│       │   └── admin-sidebar.ejs
+│       ├── admin.ejs
+│       ├── dashboard.ejs
+│       ├── district.ejs
+│       ├── grade.ejs
+│       ├── login.ejs
+│       ├── profile.ejs
+│       ├── school.ejs
+│       └── users.ejs
+├── tests/
+├── node_modules/
+├── .git/
+├── .env
+├── .gitignore
+├── .gitattributes
+├── .dockerignore
+├── Dockerfile
+├── docker-compose.yml
+├── package.json
+├── package-lock.json
+├── LICENSE
+├── README.md
+├── app.js
+├── server.js
+├── syncModels.js
+├── add-turma.js
+└── add-masterUser.js 

@@ -1,5 +1,6 @@
     # Ignorar a pasta node_modules
     node_modules/
+    Copilot/
 
     # Ignorar o ficheiro package-lock.json
     package-lock.json

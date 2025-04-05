@@ -1,0 +1,5 @@
+{"level":"info","message":"Servidor rodando na porta 3003","timestamp":"2025-04-05T17:51:05.482Z"}
+{"level":"info","message":"Conectado ao Redis com sucesso","timestamp":"2025-04-05T17:51:05.526Z"}
+{"level":"info","message":"Servidor rodando na porta 3003","timestamp":"2025-04-05T18:23:52.123Z"}
+{"level":"info","message":"Conectado ao Redis com sucesso","timestamp":"2025-04-05T18:23:52.150Z"}
+{"level":"error","message":"Erro ao obter escolas do schoolService:","timestamp":"2025-04-05T18:42:50.857Z"}
