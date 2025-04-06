@@ -3,7 +3,7 @@ const District = require('../models/District');
 const School = require('../models/School');
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middlewares/auth');
+const authMiddleware = require('../../services/auth-service/src/middlewares/auth');
 const Grade = require('../models/Grade');
 
 const renderUsersPage = async (req, res) => {
@@ -66,6 +66,19 @@ const renderUsersPage = async (req, res) => {
     }
 };
 
+// Renderizar página com todas as escolas
+const renderSchoolPage = async (req, res) => {
+    try {
+        const schools = await School.findAll(); // Busca todas as escolas no banco
+        res.render("school", { schools });
+    } catch (err) {
+        console.error("Erro ao carregar as escolas:", err);
+        res.status(500).send("Erro ao carregar as escolas");
+    }
+};
+
+
 module.exports = {
     renderUsersPage,
+    renderSchoolPage,
 };

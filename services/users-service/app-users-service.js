@@ -1,8 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-const routes = require('./routes/users');
-const db = require('./../config/db');
+const routes = require('./src/routes/users');
+const db = require('./src/config/db');
 require('dotenv').config();
 
 const app = express();

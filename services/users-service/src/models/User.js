@@ -1,5 +1,5 @@
 const { DataTypes, Model } = require('sequelize');
-const sequelize = require('../../../../src/config/db');
+const sequelize = require('../config/db');
 const bcrypt = require('bcryptjs');
 
 class User extends Model {
@@ -68,11 +68,10 @@ User.init({
   },
 
   // Dados Acadêmicos/Profissionais
-  class: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    field: 'userClass'
-  },
+  userClass: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   content: {
     type: DataTypes.STRING,
     allowNull: true

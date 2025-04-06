@@ -1,9 +1,35 @@
 const User = require('../models/User');
-const fetch = require('node-fetch');
+async function getFetch() {
+    try {
+      const fetchModule = await import('node-fetch');
+      return fetchModule.default;
+    } catch (error) {
+      console.error('Erro ao importar node-fetch:', error);
+      return null; // Ou outra forma de lidar com o erro
+    }
+  }
+  
+  let fetch;
+  getFetch().then(f => {
+    fetch = f;
+  });
 const { body, validationResult } = require('express-validator');
 const { emailExiste, invalidarCache } = require('../services/userCacheService');
 const logService = require('../services/logService');
 require('dotenv').config();
+const {
+    verificarPermissaoCriacao,
+    verificarPermissaoEdicao,
+    verificarPermissaoExclusao
+} = require('../services/permissionService');
+
+const {
+    applyUserFilters,
+    validarCPF,
+    validarTelefone,
+    validarDataNascimento,
+    validarCEP
+} = require('../services/userService');
 
 // Cache para armazenar tentativas de criação
 const tentativasCriacao = new Map();
@@ -35,153 +61,6 @@ const verificarTentativas = (ip) => {
     }
 
     return { bloqueado: false };
-};
-
-// Função para validar CPF
-const validarCPF = (cpf) => {
-    cpf = cpf.replace(/[^\d]/g, '');
-    if (cpf.length !== 11) return false;
-    
-    // Verifica se todos os dígitos são iguais
-    if (/^(\d)\1{10}$/.test(cpf)) return false;
-    
-    // Validação do primeiro dígito verificador
-    let soma = 0;
-    for (let i = 0; i < 9; i++) {
-        soma += parseInt(cpf.charAt(i)) * (10 - i);
-    }
-    let resto = 11 - (soma % 11);
-    let digitoVerificador1 = resto > 9 ? 0 : resto;
-    if (digitoVerificador1 !== parseInt(cpf.charAt(9))) return false;
-    
-    // Validação do segundo dígito verificador
-    soma = 0;
-    for (let i = 0; i < 10; i++) {
-        soma += parseInt(cpf.charAt(i)) * (11 - i);
-    }
-    resto = 11 - (soma % 11);
-    let digitoVerificador2 = resto > 9 ? 0 : resto;
-    if (digitoVerificador2 !== parseInt(cpf.charAt(10))) return false;
-    
-    return true;
-};
-
-// Função para validar telefone
-const validarTelefone = (telefone) => {
-    // Remove todos os caracteres não numéricos
-    telefone = telefone.replace(/[^\d]/g, '');
-    
-    // Verifica se tem entre 10 e 11 dígitos (com DDD)
-    if (telefone.length < 10 || telefone.length > 11) return false;
-    
-    // Verifica se começa com 9 (celular) ou 2-5 (fixo)
-    const primeiroDigito = telefone.charAt(telefone.length - 9);
-    return /^[2-5]|^9/.test(primeiroDigito);
-};
-
-// Função para validar data de nascimento
-const validarDataNascimento = (data) => {
-    const dataNascimento = new Date(data);
-    const hoje = new Date();
-    const idadeMinima = 14; // Idade mínima para cadastro
-    
-    // Verifica se é uma data válida
-    if (isNaN(dataNascimento.getTime())) return false;
-    
-    // Verifica se não é uma data futura
-    if (dataNascimento > hoje) return false;
-    
-    // Calcula a idade
-    let idade = hoje.getFullYear() - dataNascimento.getFullYear();
-    const mes = hoje.getMonth() - dataNascimento.getMonth();
-    if (mes < 0 || (mes === 0 && hoje.getDate() < dataNascimento.getDate())) {
-        idade--;
-    }
-    
-    return idade >= idadeMinima;
-};
-
-// Função para validar CEP
-const validarCEP = (cep) => {
-    // Remove todos os caracteres não numéricos
-    cep = cep.replace(/[^\d]/g, '');
-    
-    // Verifica se tem 8 dígitos
-    if (cep.length !== 8) return false;
-    
-    // Verifica se é um CEP válido (primeiro dígito não pode ser 0)
-    return /^[1-9]\d{7}$/.test(cep);
-};
-
-// Função para verificar permissões de criação de usuário
-const verificarPermissaoCriacao = (roleUsuarioLogado, roleNovoUsuario) => {
-    // Define as permissões por role
-    const permissoes = {
-        'Master': ['Master', 'Inspetor', 'Diretor', 'Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
-        'Inspetor': ['Diretor', 'Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
-        'Diretor': ['Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
-        'Secretario': ['Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
-        'Coordenador': [],
-        'Pedagogo': [],
-        'Professor': [],
-        'Aluno': []
-    };
-
-    // Verifica se o role do usuário logado existe nas permissões
-    if (!permissoes.hasOwnProperty(roleUsuarioLogado)) {
-        return {
-            permitido: false,
-            mensagem: 'Usuário com role inválido.'
-        };
-    }
-
-    // Verifica se o usuário tem permissão para criar o role especificado
-    if (!permissoes[roleUsuarioLogado].includes(roleNovoUsuario)) {
-        return {
-            permitido: false,
-            mensagem: `Usuário ${roleUsuarioLogado} não tem permissão para criar usuário ${roleNovoUsuario}.`
-        };
-    }
-
-    return {
-        permitido: true
-    };
-};
-
-// Função para verificar permissões de edição
-const verificarPermissaoEdicao = (roleUsuarioLogado, roleUsuarioAlvo, idUsuarioLogado, idUsuarioAlvo) => {
-    // Se for o próprio usuário, pode editar suas próprias informações
-    if (idUsuarioLogado === idUsuarioAlvo) {
-        return { permitido: true };
-    }
-
-    // Define as permissões por role
-    const permissoes = {
-        'Master': ['Master', 'Inspetor', 'Diretor', 'Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
-        'Inspetor': ['Diretor', 'Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
-        'Diretor': ['Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
-        'Secretario': ['Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
-        'Coordenador': ['Professor', 'Aluno'],
-        'Pedagogo': ['Professor', 'Aluno'],
-        'Professor': [],
-        'Aluno': []
-    };
-
-    if (!permissoes.hasOwnProperty(roleUsuarioLogado)) {
-        return {
-            permitido: false,
-            mensagem: 'Usuário com role inválido.'
-        };
-    }
-
-    if (!permissoes[roleUsuarioLogado].includes(roleUsuarioAlvo)) {
-        return {
-            permitido: false,
-            mensagem: `Usuário ${roleUsuarioLogado} não tem permissão para editar usuário ${roleUsuarioAlvo}.`
-        };
-    }
-
-    return { permitido: true };
 };
 
 exports.adicionarUsuario = [
@@ -240,10 +119,10 @@ exports.adicionarUsuario = [
         }),
     body('horario')
         .optional()
-        .default('Integral')  // Define o valor padrão durante a validação
+        .default('Integral')   // Define o valor padrão durante a validação
         .isIn(['Manhã', 'Tarde', 'Noite', 'Integral'])
         .withMessage('Horário inválido'),
-    body('class').optional(),
+    body('userClass').optional(),
     body('content').optional(),
     body('status').optional().isIn(['active', 'inactive']).withMessage('Status inválido'),
 
@@ -251,7 +130,7 @@ exports.adicionarUsuario = [
         // Verifica tentativas de criação
         const ip = req.ip || req.connection.remoteAddress;
         const verificação = verificarTentativas(ip);
-        
+
         if (verificação.bloqueado) {
             return res.status(429).json({
                 message: `Muitas tentativas de criação. Tente novamente em ${verificação.tempoRestante} minutos.`
@@ -326,14 +205,14 @@ exports.adicionarUsuario = [
                 finalDistrictId = usuarioLogado.districtId;
             }
 
-            const schoolServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/schools/${schoolId}`;
+            const schoolServiceUrl = `<span class="math-inline">\{process\.env\.SCHOOL\_SERVICE\_URL\}/schools/</span>{schoolId}`;
             const schoolResponse = await fetch(schoolServiceUrl);
             if (!schoolResponse.ok) {
                 return res.status(400).json({ message: 'schoolId inválido.' });
             }
 
             if (finalDistrictId) {
-                const districtServiceUrl = `${process.env.DISTRICT_SERVICE_URL}/districts/${finalDistrictId}`;
+                const districtServiceUrl = `<span class="math-inline">\{process\.env\.DISTRICT\_SERVICE\_URL\}/districts/</span>{finalDistrictId}`;
                 const districtResponse = await fetch(districtServiceUrl);
                 if (!districtResponse.ok) {
                     return res.status(400).json({ message: 'districtId inválido.' });
@@ -389,114 +268,176 @@ exports.listarUsuarios = async (req, res) => {
         const usuarios = await User.findAll();
         res.json(usuarios);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Erro ao listar usuários:', error); // Manter o console.error para desenvolvimento
+        await logService.error('Erro ao listar usuários', { error: error.message });
+        res.status(500).json({ message: 'Erro ao listar usuários.' });
     }
 };
 
-exports.atualizarUsuario = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const dadosRecebidos = req.body;
-
-        // Verifica autenticação
-        if (!req.user || !req.user.id) {
-            return res.status(401).json({ message: 'Usuário não autenticado.' });
-        }
-
-        const usuarioLogado = await User.findByPk(req.user.id, {
-            attributes: ['id', 'name', 'email', 'role', 'districtId', 'schoolId']
-        });
-
-        if (!usuarioLogado) {
-            return res.status(401).json({ message: 'Usuário não encontrado.' });
-        }
-
-        const usuarioAlvo = await User.findByPk(id);
-        if (!usuarioAlvo) {
-            return res.status(404).json({ message: 'Usuário não encontrado.' });
-        }
-
-        // Verifica permissões
-        const verificacaoPermissao = verificarPermissaoEdicao(
-            usuarioLogado.role,
-            usuarioAlvo.role,
-            usuarioLogado.id,
-            usuarioAlvo.id
-        );
-
-        if (!verificacaoPermissao.permitido) {
-            return res.status(403).json({ message: verificacaoPermissao.mensagem });
-        }
-
-        const updatedData = {};
-        Object.keys(dadosRecebidos).forEach((campo) => {
-            if (dadosRecebidos[campo] !== undefined && dadosRecebidos[campo] !== '') {
-                updatedData[campo] = dadosRecebidos[campo];
+exports.atualizarUsuario = [
+    // Validações (tornando os campos opcionais com .optional())
+    body('name').optional().notEmpty().withMessage('Nome é obrigatório'),
+    body('email').optional().isEmail().withMessage('Email inválido'),
+    body('role').optional().notEmpty().withMessage('Papel é obrigatório'),
+    body('cpf')
+        .optional()
+        .custom((value) => {
+            if (value && !validarCPF(value)) {
+                throw new Error('CPF inválido');
             }
-        });
-
-        if (Object.keys(updatedData).length === 0) {
-            return res.status(400).json({ message: 'Nenhum dado válido para atualizar.' });
-        }
-
-        if (updatedData.schoolId) {
-            const schoolServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/schools/${updatedData.schoolId}`;
-            const schoolResponse = await fetch(schoolServiceUrl);
-            if (!schoolResponse.ok) {
-                return res.status(400).json({ message: 'schoolId inválido.' });
+            return true;
+        }),
+    body('phone')
+        .optional()
+        .custom((value) => {
+            if (value && !validarTelefone(value)) {
+                throw new Error('Telefone inválido');
             }
-        }
-
-        if (updatedData.districtId) {
-            const districtServiceUrl = `${process.env.DISTRICT_SERVICE_URL}/districts/${updatedData.districtId}`;
-            const districtResponse = await fetch(districtServiceUrl);
-            if (!districtResponse.ok) {
-                return res.status(400).json({ message: 'districtId inválido.' });
+            return true;
+        }),
+    body('dateOfBirth')
+        .optional()
+        .custom((value) => {
+            if (value && !validarDataNascimento(value)) {
+                throw new Error('Data de nascimento inválida ou idade mínima não atingida');
             }
+            return true;
+        }),
+    body('gender')
+        .optional()
+        .isIn(['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer'])
+        .withMessage('Gênero inválido'),
+    body('schoolId').optional(),
+    body('districtId').optional(),
+    body('address').optional(),
+    body('city').optional(),
+    body('state').optional(),
+    body('zip')
+        .optional()
+        .custom((value) => {
+            if (value && !validarCEP(value)) {
+                throw new Error('CEP inválido');
+            }
+            return true;
+        })
+        .optional()
+        .customSanitizer(value => {
+            if (value) {
+                return value.replace(/[^\d]/g, '').padStart(8, '0');
+            }
+            return value;
+        }),
+    body('horario')
+        .optional()
+        .isIn(['Manhã', 'Tarde', 'Noite', 'Integral'])
+        .withMessage('Horário inválido'),
+    body('userClass').optional(),
+    body('content').optional(),
+    body('status').optional().isIn(['active', 'inactive']).withMessage('Status inválido'),
+
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
         }
 
-        await User.update(updatedData, { where: { id } });
+        try {
+            const { id } = req.params;
+            const dadosRecebidos = req.body;
 
-        const usuarioAtualizado = await User.findByPk(id);
+            const usuarioLogado = req.user;
 
-        const usuarioResponse = {
-            id: usuarioAtualizado.id,
-            nome: usuarioAtualizado.name,
-            email: usuarioAtualizado.email,
-            role: usuarioAtualizado.role,
-            status: usuarioAtualizado.status,
-            horario: usuarioAtualizado.horario,
-            address: usuarioAtualizado.address,
-            city: usuarioAtualizado.city,
-            state: usuarioAtualizado.state,
-            zip: usuarioAtualizado.zip,
-            cpf: usuarioAtualizado.cpf,
-            phone: usuarioAtualizado.phone,
-            dateOfBirth: usuarioAtualizado.dateOfBirth,
-            gender: usuarioAtualizado.gender,
-            profilePic: usuarioAtualizado.profilePic,
-            content: usuarioAtualizado.content,
-            userClass: usuarioAtualizado.userClass,
-            schoolId: usuarioAtualizado.schoolId,
-            districtId: usuarioAtualizado.districtId,
-            updatedAt: usuarioAtualizado.updatedAt
-        };
+            if (!usuarioLogado) {
+                return res.status(401).json({ message: 'Usuário não autenticado.' });
+            }
 
-        await logService.logUserOperation('edicao', id, {
-            editadoPor: usuarioLogado.id,
-            alteracoes: updatedData
-        });
+            const usuarioAlvo = await User.findByPk(id);
+            if (!usuarioAlvo) {
+                return res.status(404).json({ message: 'Usuário não encontrado.' });
+            }
 
-        res.status(200).json(usuarioResponse);
-    } catch (error) {
-        console.error('Erro ao atualizar o usuário:', error);
-        await logService.error('Erro ao atualizar usuário', { 
-            error: error.message,
-            id: req.params.id
-        });
-        res.status(500).json({ message: 'Erro ao atualizar o usuário.' });
+            // Verifica permissões
+            const verificacaoPermissao = verificarPermissaoEdicao(
+                usuarioLogado.role,
+                usuarioAlvo.role,
+                usuarioLogado.id,
+                usuarioAlvo.id
+            );
+
+            if (!verificacaoPermissao.permitido) {
+                return res.status(403).json({ message: verificacaoPermissao.mensagem });
+            }
+
+            const updatedData = {};
+            Object.keys(dadosRecebidos).forEach((campo) => {
+                if (dadosRecebidos[campo] !== undefined && dadosRecebidos[campo] !== '') {
+                    updatedData[campo] = dadosRecebidos[campo];
+                }
+            });
+
+            if (Object.keys(updatedData).length === 0) {
+                return res.status(400).json({ message: 'Nenhum dado válido para atualizar.' });
+            }
+
+            if (updatedData.schoolId) {
+                const schoolServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/schools/${updatedData.schoolId}`;
+                const schoolResponse = await fetch(schoolServiceUrl);
+                if (!schoolResponse.ok) {
+                    return res.status(400).json({ message: 'schoolId inválido.' });
+                }
+            }
+
+            if (updatedData.districtId) {
+                const districtServiceUrl = `${process.env.DISTRICT_SERVICE_URL}/districts/${updatedData.districtId}`;
+                const districtResponse = await fetch(districtServiceUrl);
+                if (!districtResponse.ok) {
+                    return res.status(400).json({ message: 'districtId inválido.' });
+                }
+            }
+
+            await User.update(updatedData, { where: { id } });
+
+            const usuarioAtualizado = await User.findByPk(id);
+
+            const usuarioResponse = {
+                id: usuarioAtualizado.id,
+                nome: usuarioAtualizado.name,
+                email: usuarioAtualizado.email,
+                role: usuarioAtualizado.role,
+                status: usuarioAtualizado.status,
+                horario: usuarioAtualizado.horario,
+                address: usuarioAtualizado.address,
+                city: usuarioAtualizado.city,
+                state: usuarioAtualizado.state,
+                zip: usuarioAtualizado.zip,
+                cpf: usuarioAtualizado.cpf,
+                phone: usuarioAtualizado.phone,
+                dateOfBirth: usuarioAtualizado.dateOfBirth,
+                gender: usuarioAtualizado.gender,
+                profilePic: usuarioAtualizado.profilePic,
+                content: usuarioAtualizado.content,
+                userClass: usuarioAtualizado.userClass,
+                schoolId: usuarioAtualizado.schoolId,
+                districtId: usuarioAtualizado.districtId,
+                updatedAt: usuarioAtualizado.updatedAt
+            };
+
+            await logService.logUserOperation('edicao', id, {
+                editadoPor: usuarioLogado.id,
+                alteracoes: updatedData
+            });
+
+            res.status(200).json(usuarioResponse);
+        } catch (error) {
+            console.error('Erro ao atualizar o usuário:', error);
+            await logService.error('Erro ao atualizar usuário', {
+                error: error.message,
+                id: req.params.id
+            });
+            res.status(500).json({ message: 'Erro ao atualizar o usuário.' });
+        }
     }
-};
+];
 
 exports.deletarUsuario = async (req, res) => {
     try {
@@ -507,9 +448,7 @@ exports.deletarUsuario = async (req, res) => {
             return res.status(401).json({ message: 'Usuário não autenticado.' });
         }
 
-        const usuarioLogado = await User.findByPk(req.user.id, {
-            attributes: ['id', 'name', 'email', 'role', 'districtId', 'schoolId']
-        });
+        const usuarioLogado = req.user;
 
         if (!usuarioLogado) {
             return res.status(401).json({ message: 'Usuário não encontrado.' });
@@ -520,31 +459,17 @@ exports.deletarUsuario = async (req, res) => {
             return res.status(404).json({ message: 'Usuário não encontrado.' });
         }
 
-        // Define as permissões de exclusão por role
-        const permissoesExclusao = {
-            'Master': ['Master', 'Inspetor', 'Diretor', 'Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
-            'Inspetor': ['Diretor', 'Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
-            'Diretor': ['Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
-            'Secretario': ['Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno']
-        };
-
-        // Verifica se o usuário tem permissão para excluir
-        if (!permissoesExclusao[usuarioLogado.role]) {
-            return res.status(403).json({ message: 'Sem permissão para excluir usuários.' });
-        }
-
-        // Verifica se pode excluir o usuário alvo
-        if (!permissoesExclusao[usuarioLogado.role].includes(usuarioAlvo.role)) {
-            return res.status(403).json({ 
-                message: `${usuarioLogado.role} não tem permissão para excluir usuário ${usuarioAlvo.role}.` 
-            });
+        // Verifica permissões de exclusão
+        const permissaoExclusao = verificarPermissaoExclusao(usuarioLogado.role, usuarioAlvo.role);
+        if (!permissaoExclusao.permitido) {
+            return res.status(403).json({ message: permissaoExclusao.mensagem });
         }
 
         await User.destroy({ where: { id } });
         res.json({ message: 'Usuário excluído com sucesso.' });
     } catch (error) {
         console.error('Erro ao excluir o usuário:', error);
-        await logService.error('Erro ao excluir usuário', { 
+        await logService.error('Erro ao excluir usuário', {
             error: error.message,
             id: req.params.id
         });
@@ -599,9 +524,7 @@ exports.buscarUsuarioLogado = async (req, res) => {
             return res.status(401).json({ message: 'Usuário não autenticado.' });
         }
 
-        const usuario = await User.findByPk(req.user.id, {
-            attributes: ['id', 'name', 'email', 'role', 'districtId', 'schoolId']
-        });
+        const usuario = req.user;
 
         if (!usuario) {
             return res.status(404).json({ message: 'Usuário não encontrado.' });
@@ -654,34 +577,6 @@ exports.resetarSenha = async (req, res) => {
     }
 };
 
-const applyUserFilters = (user, query) => {
-    let whereClause = {};
-
-    if (user.role === 'Master') {
-    } else if (user.role === 'Inspetor') {
-        whereClause.districtId = user.districtId;
-    } else if (['Diretor', 'Coordenador', 'Pedagogo'].includes(user.role)) {
-        whereClause.districtId = user.districtId;
-        if (user.schoolId !== undefined) {
-            whereClause.schoolId = user.schoolId;
-        }
-    } else {
-        whereClause.districtId = user.districtId;
-        if (user.schoolId !== undefined) {
-            whereClause.schoolId = user.schoolId;
-        }
-    }
-
-    if (query.districtId) whereClause.districtId = query.districtId;
-    if (query.schoolId) whereClause.schoolId = query.schoolId;
-    if (query.role) whereClause.role = query.role;
-    if (query.subject) whereClause.subject = query.subject;
-    if (query.userClass) whereClause.userClass = query.userClass;
-    if (query.status) whereClause.status = query.status;
-
-    return whereClause;
-};
-
 exports.filterUsers = async (req, res) => {
     try {
         if (!req.user) {
@@ -689,7 +584,7 @@ exports.filterUsers = async (req, res) => {
         }
 
         const user = await User.findByPk(req.user.id);
-        const whereClause = applyUserFilters(user, req.query);
+        const whereClause = applyUserFilters(user, req.query); // Use a função do serviço
 
         const users = await User.findAll({ where: whereClause });
 

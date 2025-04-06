@@ -1,0 +1,31 @@
+{
+  "name": "auth-service",
+  "version": "1.0.0",
+  "main": "app-auth-service.js",
+  "scripts": {
+    "start": "node app-auth-service.js",
+    "dev": "nodemon app-auth-service.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.8.4",
+    "bcrypt": "^5.1.1",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.10.0",
+    "nodemon": "^3.1.9",
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.2"
+  }
+}

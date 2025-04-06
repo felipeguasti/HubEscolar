@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db'); // Certifique-se de que o caminho está correto
+const sequelize = require('../config/db');
 
 const School = sequelize.define('School', {
   name: {
