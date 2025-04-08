@@ -1,10 +1,10 @@
 const express = require('express');
+require('dotenv').config();
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const authRoutes = require('./src/routes/authRoutes');
 const errorHandler = require('./src/middlewares/errorHandler');
 const rateLimit = require('express-rate-limit');
-require('dotenv').config();
 const app = express();
 const PORT = process.env.AUTH_SERVICE_URL ? new URL(process.env.AUTH_SERVICE_URL).port : 3004;
 

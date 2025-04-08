@@ -1,15 +1,17 @@
-// middlewares/auth.js (adaptado para auth-service)
-
 const jwt = require('jsonwebtoken');
 const logger = require('../services/logger'); // Importe o logger
 
 const authMiddleware = (req, res, next) => {
     let token = null;
 
-    // Verifica se o token está no cabeçalho Authorization
-    const authHeader = req.header('Authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.split(' ')[1];
+    if (req.originalUrl === '/auth/validate-token' && req.body.accessToken) {
+        token = req.body.accessToken;
+    } else {
+        // Verifica se o token está no cabeçalho Authorization para outras rotas
+        const authHeader = req.header('Authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        }
     }
 
     if (!token) {

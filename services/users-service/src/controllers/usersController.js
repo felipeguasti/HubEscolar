@@ -1,4 +1,19 @@
 const User = require('../models/User');
+const winston = require('winston');
+
+const logger = winston.createLogger({
+    level: 'info', // Defina o nível de log desejado
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+    ),
+    transports: [
+        new winston.transports.Console(), // Log para o console
+        // new winston.transports.File({ filename: 'error.log', level: 'error' }), // Log de erros em arquivo (opcional)
+        // new winston.transports.File({ filename: 'combined.log' }), // Log geral em arquivo (opcional)
+    ],
+});
+
 async function getFetch() {
     try {
       const fetchModule = await import('node-fetch');
@@ -35,6 +50,23 @@ const {
 const tentativasCriacao = new Map();
 const MAX_TENTATIVAS = 5;
 const TEMPO_BLOQUEIO = 15 * 60 * 1000; // 15 minutos em milissegundos
+
+exports.buscarUsuarioPorEmail = async (req, res) => {
+    const { email } = req.params;
+    try {
+        const user = await User.findOne({ where: { email } });
+        if (user) {
+            logger.info(`Usuário encontrado com o email: ${email}`, { service: 'users-service' });
+            res.json(user);
+        } else {
+            logger.warn(`Usuário com o email ${email} não encontrado.`, { service: 'users-service' });
+            res.status(404).json({ message: 'Usuário não encontrado.' });
+        }
+    } catch (error) {
+        logger.error('Erro ao buscar usuário por email:', error, { service: 'users-service' });
+        res.status(500).json({ message: 'Erro ao buscar usuário.' });
+    }
+};
 
 // Função para verificar e registrar tentativas
 const verificarTentativas = (ip) => {

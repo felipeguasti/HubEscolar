@@ -1,13 +1,17 @@
-const Grade = require('../models/Grade'); // Importa o modelo correto
-const District = require('../models/District');
-const School = require('../models/School'); // Corrigido: Importar School corretamente
+const gradesService = require('../models/Grade');
+const districtsService = require('../services/districtService');
+const schoolsService = require('../services/schoolService');
 
 // Renderiza a página de turmas com os dados necessários
 exports.renderGradesPage = async (req, res) => {
     try {
-        const districts = await District.findAll({ attributes: ["id", "name"] });
-        const schools = await School.findAll({ attributes: ["id", "name", "districtId"] });
-        const grades = await Grade.findAll({ attributes: ["id", "name", "schoolId", "status"] });
+        const districtsResponse = await districtsService.getAllDistricts(1, 0, req.headers.authorization?.split(' ')[1]); // Obter todos os distritos
+        const schoolsResponse = await schoolsService.getAllSchools(req.headers.authorization?.split(' ')[1]); // Obter todas as escolas
+        const gradesResponse = await gradesService.getAllGrades(req.query.schoolId, req.headers.authorization?.split(' ')[1]); // Obter todas as turmas ou por escola
+
+        const districts = districtsResponse.results || districtsResponse;
+        const schools = schoolsResponse;
+        const grades = gradesResponse.results || gradesResponse;
 
         // Criar um dicionário de distritos
         const districtMap = {};
@@ -36,9 +40,9 @@ exports.renderGradesPage = async (req, res) => {
                 id: grade.id,
                 name: grade.name,
                 schoolId: grade.schoolId,
-                schoolName: school.name || "Desconhecido", // Pegar o nome da escola
-                districtName: districtMap[school.districtId] || "Desconhecido", // Pegar o distrito da escola
-                districtId: school.districtId || null, // Adicionando o districtId aqui
+                schoolName: school.name || "Desconhecido",
+                districtName: districtMap[school.districtId] || "Desconhecido",
+                districtId: school.districtId || null,
             };
         });
 
@@ -54,8 +58,8 @@ exports.renderGradesPage = async (req, res) => {
         res.render("grades", {
             title: "Turmas",
             districts,
-            schools: filteredSchools,  // Exibindo apenas as escolas filtradas
-            grades: gradesToDisplay,  // Exibindo as turmas filtradas
+            schools: filteredSchools,
+            grades: gradesToDisplay,
             user: req.user,
             districtId: req.query.districtId || req.user.districtId,
             districtMap: districtMap,
@@ -66,12 +70,11 @@ exports.renderGradesPage = async (req, res) => {
     }
 };
 
-
 // Buscar uma turma pelo ID
 exports.getGradeById = async (req, res) => {
     try {
         const { id } = req.params;
-        const grade = await Grade.findByPk(id);
+        const grade = await gradesService.getGradeById(id, req.headers.authorization?.split(' ')[1]);
         if (!grade) {
             return res.status(404).json({ error: "Turma não encontrada" });
         }
@@ -85,18 +88,8 @@ exports.getGradeById = async (req, res) => {
 // Listar todas as turmas ou turmas por escola
 exports.getAllGrades = async (req, res) => {
     const schoolId = req.query.schoolId;
-
     try {
-        let grades;
-        if (schoolId) {
-            // Se schoolId for fornecido, busca turmas por escola
-            grades = await Grade.findAll({
-                where: { schoolId: schoolId }
-            });
-        } else {
-            // Se schoolId não for fornecido, busca todas as turmas
-            grades = await Grade.findAll();
-        }
+        const grades = await gradesService.getAllGrades(schoolId, req.headers.authorization?.split(' ')[1]);
         res.json(grades);
     } catch (error) {
         console.error("Erro ao buscar turmas:", error);
@@ -109,26 +102,9 @@ exports.createGrade = async (req, res) => {
     if (req.user.role !== "Master") {
         return res.status(403).json({ error: "Acesso negado" });
     }
-
     try {
-        const { name, district, year, shift, startDate, endDate, status, description } = req.body;
-
-        if (!name || !district || !year || !shift || !startDate) {
-            return res.status(400).json({ error: "Preencha todos os campos obrigatórios." });
-        }
-
-        const grade = await Grade.create({
-            name,
-            district,
-            year,
-            shift,
-            startDate,
-            endDate: endDate || null,
-            status: status || 'active',
-            description: description || null,
-        });
-
-        res.status(201).json(grade);
+        const newGrade = await gradesService.createGrade(req.body, req.headers.authorization?.split(' ')[1]);
+        res.status(201).json(newGrade);
     } catch (error) {
         console.error("Erro ao criar turma:", error);
         res.status(500).json({ error: "Erro ao criar turma", details: error.message });
@@ -140,26 +116,10 @@ exports.updateGrade = async (req, res) => {
     if (req.user.role !== "Master") {
         return res.status(403).json({ error: "Acesso negado" });
     }
-
     try {
         const { id } = req.params;
-        const { name, district, year, shift, startDate, endDate, status, description } = req.body;
-
-        const grade = await Grade.findByPk(id);
-        if (!grade) return res.status(404).json({ error: "Turma não encontrada" });
-
-        // Atualiza os campos
-        if (name) grade.name = name;
-        if (district) grade.district = district;
-        if (year) grade.year = year;
-        if (shift) grade.shift = shift;
-        if (startDate) grade.startDate = startDate;
-        if (endDate !== undefined) grade.endDate = endDate;
-        if (status) grade.status = status;
-        if (description) grade.description = description;
-
-        await grade.save();
-        res.json(grade);
+        const updatedGrade = await gradesService.updateGrade(id, req.body, req.headers.authorization?.split(' ')[1]);
+        res.json(updatedGrade);
     } catch (error) {
         console.error("Erro ao atualizar turma:", error);
         res.status(500).json({ error: "Erro ao atualizar turma" });
@@ -171,13 +131,9 @@ exports.deleteGrade = async (req, res) => {
     if (req.user.role !== "Master") {
         return res.status(403).json({ error: "Acesso negado" });
     }
-
     try {
         const { id } = req.params;
-        const grade = await Grade.findByPk(id);
-        if (!grade) return res.status(404).json({ error: "Turma não encontrada" });
-
-        await grade.destroy();
+        await gradesService.deleteGrade(id, req.headers.authorization?.split(' ')[1]);
         res.json({ message: "Turma excluída com sucesso" });
     } catch (error) {
         console.error("Erro ao excluir turma:", error);

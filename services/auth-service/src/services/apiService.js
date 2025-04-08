@@ -10,7 +10,7 @@ const apiService = {
         } catch (error) {
             logger.error(`Erro ao fazer GET em ${url}:`, error.message);
             logger.debug(`Detalhes do erro GET em ${url}:`, error);
-            throw error; // Rejogue o erro para ser tratado no controller
+            throw error;
         }
     },
 

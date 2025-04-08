@@ -8,7 +8,6 @@ const passport = require('./src/config/passport');
 const app = express();
 const expressLayouts = require('express-ejs-layouts');
 const flash = require('connect-flash');
-const authMiddleware = require('./src/middlewares/auth');
 require('dotenv').config();
 const moment = require('moment-timezone'); // Adicione esta linha
 
@@ -17,46 +16,35 @@ process.env.TZ = 'America/Sao_Paulo'; // Define a variável de ambiente TZ
 moment.tz.setDefault('America/Sao_Paulo'); // Define o fuso horário padrão do moment-timezone
 
 // Importação de módulos
-const studentsRoutes = require('./src/modules/manager/routes/students');
-const teachersRoutes = require('./src/modules/manager/routes/teachers');
-const coordenatorsRoutes = require('./src/modules/manager/routes/coordenators');
-const adminsRoutes = require('./src/routes/admins'); 
-const reportsRoutes = require('./src/modules/manager/routes/reports');
-const warningsRoutes = require('./src/modules/manager/routes/warnings');
-const db = require('./src/config/db');
-const classesRoute = require('./src/modules/manager/routes/classes');
-const broadcastRoutes = require('./src/modules/broadcast/routes/broadcasts');
-const EduControlRoutes = require('./src/modules/EduControl/routes/reservations');
-const managerRoutes = require('./src/modules/manager/routes/manager');
-const authRoutes = require('./src/modules/auth/routes/authRoutes');
-const dashboardRoutes = require('./src/modules/manager/routes/dashboard')
-const usersRoutes = require('./src/routes/users')
-const usersDistricts = require('./src/routes/districts')
-const schoolsRoutes = require('./src/routes/schools')
-const gradesRoutes = require('./src/routes/grades')
+const adminsRoutes = require('./src/routes/admins');
+const classesRoute = require('./src/routes/classes');
+const authRoutes = require('./src/routes/authRoutes'); // Rotas para consumir auth-service
+const usersRoutes = require('./src/routes/usersRoutes');   // Rotas para consumir users-service
+const districtsRoutes = require('./src/routes/districtsRoutes'); // Rotas para consumir district-service
+const schoolsRoutes = require('./src/routes/schoolsRoutes'); // Rotas para consumir school-service
+const dashboardRoutes = require('./src/routes/dashboard');
+const gradesRoutes = require('./src/routes/grades');
 
 // Validação das variáveis de ambiente
 if (!process.env.SESSION_SECRET || !process.env.JWT_SECRET || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     throw new Error('Configurações de ambiente ausentes. Verifique o arquivo .env.');
 }
 
-
 // Middleware para análise de corpo de requisição
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('./src/public'));
-app.use(expressLayouts); 
-app.set('layout', 'partials/main-layout'); 
+app.use(expressLayouts);
+app.set('layout', 'partials/main-layout');
 
 app.use(cookieParser());
 
 // Configuração do session middleware
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'default_secret', // Coloque uma chave secreta
-  resave: false,
-  saveUninitialized: true
+    secret: process.env.SESSION_SECRET || 'default_secret', // Coloque uma chave secreta
+    resave: false,
+    saveUninitialized: true
 }));
-
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -74,7 +62,7 @@ app.use(expressLayouts); // Ativando o uso de layouts
 app.set('layout', 'partials/main-layout'); // Definindo o layout padrão
 
 // Configuração do Multer
-const upload = multer({ 
+const upload = multer({
     storage: multer.diskStorage({
         destination: (req, file, cb) => {
         cb(null, path.join(__dirname, 'src', 'public', 'medias', 'uploads'));
@@ -93,21 +81,13 @@ const upload = multer({
 });
 
 // Configuração de rotas
-app.use('/api/broadcast', broadcastRoutes);
-app.use('/api/educontrol', EduControlRoutes);
-app.use('/api/manager', managerRoutes);
-app.use('/students', studentsRoutes);
-app.use('/teachers', teachersRoutes);
-app.use('/coordenators', coordenatorsRoutes);
 app.use('/admin', adminsRoutes);
-app.use('/reports', reportsRoutes);
-app.use('/warnings', warningsRoutes);
-app.use('/auth', authRoutes);
+app.use('/auth', authRoutes);  
+app.use('/users', usersRoutes);
+app.use('/districts', districtsRoutes);
+app.use('/schools', schoolsRoutes);
 app.use('/classes', classesRoute);
 app.use('/dashboard', dashboardRoutes);
-app.use('/users', usersRoutes);
-app.use('/districts', usersDistricts);
-app.use('/schools', schoolsRoutes);
 app.use('/grades', gradesRoutes);
 
 // Rota inicial
@@ -117,51 +97,38 @@ app.get('/', (req, res) => {
     });
 });
 
-// Rota de login
+// Rota de login (renderiza a página de login localmente)
 app.get('/login', (req, res) => {
     res.render('login', {
         title: 'Login',
-        message: req.flash('message') // Adicionando a mensagem flash ao renderizar a página
+        message: req.flash('message')
     });
 });
 
-// Outras rotas de página
+// Outras rotas de página (que são renderizadas localmente pelo sistema principal)
 app.get('/recursos', (req, res) => {
-    res.render('recursos', {
-        title: 'Recursos'
-    });
+    res.render('recursos', { title: 'Recursos' });
 });
 
 app.get('/planos', (req, res) => {
-    res.render('planos', {
-        title: 'Planos'
-    });
+    res.render('planos', { title: 'Planos' });
 });
 
 app.get('/blog', (req, res) => {
-    res.render('blog', {
-        title: 'Blog'
-    });
+    res.render('blog', { title: 'Blog' });
 });
 
 app.get('/sobre', (req, res) => {
-    res.render('sobre', {
-        title: 'Sobre'
-    });
+    res.render('sobre', { title: 'Sobre' });
 });
 
 app.get('/contato', (req, res) => {
-    res.render('contato', {
-        title: 'Contato'
-    });
+    res.render('contato', { title: 'Contato' });
 });
 
-// Rota de esqueci minha senha
+// Rota de esqueci minha senha (renderiza a página localmente)
 app.get('/forgot-password', (req, res) => {
-    res.render('forgot', {
-        title: 'Esqueceu a senha',
-        message: req.flash('message'), // Mensagens enviadas pelo controlador
-    });
+    res.render('forgot', { title: 'Esqueceu a senha', message: req.flash('message') });
 });
 
 app.get('/reports', (req, res) => {
@@ -173,13 +140,9 @@ app.get('/warnings', (req, res) => {
     res.render('warnings');
 });
 
-
-// Página de redefinição de senha (usada após o link enviado)
+// Página de redefinição de senha (renderiza a página localmente)
 app.get('/reset-password/:token', (req, res) => {
-    res.render('reset-password', {
-        title: 'Redefinir Senha',
-        token: req.params.token // Inclui o token no contexto da página
-    });
+    res.render('reset-password', { title: 'Redefinir Senha', token: req.params.token });
 });
 
 // Configuração para servir arquivos estáticos na pasta 'js'
@@ -193,7 +156,6 @@ app.use((req, res, next) => {
     next();
 });
 
-
 // Middleware de erro
 app.use((error, req, res, next) => {
     console.error('Erro:', error);
@@ -205,7 +167,6 @@ app.use((error, req, res, next) => {
     res.status(500).json({ error: 'Erro interno do servidor.' });
     next();
 });
-
 
 // Inicializando o servidor
 const PORT = process.env.PORT || 3000;

@@ -1,75 +1,60 @@
-const User = require('../models/User');
-const District = require('../models/District');
-const School = require('../models/School');
-const express = require('express');
-const router = express.Router();
-const authMiddleware = require('../../services/auth-service/src/middlewares/auth');
-const Grade = require('../models/Grade');
+const usersService = require('../services/usersService');
+const districtsService = require('../services/districtService');
+const schoolsService = require('../services/schoolService');
+const Grade = require('../models/Grade'); // Mantém a importação do modelo Grade
 
 const renderUsersPage = async (req, res) => {
     try {
-        const user = await User.findByPk(req.user.id);
-        const districts = await District.findAll();
-        const schools = await School.findAll();
-        const grades = await Grade.findAll();
+        // Obter informações do usuário logado (do auth-service via middleware)
+        const loggedInUser = req.user;
 
-        let whereClause = {};
+        // Chamar o users-service para obter a lista de usuários
+        let users = await usersService.getAllUsers(req.headers.authorization?.split(' ')[1]);
 
-        if (user.role !== 'Master') {
-            if (user.role === 'Inspetor') {
-                whereClause.districtId = user.districtId;
-            } else if (['Diretor', 'Secretario'].includes(user.role)) {
-                whereClause.schoolId = user.schoolId;
-            } else if (['Pedagogo', 'Coordenador'].includes(user.role)) {
-                whereClause.role = ['Professor', 'Aluno'];
-                whereClause.schoolId = user.schoolId;
-            } else if (user.role === 'Professor') {
-                whereClause.role = 'Aluno';
-                whereClause.schoolId = user.schoolId;
-            } else if (user.role === 'Aluno') {
-                whereClause.id = null; // Alunos não veem ninguém
-            } else {
-                whereClause.id = null; // Outros papéis não veem ninguém
-            }
+        // Filtrar usuários com base na role (isso idealmente estaria no users-service)
+        let filteredUsers = users;
+        if (loggedInUser.role !== 'Master') {
+            filteredUsers = await usersService.getFilteredUsers(loggedInUser.role, loggedInUser.districtId, loggedInUser.schoolId, req.headers.authorization?.split(' ')[1]);
         }
 
-        const users = await User.findAll({ where: whereClause });
+        // Chamar o districts-service para obter a lista de distritos
+        const districts = await districtsService.getAllDistricts(1, 1000, req.headers.authorization?.split(' ')[1]);
 
-        const sortedUsers = users.sort((a, b) => {
-            if (a.status === 'inactive' && b.status !== 'inactive') return -1;
-            if (a.status !== 'inactive' && b.status === 'inactive') return 1;
-            return new Date(b.createdAt) - new Date(a.createdAt);
-        });
+        // Chamar o schools-service para obter a lista de escolas
+        const schools = await schoolsService.getAllSchools(req.headers.authorization?.split(' ')[1]);
+
+        // Buscar as notas diretamente do banco de dados local
+        const grades = await Grade.findAll();
 
         // Buscar o usuário a ser editado (se o userId for fornecido)
         let editingUser = null;
         if (req.query.userId) {
-            editingUser = await User.findByPk(req.query.userId);
+            editingUser = await usersService.getUserById(req.query.userId, req.headers.authorization?.split(' ')[1]);
         }
 
         res.render('users', {
             title: 'Usuários',
-            user: user,
-            users: sortedUsers,
-            districts: districts,
+            user: loggedInUser,
+            users: filteredUsers,
+            districts: districts.results || districts,
             schools: schools,
             grades: grades,
             editingUser: editingUser,
-            selectedDistrict: user.districtId,
-            selectedSchool: user.schoolId,
-            userRole: user.role,
-            currentUserId: user.id
+            selectedDistrict: loggedInUser.districtId,
+            selectedSchool: loggedInUser.schoolId,
+            userRole: loggedInUser.role,
+            currentUserId: loggedInUser.id
         });
     } catch (err) {
-        console.error('Erro ao buscar usuários:', err);
-        res.status(500).send('Erro ao carregar os usuários');
+        console.error('Erro ao buscar dados para a página de usuários:', err);
+        res.status(500).send('Erro ao carregar a página de usuários');
     }
 };
 
-// Renderizar página com todas as escolas
+// As outras funções (renderSchoolPage e renderDistrictsPage) já estavam corretas
 const renderSchoolPage = async (req, res) => {
     try {
-        const schools = await School.findAll(); // Busca todas as escolas no banco
+        const schools = await schoolsService.getAllSchools(req.headers.authorization?.split(' ')[1]);
         res.render("school", { schools });
     } catch (err) {
         console.error("Erro ao carregar as escolas:", err);
@@ -77,8 +62,24 @@ const renderSchoolPage = async (req, res) => {
     }
 };
 
+const renderDistrictsPage = async (req, res) => {
+    try {
+        const districts = await districtsService.getAllDistricts(1, 1000, req.headers.authorization?.split(' ')[1]);
+        const schools = await schoolsService.getAllSchools(req.headers.authorization?.split(' ')[1]);
+        res.render("districts", {
+            title: "Distritos",
+            districts: districts.results || districts,
+            schools: schools,
+            user: req.user,
+        });
+    } catch (err) {
+        console.error("Erro ao buscar distritos e escolas:", err);
+        res.status(500).send("Erro ao carregar os distritos");
+    }
+};
 
 module.exports = {
     renderUsersPage,
     renderSchoolPage,
+    renderDistrictsPage,
 };

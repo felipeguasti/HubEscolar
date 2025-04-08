@@ -2,11 +2,12 @@ const sequelize = require('./src/config/db'); // Importe a instância do Sequeli
 //const Reserva = require('./src/models/reserva');
 //const Recado = require('./src/models/recado');
 //const Anuncio = require('./src/models/anuncio');
-const Usuario = require('./services/users-service/src/models/User');
+//const Usuario = require('./services/users-service/src/models/User');
 //const District = require('./src/models/District');
 //const Refeitorio = require('./src/models/refeitorio');
 //const School = require('./src/models/School');
 //const Grade = require('./src/models/Grade');
+const RefreshToken = require('./services/auth-service/src/models/RefreshToken');
 
 
 async function sincronizarModelos() {

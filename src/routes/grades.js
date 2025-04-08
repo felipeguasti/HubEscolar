@@ -2,24 +2,60 @@ const express = require("express");
 const router = express.Router();
 const gradeController = require("../controllers/gradeController");
 const authMiddleware = require('../middlewares/auth');
+const requireRole = require('../middlewares/requireRole'); // Certifique-se de importar o requireRole
 
+// Rota para renderizar a página de turmas
+router.get("/", authMiddleware, async (req, res, next) => {
+    try {
+        await gradeController.renderGradesPage(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 
-// Rota para listar todos as turmas
-router.get("/", authMiddleware(), gradeController.getAllGrades);
+// Rota para listar todas as turmas (dados JSON)
+router.get("/grades", authMiddleware, async (req, res, next) => {
+    try {
+        await gradeController.getAllGrades(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 
-// Rota para listar todos as turmas
-router.get("/", authMiddleware(), gradeController.renderGradesPage);
+// Rota para criar uma nova turma
+router.post("/create", authMiddleware, requireRole(["Master", "Inspetor", "Secretario"]), async (req, res, next) => {
+    try {
+        await gradeController.createGrade(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 
-// Rota para criar um novo turmas
-router.post("/create", authMiddleware(["Master", "Inspetor", "Secretario"]), gradeController.createGrade);
+// Rota para obter uma turma específica pelo ID
+router.get("/:id", authMiddleware, async (req, res, next) => {
+    try {
+        await gradeController.getGradeById(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 
-// Rota para obter um distrito específico pelo ID
-router.get("/:id", authMiddleware(), gradeController.getGradeById);
+// Rota para atualizar uma turma pelo ID (apenas usuários com as roles especificadas podem atualizar)
+router.put("/edit/:id", authMiddleware, requireRole(["Master", "Inspetor", "Secretario"]), async (req, res, next) => {
+    try {
+        await gradeController.updateGrade(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 
-// Rota para atualizar um turma pelo ID (apenas usuário Master pode atualizar)
-router.put("/edit/:id", authMiddleware(["Master", "Inspetor", "Secretario"]), gradeController.updateGrade);
-
-// Rota para excluir um turma pelo ID (apenas usuário Master pode excluir)
-router.delete("/delete/:id", authMiddleware(["Master", "Inspetor", "Secretario"]), gradeController.deleteGrade);
+// Rota para excluir uma turma pelo ID (apenas usuários com as roles especificadas podem excluir)
+router.delete("/delete/:id", authMiddleware, requireRole(["Master", "Inspetor", "Secretario"]), async (req, res, next) => {
+    try {
+        await gradeController.deleteGrade(req, res);
+    } catch (error) {
+        next(error);
+    }
+});
 
 module.exports = router;

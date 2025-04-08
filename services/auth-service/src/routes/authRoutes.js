@@ -4,7 +4,7 @@ const { login, refreshToken } = require('../controllers/authController');
 const authMiddleware = require('../middlewares/auth');
 const { body, param } = require('express-validator');
 const validationResultHandler = require('../middlewares/validationResultHandler');
-const { loginLimiter } = require('../middlewares/rateLimitMiddleware'); // Importe do middleware
+const { loginLimiter } = require('../middlewares/rateLimitMiddleware');
 
 // Validações para login
 const loginValidation = [
@@ -14,7 +14,7 @@ const loginValidation = [
 
 // Validações para refresh token
 const refreshTokenValidation = [
-    body('refreshToken').notEmpty().withMessage('O refresh token é obrigatório.'),
+    body('refreshToken').notEmpty().withMessage('O refresh token é obrigatória.'),
 ];
 
 // Rota para login (agora com rate limiter e validações)
@@ -24,7 +24,9 @@ router.post('/login', loginLimiter, loginValidation, validationResultHandler, lo
 router.post('/refresh-token', refreshTokenValidation, validationResultHandler, refreshToken);
 
 // Rota para validar um token existente
-router.post('/validate-token', authMiddleware, (req, res) => {
+router.post('/validate-token', [
+    body('accessToken').notEmpty().withMessage('O access token é obrigatório.')
+], validationResultHandler, authMiddleware, (req, res) => {
     console.log('Requisição recebida para validar token');
     return res.status(200).json({ valid: true, userId: req.user ? req.user.id : null });
 });
