@@ -1,7 +1,7 @@
 const usersService = require('../services/usersService');
 const districtsService = require('../services/districtService');
 const schoolsService = require('../services/schoolService');
-const Grade = require('../models/Grade'); // Mantém a importação do modelo Grade
+const Grade = require('../../services/school-service/src/models/Grade'); // Mantém a importação do modelo Grade
 
 const renderUsersPage = async (req, res) => {
     try {
@@ -62,24 +62,24 @@ const renderSchoolPage = async (req, res) => {
     }
 };
 
-const renderDistrictsPage = async (req, res) => {
-    try {
-        const districts = await districtsService.getAllDistricts(1, 1000, req.headers.authorization?.split(' ')[1]);
-        const schools = await schoolsService.getAllSchools(req.headers.authorization?.split(' ')[1]);
-        res.render("districts", {
-            title: "Distritos",
-            districts: districts.results || districts,
-            schools: schools,
-            user: req.user,
-        });
-    } catch (err) {
-        console.error("Erro ao buscar distritos e escolas:", err);
-        res.status(500).send("Erro ao carregar os distritos");
-    }
-};
+// const renderDistrictsPage = async (req, res) => {
+//     try {
+//         const districts = await districtsService.getAllDistricts(1, 1000, req.headers.authorization?.split(' ')[1]);
+//         const schools = await schoolsService.getAllSchools(req.headers.authorization?.split(' ')[1]);
+//         res.render("districts", {
+//             title: "Distritos",
+//             districts: districts.results || districts,
+//             schools: schools,
+//             user: req.user,
+//         });
+//     } catch (err) {
+//         console.error("Erro ao buscar distritos e escolas:", err);
+//         res.status(500).send("Erro ao carregar os distritos");
+//     }
+// };
 
 module.exports = {
     renderUsersPage,
     renderSchoolPage,
-    renderDistrictsPage,
+    // renderDistrictsPage,
 };

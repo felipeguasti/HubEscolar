@@ -36,8 +36,7 @@ router.post('/logout', (req, res) => {
 });
 
 router.get('/me', async (req, res) => {
-    const accessToken = req.cookies.accessToken;
-
+    const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
     try {
         const userInfo = await authService.getUserInfoByToken(accessToken);
 
@@ -78,7 +77,7 @@ router.post('/refresh-token', async (req, res) => {
 
 // Rota para validar um token (o sistema principal pode usar isso para verificar a validade do token armazenado)
 router.post('/validate-token', async (req, res) => {
-    const { accessToken } = req.body;
+    const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
 
     if (!accessToken) {
         return res.status(400).json({ message: 'Access token não fornecido' });

@@ -30,7 +30,9 @@ exports.getDistrictById = async (req, res, next) => {
         let districtSchools = [];
         let schoolServiceStatus = 'UP';
         try {
-            const schools = await schoolService.getAllSchools();
+            const accessToken = req.headers.authorization ? req.headers.authorization.split(' ')[1] : null;
+            const schools = await schoolService.getAllSchools(accessToken);
+            console.log("Resposta do schoolService (getDistrictById):", schoolsResponse); // ADICIONE ESTE LOG
             districtSchools = schools.filter(school => school.districtId === district.id);
         } catch (error) {
             logger.error('Erro ao obter escolas do schoolService:', error.message);
@@ -70,6 +72,8 @@ exports.getAllDistricts = async (req, res, next) => {
         let allSchools = [];
         let schoolServiceStatus = 'UP';
         try {
+            const schoolsResponse = await schoolService.getAllSchools();
+            console.log("Resposta do schoolService (getAllDistricts):", schoolsResponse); // ADICIONE ESTE LOG
             allSchools = await schoolService.getAllSchools();
         } catch (error) {
             logger.error('Erro ao obter escolas do schoolService:', error.message);
@@ -122,24 +126,25 @@ exports.updateDistrict = async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        const { error: idError } = validateId(id);
-        if (idError) {
-            throw new AppError('ID inválido', 400, idError.details[0].message);
+        const validationResult = validateId(id); // Obtenha o objeto de validação completo
+        if (validationResult.error) {
+            throw new AppError('ID inválido', 400, validationResult.error.details[0].message);
         }
+        const validatedId = validationResult.value; // Use o ID validado (opcional, mas boa prática)
 
         const { error, value } = validateDistrict(req.body);
         if (error) {
             throw new AppError('Dados inválidos', 400, error.details.map(detail => detail.message));
         }
 
-        const district = await District.findByPk(id);
+        const district = await District.findByPk(validatedId); // Use validatedId aqui
         if (!district) {
             throw new AppError('Distrito não encontrado', 404);
         }
 
         await district.update(value);
 
-        await cacheService.del(`district:${id}`);
+        await cacheService.del(`district:${validatedId}`);
         await cacheService.clearPattern('districts:*');
 
         res.json(district);
@@ -180,8 +185,6 @@ exports.deleteDistrict = async (req, res, next) => {
             throw new AppError('Não é possível excluir o distrito pois existem escolas vinculadas a ele', 400);
         } else if (districtSchools.length > 0 && schoolServiceStatus === 'DOWN') {
             logger.warn(`Tentativa de excluir distrito com escolas vinculadas, mas o serviço de escolas está indisponível.`);
-            // Podemos optar por permitir ou negar a exclusão neste cenário.
-            // No exemplo, vamos permitir com um aviso no log.
         }
 
         await district.destroy();

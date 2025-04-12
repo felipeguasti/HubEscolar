@@ -17,7 +17,7 @@ class UserService {
 
     async getUserById(id) {
         try {
-            const response = await this.client.get(`/api/users/${id}`);
+            const response = await this.client.get(`/users/${id}`);
             return response.data;
         } catch (error) {
             console.error('Erro ao buscar usuário:', error.message);
@@ -27,7 +27,7 @@ class UserService {
 
     async getUsersByDistrict(districtId) {
         try {
-            const response = await this.client.get(`/api/users?districtId=${districtId}`);
+            const response = await this.client.get(`/users?districtId=${districtId}`);
             return response.data;
         } catch (error) {
             console.error('Erro ao buscar usuários do distrito:', error.message);

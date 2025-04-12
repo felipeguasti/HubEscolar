@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('Usuário não autenticado (401) - permanecendo na página de login.');
                 } else {
                     // Logar outros erros que não sejam 401
-                    console.error('Erro ao verificar autenticação:', response.status, response.statusText);
+                    //console.error('Erro ao verificar autenticação:', response.status, response.statusText);
                 }
             } catch (error) {
                 console.error('Erro ao verificar autenticação (rede ou outros):', error);

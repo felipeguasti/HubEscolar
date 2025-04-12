@@ -28,7 +28,7 @@ app.use(express.json());
 app.use(rateLimiter);
 
 // Rotas
-app.use('/api/districts', districtsRoutes);
+app.use('/districts', districtsRoutes);
 app.use('/health', healthRoutes);
 
 // Middleware de tratamento de erros

@@ -17,7 +17,7 @@ class AuthService {
 
     async verifyToken(token) {
         try {
-            const response = await this.client.post('/api/auth/verify', {}, {
+            const response = await this.client.post('/auth/validate-token', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             return response.data;
@@ -28,7 +28,7 @@ class AuthService {
 
     async checkPermission(token, requiredRole) {
         try {
-            const response = await this.client.post('/api/auth/check-permission', {
+            const response = await this.client.post('/auth/verify', {
                 role: requiredRole
             }, {
                 headers: { Authorization: `Bearer ${token}` }

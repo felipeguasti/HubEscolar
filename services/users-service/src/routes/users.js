@@ -8,7 +8,7 @@ router.post('/', authenticate, cacheUserMiddleware, usersController.adicionarUsu
 router.get('/', authenticate, cacheUserMiddleware, usersController.listarUsuarios);
 router.put('/:id', authenticate, cacheUserMiddleware, usersController.atualizarUsuario);
 router.delete('/:id', authenticate, cacheUserMiddleware, usersController.deletarUsuario);
-router.get('/me', authenticate, cacheUserMiddleware, usersController.buscarUsuarioLogado);
+router.get('/me', cacheUserMiddleware, usersController.buscarUsuarioLogado);
 router.get('/:id', authenticate, cacheUserMiddleware, usersController.buscarUsuario);
 router.get('/email/:email', cacheUserMiddleware, usersController.buscarUsuarioPorEmail);
 router.get('/filter', authenticate, cacheUserMiddleware, usersController.filterUsers);

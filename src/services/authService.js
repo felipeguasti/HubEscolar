@@ -41,10 +41,8 @@ const authService = {
 
     async getUserInfoByToken(accessToken) {
         try {
-            const response = await axios.get(`${AUTH_SERVICE_URL}/auth/verify`, {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
+            const response = await axios.post(`${AUTH_SERVICE_URL}/auth/validate-token`, {
+                accessToken: accessToken
             });
             return response.data;
         } catch (error) {

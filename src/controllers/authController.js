@@ -13,7 +13,7 @@ exports.loginHandler = async (req, res) => {
                 message: 'Login bem-sucedido',
                 token: authServiceResponse.accessToken, // Envie o accessToken como 'token'
                 refreshToken: authServiceResponse.refreshToken, // Você pode enviar o refreshToken também
-                expiresAt: /* Lógica para calcular a expiração do accessToken */ new Date(Date.now() + (3600 * 1000)), // Exemplo
+                expiresAt: new Date(Date.now() + (3600 * 1000 * 24)), //Lógica para calcular a expiração do accessToken (24 horas)
                 redirectTo: '/dashboard'
             });
         } else {

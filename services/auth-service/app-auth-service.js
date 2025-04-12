@@ -7,6 +7,10 @@ const errorHandler = require('./src/middlewares/errorHandler');
 const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = process.env.AUTH_SERVICE_URL ? new URL(process.env.AUTH_SERVICE_URL).port : 3004;
+const moment = require('moment-timezone');
+
+const targetTimezone = 'America/Sao_Paulo';
+moment.tz.setDefault(targetTimezone);
 
 // Configuração do Rate Limiting
 const limiter = rateLimit({

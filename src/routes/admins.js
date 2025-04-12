@@ -23,12 +23,5 @@ router.get('/schools', isAuthenticated, async (req, res, next) => {
     }
 });
 
-router.get('/districts', isAuthenticated, async (req, res, next) => {
-    try {
-        await adminController.renderDistrictsPage(req, res);
-    } catch (error) {
-        next(error);
-    }
-});
 
 module.exports = router;

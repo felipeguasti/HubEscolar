@@ -1,4 +1,5 @@
 const School = require('../models/School');
+const Grade = require('../models/Grade');
 const axios = require('axios');
 const { validate } = require('../services/validationService');
 const {
@@ -32,7 +33,14 @@ exports.createSchool = [
       }
 
       try {
-        const districtResponse = await axios.get(`${districtServiceUrl}/${districtId}`, { timeout: AXIOS_TIMEOUT });
+        const authorizationHeader = req.headers.authorization;
+        const districtToken = authorizationHeader ? authorizationHeader.split(' ')[1] : null;
+        const districtResponse = await axios.get(`${districtServiceUrl}/districts/${districtId}`, { 
+          timeout: AXIOS_TIMEOUT,
+          headers: {
+            Authorization: `Bearer ${districtToken}`,
+          },
+         });
         if (!districtResponse.data) {
           return res.status(400).json({ error: "Distrito não encontrado." });
         }
@@ -73,11 +81,11 @@ exports.createSchool = [
   },
 ];
 
-exports.getAllSchool = [
-  validate(getAllSchoolValidation),
+exports.getSchools = [
   async (req, res) => {
+    console.log('schoolController.getSchool ATIVADO'); // Adicione este log
     try {
-      const { districtId } = req.query;
+      const districtId = req.query.districtId;
       let schools;
 
       if (districtId) {
@@ -88,7 +96,14 @@ exports.getAllSchool = [
         }
 
         try {
-          const districtResponse = await axios.get(`${districtServiceUrl}/${districtId}`, { timeout: AXIOS_TIMEOUT });
+          const authorizationHeader = req.headers.authorization;
+          const districtToken = authorizationHeader ? authorizationHeader.split(' ')[1] : null;
+          const districtResponse = await axios.get(`${districtServiceUrl}/districts/${districtId}`, {
+              timeout: AXIOS_TIMEOUT,
+              headers: {
+                  Authorization: `Bearer ${districtToken}`, // Ou outro esquema de token
+              },
+          });
           if (!districtResponse.data) {
             return res.status(404).json({ error: 'Distrito não encontrado.' });
           }
@@ -212,25 +227,33 @@ exports.updateSchool = [
 ];
 
 exports.deleteSchool = [
-  validate(deleteSchoolValidation),
-  async (req, res) => {
-    if (!req.user || (req.user.role !== "Master" && req.user.role !== "Inspetor")) {
-      logger.warn(`Acesso negado para usuário ${req.user ? req.user.id : 'não autenticado'} com role ${req.user ? req.user.role : 'desconhecida'} ao tentar excluir a escola ${req.params.id}.`);
-      return res.status(403).json({ error: "Acesso negado" });
-    }
+    validate(deleteSchoolValidation),
+    async (req, res) => {
+        if (!req.user || (req.user.role !== "Master" && req.user.role !== "Inspetor")) {
+            logger.warn(`Acesso negado para usuário ${req.user ? req.user.id : 'não autenticado'} com role ${req.user ? req.user.role : 'desconhecida'} ao tentar excluir a escola ${req.params.id}.`);
+            return res.status(403).json({ error: "Acesso negado" });
+        }
 
-    const { id } = req.params;
+        const { id } = req.params;
 
-    try {
-      const school = await School.findByPk(id);
-      if (!school) return res.status(404).json({ error: "Escola não encontrada" });
+        try {
+            const school = await School.findByPk(id);
+            if (!school) return res.status(404).json({ error: "Escola não encontrada" });
 
-      await school.destroy();
-      logger.info(`Escola ${id} excluída com sucesso por usuário ${req.user ? req.user.id : 'desconhecido'}.`);
-      res.json({ message: "Escola excluída com sucesso!" });
-    } catch (err) {
-      logger.error(`Erro ao excluir a escola ${id}:`, err);
-      return handleServiceError(res, err, "Erro ao excluir a escola.", 500);
-    }
-  },
+            // Excluir todas as turmas (grades) associadas a esta escola
+            await Grade.destroy({
+                where: {
+                    schoolId: id
+                }
+            });
+
+            await school.destroy();
+            logger.info(`Escola ${id} e suas turmas associadas excluídas com sucesso por usuário ${req.user ? req.user.id : 'desconhecido'}.`);
+            res.status(200).json({ success: true, message: "Escola excluída com sucesso!" });
+
+        } catch (err) {
+            logger.error(`Erro ao excluir a escola ${id} e suas turmas:`, err);
+            return handleServiceError(res, err, "Erro ao excluir a escola e suas turmas.", 500);
+        }
+    },
 ];

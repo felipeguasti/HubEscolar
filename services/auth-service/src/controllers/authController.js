@@ -4,10 +4,12 @@ const jwt = require('jsonwebtoken');
 const apiService = require('../services/apiService');
 const { body, param } = require('express-validator');
 const USERS_SERVICE_URL = process.env.USERS_SERVICE_URL;
-const { JWT_EXPIRATION_TIME, JWT_REFRESH_EXPIRATION_TIME } = require('../services/constants');
+const { JWT_EXPIRATION_TIME, JWT_REFRESH_EXPIRATION_TIME, getMidnightExpiration } = require('../services/constants');
 const logger = require('../services/logger');
 const { v4: uuidv4 } = require('uuid');
 const RefreshToken = require('../models/RefreshToken');
+const moment = require('moment-timezone');
+
 
 function generateRefreshToken() {
     return uuidv4();
@@ -40,7 +42,7 @@ const login = async (req, res, next) => {
             const accessToken = jwt.sign(
                 { id: user.id, role: user.role },
                 process.env.JWT_SECRET,
-                { expiresIn: JWT_EXPIRATION_TIME }
+                { expiresIn: getMidnightExpiration() } // Token expira à meia-noite
             );
             logger.debug(`Access Token gerado para o usuário ${user.id}: ${accessToken}`);
 

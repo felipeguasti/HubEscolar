@@ -49,11 +49,16 @@
                             <td>
                                 <button class="btn btn-edit" data-district-id="<%= district.id %>">Editar</button>
                                 <% if (user.role === 'Master') { %>
-                                    <button class="btn btn-delete" data-district-id="<%= district.id %>" data-district-name="<%= district.name %>" data-district-status="<%= district.status %>" data-district-createdAt="<%= district.createdAt.toISOString() %>">Excluir</button>
-                                <% } %>                                
+                                    <% const createdAtDate = new Date(district.createdAt); %>
+                                    <% let createdAtISO = 'Data Inválida'; %>
+                                    <% if (createdAtDate instanceof Date && !isNaN(createdAtDate)) { %>
+                                        <% createdAtISO = createdAtDate.toISOString(); %>
+                                    <% } %>
+                                    <button class="btn btn-delete" data-district-id="<%= district.id %>" data-district-name="<%= district.name %>" data-district-status="<%= district.status %>" data-district-createdAt="<%= createdAtISO %>">Excluir</button>
+                                <% } %>
                             </td>
                         </tr>
-                    <% }) %>                                  
+                    <% }) %>                          
                 </tbody>
             </table>
         </section>
@@ -108,7 +113,7 @@
 
                         <!-- Nome -->
                         <label for="editName">Nome do distrito:</label>
-                        <input type="text" id="editName" name="name" value="<%= districts.name %>" 
+                        <input type="text" id="editName" name="name" value="<%= districts.id %>" 
                             <% if (user.role !== 'Master') { %> 
                                 readonly 
                             <% } %> 
@@ -137,29 +142,19 @@
                         <div id="associatedSchools">
                             <% districts.forEach(district => { %>
                                 <h3><%= district.name %></h3>
-                        
                                 <h4>Escolas Associadas:</h4>
                                 <ul>
-                                    <% 
-                                        let associatedSchools = schools.filter(school => school.districtId === district.id);                                        
-                                        associatedSchools.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                                    %>
-                        
-                                    <% if (associatedSchools.length > 0) { %>
-                                        <% associatedSchools.forEach(school => { %>
+                                    <% if (district.schools && district.schools.length > 0) { %>
+                                        <% district.schools.forEach(school => { %>
                                             <li>
                                                 <span class="school-name" data-id="<%= school.id %>"><%= school.name %></span>
                                                 <input type="text" class="edit-input" data-id="<%= school.id %>" value="<%= school.name %>" style="display: none;">
-                        
-                                                <!-- Botões de ação -->
                                                 <button class="edit-icon" data-id="<%= school.id %>">✏️</button>
                                                 <button class="confirm-edit" data-id="<%= school.id %>" style="display: none;">✔️</button>
                                                 <button class="cancel-edit" data-id="<%= school.id %>" style="display: none;">❌</button>
-                        
-                                                <!-- Ícone de excluir -->
                                                 <button class="delete-icon" data-id="<%= school.id %>">🗑️</button>
                                             </li>
-                                        <% }) %>
+                                        <% }); %>
                                     <% } else { %>
                                         <li>Nenhuma escola associada.</li>
                                     <% } %>

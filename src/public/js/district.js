@@ -668,7 +668,7 @@ document.addEventListener('DOMContentLoaded', function() {
             event.preventDefault();
             if (confirm('Tem certeza de que deseja excluir esta escola?')) {
                 showLoading();
-                const districtName = document.getElementById('editName').value;
+                const districtId = document.getElementById('editdistrictId').value;
                 fetch(`/schools/delete/${schoolId}`, {
                     method: 'DELETE',
                 })
@@ -683,7 +683,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         alert(data.message || 'Erro ao excluir a escola');
                     }
-                    updateSchoolList(districtName);
+                    updateSchoolList(districtId);
                 })
                 .catch(error => {
                     hideLoading();

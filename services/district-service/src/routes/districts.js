@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const districtController = require("../controllers/districtController");
-const { requireAuth, requireRole } = require("../middlewares/auth");
+const { requireAuth } = require("../middlewares/auth");
 const paginate = require("../middlewares/pagination");
 
 // Middleware de autenticação para todas as rotas
@@ -14,8 +14,8 @@ router.get("/", paginate, districtController.getAllDistricts);
 router.get("/:id", districtController.getDistrictById);
 
 // Rotas protegidas (apenas Master)
-router.post("/", requireRole('Master'), districtController.createDistrict);
-router.put("/:id", requireRole('Master'), districtController.updateDistrict);
-router.delete("/:id", requireRole('Master'), districtController.deleteDistrict);
+router.post("/create/", districtController.createDistrict);
+router.put("/edit/:id", districtController.updateDistrict);
+router.delete("/delete/:id", districtController.deleteDistrict);
 
 module.exports = router;

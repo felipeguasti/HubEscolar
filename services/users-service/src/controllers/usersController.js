@@ -1,33 +1,30 @@
 const User = require('../models/User');
 const winston = require('winston');
-
 const logger = winston.createLogger({
-    level: 'info', // Defina o nível de log desejado
+    level: 'info',
     format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.json()
     ),
     transports: [
-        new winston.transports.Console(), // Log para o console
-        // new winston.transports.File({ filename: 'error.log', level: 'error' }), // Log de erros em arquivo (opcional)
-        // new winston.transports.File({ filename: 'combined.log' }), // Log geral em arquivo (opcional)
+        new winston.transports.Console(),
     ],
 });
 
 async function getFetch() {
     try {
-      const fetchModule = await import('node-fetch');
-      return fetchModule.default;
+        const fetchModule = await import('node-fetch');
+        return fetchModule.default;
     } catch (error) {
-      console.error('Erro ao importar node-fetch:', error);
-      return null; // Ou outra forma de lidar com o erro
+        console.error('Erro ao importar node-fetch:', error);
+        return null;
     }
-  }
-  
-  let fetch;
-  getFetch().then(f => {
+}
+
+let fetch;
+getFetch().then(f => {
     fetch = f;
-  });
+});
 const { body, validationResult } = require('express-validator');
 const { emailExiste, invalidarCache } = require('../services/userCacheService');
 const logService = require('../services/logService');
@@ -37,7 +34,6 @@ const {
     verificarPermissaoEdicao,
     verificarPermissaoExclusao
 } = require('../services/permissionService');
-
 const {
     applyUserFilters,
     validarCPF,
@@ -46,10 +42,23 @@ const {
     validarCEP
 } = require('../services/userService');
 
-// Cache para armazenar tentativas de criação
 const tentativasCriacao = new Map();
 const MAX_TENTATIVAS = 5;
-const TEMPO_BLOQUEIO = 15 * 60 * 1000; // 15 minutos em milissegundos
+const TEMPO_BLOQUEIO = 15 * 60 * 1000;
+
+// Função auxiliar para fazer fetch com autorização
+async function fetchDataWithAuth(url, method = 'GET', body = null, accessToken) {
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+    };
+    const config = { method, headers };
+    if (body) {
+        config.body = JSON.stringify(body);
+    }
+    const response = await fetch(url, config);
+    return response;
+}
 
 exports.buscarUsuarioPorEmail = async (req, res) => {
     const { email } = req.params;
@@ -68,105 +77,48 @@ exports.buscarUsuarioPorEmail = async (req, res) => {
     }
 };
 
-// Função para verificar e registrar tentativas
 const verificarTentativas = (ip) => {
     const agora = Date.now();
     const tentativas = tentativasCriacao.get(ip) || { contador: 0, ultimaTentativa: 0 };
-
-    // Limpa tentativas antigas
     if (agora - tentativas.ultimaTentativa > TEMPO_BLOQUEIO) {
         tentativas.contador = 0;
     }
-
-    // Incrementa contador
     tentativas.contador++;
     tentativas.ultimaTentativa = agora;
     tentativasCriacao.set(ip, tentativas);
-
-    // Verifica se excedeu o limite
     if (tentativas.contador > MAX_TENTATIVAS) {
         const tempoRestante = Math.ceil((TEMPO_BLOQUEIO - (agora - tentativas.ultimaTentativa)) / 1000 / 60);
-        return {
-            bloqueado: true,
-            tempoRestante
-        };
+        return { bloqueado: true, tempoRestante };
     }
-
     return { bloqueado: false };
 };
 
 exports.adicionarUsuario = [
-    // Validações dos campos
+    // Validações (mantidas)
     body('name').notEmpty().withMessage('Nome é obrigatório'),
     body('email').isEmail().withMessage('Email inválido'),
     body('password').notEmpty().withMessage('Senha é obrigatória'),
     body('role').notEmpty().withMessage('Papel é obrigatório'),
-    body('cpf')
-        .optional()
-        .custom((value) => {
-            if (value && !validarCPF(value)) {
-                throw new Error('CPF inválido');
-            }
-            return true;
-        }),
-    body('phone')
-        .optional()
-        .custom((value) => {
-            if (value && !validarTelefone(value)) {
-                throw new Error('Telefone inválido');
-            }
-            return true;
-        }),
-    body('dateOfBirth')
-        .optional()
-        .custom((value) => {
-            if (value && !validarDataNascimento(value)) {
-                throw new Error('Data de nascimento inválida ou idade mínima não atingida');
-            }
-            return true;
-        }),
-    body('gender')
-        .optional()
-        .isIn(['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer'])
-        .withMessage('Gênero inválido'),
+    body('cpf').optional().custom(validarCPF),
+    body('phone').optional().custom(validarTelefone),
+    body('dateOfBirth').optional().custom(validarDataNascimento),
+    body('gender').optional().isIn(['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer']).withMessage('Gênero inválido'),
     body('schoolId').optional(),
     body('districtId').optional(),
     body('address').optional(),
     body('city').optional(),
     body('state').optional(),
-    body('zip')
-        .optional()
-        .custom((value) => {
-            if (value && !validarCEP(value)) {
-                throw new Error('CEP inválido');
-            }
-            return true;
-        })
-        .customSanitizer(value => {
-            // Se o valor existir, mantém como string com zeros à esquerda
-            if (value) {
-                return value.replace(/[^\d]/g, '').padStart(8, '0');
-            }
-            return value;
-        }),
-    body('horario')
-        .optional()
-        .default('Integral')   // Define o valor padrão durante a validação
-        .isIn(['Manhã', 'Tarde', 'Noite', 'Integral'])
-        .withMessage('Horário inválido'),
+    body('zip').optional().custom(validarCEP).customSanitizer(value => value ? value.replace(/[^\d]/g, '').padStart(8, '0') : value),
+    body('horario').optional().default('Integral').isIn(['Manhã', 'Tarde', 'Noite', 'Integral']).withMessage('Horário inválido'),
     body('userClass').optional(),
     body('content').optional(),
     body('status').optional().isIn(['active', 'inactive']).withMessage('Status inválido'),
 
     async (req, res) => {
-        // Verifica tentativas de criação
         const ip = req.ip || req.connection.remoteAddress;
         const verificação = verificarTentativas(ip);
-
         if (verificação.bloqueado) {
-            return res.status(429).json({
-                message: `Muitas tentativas de criação. Tente novamente em ${verificação.tempoRestante} minutos.`
-            });
+            return res.status(429).json({ message: `Muitas tentativas de criação. Tente novamente em ${verificação.tempoRestante} minutos.` });
         }
 
         const errors = validationResult(req);
@@ -176,28 +128,20 @@ exports.adicionarUsuario = [
 
         try {
             const { email } = req.body;
-
-            // Verifica se o email existe usando o cache
             if (await emailExiste(email)) {
                 return res.status(400).json({ message: 'Usuário já existe.' });
             }
 
-            // Verifica autenticação
             if (!req.user || !req.user.id) {
                 return res.status(401).json({ message: 'Usuário não autenticado.' });
             }
 
-            const usuarioLogado = await User.findByPk(req.user.id, {
-                attributes: ['id', 'name', 'email', 'role', 'districtId', 'schoolId']
-            });
-
+            const usuarioLogado = await User.findByPk(req.user.id, { attributes: ['id', 'role', 'districtId'] });
             if (!usuarioLogado) {
                 return res.status(401).json({ message: 'Usuário não encontrado.' });
             }
 
             const { role: novoRole } = req.body;
-
-            // Verifica permissões
             const verificacaoPermissao = verificarPermissaoCriacao(usuarioLogado.role, novoRole);
             if (!verificacaoPermissao.permitido) {
                 return res.status(403).json({ message: verificacaoPermissao.mensagem });
@@ -230,22 +174,23 @@ exports.adicionarUsuario = [
             }
 
             const defaultPassword = process.env.DEFAULT_PASSWORD;
-
             let finalDistrictId = formDistrictId;
-
             if (usuarioLogado.role !== 'Master') {
                 finalDistrictId = usuarioLogado.districtId;
             }
+            const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
 
-            const schoolServiceUrl = `<span class="math-inline">\{process\.env\.SCHOOL\_SERVICE\_URL\}/schools/</span>{schoolId}`;
-            const schoolResponse = await fetch(schoolServiceUrl);
-            if (!schoolResponse.ok) {
-                return res.status(400).json({ message: 'schoolId inválido.' });
+            if (schoolId) {
+                const schoolServiceUrl = `<span class="math-inline">\{process\.env\.SCHOOL\_SERVICE\_URL\}/schools/</span>{schoolId}`;
+                const schoolResponse = await fetchDataWithAuth(schoolServiceUrl, 'GET', null, accessToken);
+                if (!schoolResponse.ok) {
+                    return res.status(400).json({ message: 'schoolId inválido.' });
+                }
             }
 
             if (finalDistrictId) {
                 const districtServiceUrl = `<span class="math-inline">\{process\.env\.DISTRICT\_SERVICE\_URL\}/districts/</span>{finalDistrictId}`;
-                const districtResponse = await fetch(districtServiceUrl);
+                const districtResponse = await fetchDataWithAuth(districtServiceUrl, 'GET', null, accessToken);
                 if (!districtResponse.ok) {
                     return res.status(400).json({ message: 'districtId inválido.' });
                 }
@@ -272,15 +217,10 @@ exports.adicionarUsuario = [
                 districtId: finalDistrictId
             });
 
-            // Invalida o cache após criar um novo usuário
             invalidarCache();
-
-            await logService.logUserOperation('criacao', newUser.id, {
-                criadoPor: usuarioLogado.id,
-                role: newUser.role
-            });
-
+            await logService.logUserOperation('criacao', newUser.id, { criadoPor: usuarioLogado.id, role: newUser.role });
             res.status(201).json({ message: 'Usuário criado com sucesso.' });
+
         } catch (error) {
             console.error(error);
             if (error.name === 'SequelizeValidationError') {
@@ -300,69 +240,28 @@ exports.listarUsuarios = async (req, res) => {
         const usuarios = await User.findAll();
         res.json(usuarios);
     } catch (error) {
-        console.error('Erro ao listar usuários:', error); // Manter o console.error para desenvolvimento
+        console.error('Erro ao listar usuários:', error);
         await logService.error('Erro ao listar usuários', { error: error.message });
         res.status(500).json({ message: 'Erro ao listar usuários.' });
     }
 };
 
 exports.atualizarUsuario = [
-    // Validações (tornando os campos opcionais com .optional())
+    // Validações (mantidas)
     body('name').optional().notEmpty().withMessage('Nome é obrigatório'),
     body('email').optional().isEmail().withMessage('Email inválido'),
     body('role').optional().notEmpty().withMessage('Papel é obrigatório'),
-    body('cpf')
-        .optional()
-        .custom((value) => {
-            if (value && !validarCPF(value)) {
-                throw new Error('CPF inválido');
-            }
-            return true;
-        }),
-    body('phone')
-        .optional()
-        .custom((value) => {
-            if (value && !validarTelefone(value)) {
-                throw new Error('Telefone inválido');
-            }
-            return true;
-        }),
-    body('dateOfBirth')
-        .optional()
-        .custom((value) => {
-            if (value && !validarDataNascimento(value)) {
-                throw new Error('Data de nascimento inválida ou idade mínima não atingida');
-            }
-            return true;
-        }),
-    body('gender')
-        .optional()
-        .isIn(['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer'])
-        .withMessage('Gênero inválido'),
+    body('cpf').optional().custom(validarCPF),
+    body('phone').optional().custom(validarTelefone),
+    body('dateOfBirth').optional().custom(validarDataNascimento),
+    body('gender').optional().isIn(['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer']).withMessage('Gênero inválido'),
     body('schoolId').optional(),
     body('districtId').optional(),
     body('address').optional(),
     body('city').optional(),
     body('state').optional(),
-    body('zip')
-        .optional()
-        .custom((value) => {
-            if (value && !validarCEP(value)) {
-                throw new Error('CEP inválido');
-            }
-            return true;
-        })
-        .optional()
-        .customSanitizer(value => {
-            if (value) {
-                return value.replace(/[^\d]/g, '').padStart(8, '0');
-            }
-            return value;
-        }),
-    body('horario')
-        .optional()
-        .isIn(['Manhã', 'Tarde', 'Noite', 'Integral'])
-        .withMessage('Horário inválido'),
+    body('zip').optional().custom(validarCEP).optional().customSanitizer(value => value ? value.replace(/[^\d]/g, '').padStart(8, '0') : value),
+    body('horario').optional().isIn(['Manhã', 'Tarde', 'Noite', 'Integral']).withMessage('Horário inválido'),
     body('userClass').optional(),
     body('content').optional(),
     body('status').optional().isIn(['active', 'inactive']).withMessage('Status inválido'),
@@ -376,7 +275,6 @@ exports.atualizarUsuario = [
         try {
             const { id } = req.params;
             const dadosRecebidos = req.body;
-
             const usuarioLogado = req.user;
 
             if (!usuarioLogado) {
@@ -388,14 +286,12 @@ exports.atualizarUsuario = [
                 return res.status(404).json({ message: 'Usuário não encontrado.' });
             }
 
-            // Verifica permissões
             const verificacaoPermissao = verificarPermissaoEdicao(
                 usuarioLogado.role,
                 usuarioAlvo.role,
                 usuarioLogado.id,
                 usuarioAlvo.id
             );
-
             if (!verificacaoPermissao.permitido) {
                 return res.status(403).json({ message: verificacaoPermissao.mensagem });
             }
@@ -411,26 +307,26 @@ exports.atualizarUsuario = [
                 return res.status(400).json({ message: 'Nenhum dado válido para atualizar.' });
             }
 
+            const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+
             if (updatedData.schoolId) {
-                const schoolServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/schools/${updatedData.schoolId}`;
-                const schoolResponse = await fetch(schoolServiceUrl);
+                const schoolServiceUrl = `<span class="math-inline">\{process\.env\.SCHOOL\_SERVICE\_URL\}/schools/</span>{updatedData.schoolId}`;
+                const schoolResponse = await fetchDataWithAuth(schoolServiceUrl, 'GET', null, accessToken);
                 if (!schoolResponse.ok) {
                     return res.status(400).json({ message: 'schoolId inválido.' });
                 }
             }
 
             if (updatedData.districtId) {
-                const districtServiceUrl = `${process.env.DISTRICT_SERVICE_URL}/districts/${updatedData.districtId}`;
-                const districtResponse = await fetch(districtServiceUrl);
+                const districtServiceUrl = `<span class="math-inline">\{process\.env\.DISTRICT\_SERVICE\_URL\}/districts/</span>{updatedData.districtId}`;
+                const districtResponse = await fetchDataWithAuth(districtServiceUrl, 'GET', null, accessToken);
                 if (!districtResponse.ok) {
                     return res.status(400).json({ message: 'districtId inválido.' });
                 }
             }
 
             await User.update(updatedData, { where: { id } });
-
             const usuarioAtualizado = await User.findByPk(id);
-
             const usuarioResponse = {
                 id: usuarioAtualizado.id,
                 nome: usuarioAtualizado.name,
@@ -454,18 +350,12 @@ exports.atualizarUsuario = [
                 updatedAt: usuarioAtualizado.updatedAt
             };
 
-            await logService.logUserOperation('edicao', id, {
-                editadoPor: usuarioLogado.id,
-                alteracoes: updatedData
-            });
-
+            await logService.logUserOperation('edicao', id, { editadoPor: usuarioLogado.id, alteracoes: updatedData });
             res.status(200).json(usuarioResponse);
+
         } catch (error) {
             console.error('Erro ao atualizar o usuário:', error);
-            await logService.error('Erro ao atualizar usuário', {
-                error: error.message,
-                id: req.params.id
-            });
+            await logService.error('Erro ao atualizar usuário', { error: error.message, id: req.params.id });
             res.status(500).json({ message: 'Erro ao atualizar o usuário.' });
         }
     }
@@ -474,37 +364,26 @@ exports.atualizarUsuario = [
 exports.deletarUsuario = async (req, res) => {
     try {
         const { id } = req.params;
-
-        // Verifica autenticação
         if (!req.user || !req.user.id) {
             return res.status(401).json({ message: 'Usuário não autenticado.' });
         }
-
         const usuarioLogado = req.user;
-
         if (!usuarioLogado) {
             return res.status(401).json({ message: 'Usuário não encontrado.' });
         }
-
         const usuarioAlvo = await User.findByPk(id);
         if (!usuarioAlvo) {
             return res.status(404).json({ message: 'Usuário não encontrado.' });
         }
-
-        // Verifica permissões de exclusão
         const permissaoExclusao = verificarPermissaoExclusao(usuarioLogado.role, usuarioAlvo.role);
         if (!permissaoExclusao.permitido) {
             return res.status(403).json({ message: permissaoExclusao.mensagem });
         }
-
         await User.destroy({ where: { id } });
         res.json({ message: 'Usuário excluído com sucesso.' });
     } catch (error) {
         console.error('Erro ao excluir o usuário:', error);
-        await logService.error('Erro ao excluir usuário', {
-            error: error.message,
-            id: req.params.id
-        });
+        await logService.error('Erro ao excluir usuário', { error: error.message, id: req.params.id });
         res.status(500).json({ message: error.message });
     }
 };
@@ -522,24 +401,28 @@ exports.buscarUsuario = async (req, res) => {
 
         let school = null;
         let district = null;
+        const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
 
-        if (usuario.schoolId) {
-            const schoolServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/schools/${usuario.schoolId}`;
-            const schoolResponse = await fetch(schoolServiceUrl);
-            if (schoolResponse.ok) {
-                school = await schoolResponse.json();
-            } else {
-                console.error('Erro ao buscar escola do school-service:', schoolResponse.statusText);
+        // Não buscar schoolId ou districtId para usuários Master
+        if (usuario.role !== 'Master') {
+            if (usuario.schoolId && usuario.role !== 'Inspector') {
+                const schoolServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/schools/${usuario.schoolId}`;
+                const schoolResponse = await fetchDataWithAuth(schoolServiceUrl, 'GET', null, accessToken);
+                if (schoolResponse.ok) {
+                    school = await schoolResponse.json();
+                } else {
+                    console.error('Erro ao buscar escola do school-service:', schoolResponse.statusText);
+                }
             }
-        }
 
-        if (usuario.districtId) {
-            const districtServiceUrl = `${process.env.DISTRICT_SERVICE_URL}/districts/${usuario.districtId}`;
-            const districtResponse = await fetch(districtServiceUrl);
-            if (districtResponse.ok) {
-                district = await districtResponse.json();
-            } else {
-                console.error('Erro ao buscar distrito do district-service:', districtResponse.statusText);
+            if (usuario.districtId) {
+                const districtServiceUrl = `${process.env.DISTRICT_SERVICE_URL}/districts/${usuario.districtId}`;
+                const districtResponse = await fetchDataWithAuth(districtServiceUrl, 'GET', null, accessToken);
+                if (districtResponse.ok) {
+                    district = await districtResponse.json();
+                } else {
+                    console.error('Erro ao buscar distrito do district-service:', districtResponse.statusText);
+                }
             }
         }
 
@@ -563,9 +446,12 @@ exports.buscarUsuarioLogado = async (req, res) => {
         }
 
         let school = null;
-        if (usuario.schoolId) {
+        const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+
+        // Não buscar schoolId para usuários Master ou Inspetor
+        if (usuario.role !== 'Master' && usuario.role !== 'Inspector' && usuario.schoolId) {
             const schoolServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/schools/${usuario.schoolId}`;
-            const schoolResponse = await fetch(schoolServiceUrl);
+            const schoolResponse = await fetchDataWithAuth(schoolServiceUrl, 'GET', null, accessToken);
             if (schoolResponse.ok) {
                 school = await schoolResponse.json();
             } else {
@@ -616,7 +502,7 @@ exports.filterUsers = async (req, res) => {
         }
 
         const user = await User.findByPk(req.user.id);
-        const whereClause = applyUserFilters(user, req.query); // Use a função do serviço
+        const whereClause = applyUserFilters(user, req.query);
 
         const users = await User.findAll({ where: whereClause });
 
@@ -627,9 +513,11 @@ exports.filterUsers = async (req, res) => {
         });
 
         let schools = [];
+        const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+
         if (req.query.districtId) {
-            const schoolServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/schools?districtId=${req.query.districtId}`;
-            const response = await fetch(schoolServiceUrl);
+            const schoolServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/schools/list?districtId=${req.query.districtId}`;
+            const response = await fetchDataWithAuth(schoolServiceUrl, 'GET', null, accessToken);
             if (response.ok) {
                 schools = await response.json();
             } else {
@@ -651,10 +539,11 @@ exports.getUsersData = async (req, res) => {
     try {
         const user = await User.findByPk(req.user.id);
         const districts = await District.findAll();
+        const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
 
         // Buscar escolas do microsserviço school-service
         const schoolServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/schools`;
-        const schoolResponse = await fetch(schoolServiceUrl);
+        const schoolResponse = await fetchDataWithAuth(schoolServiceUrl, 'GET', null, accessToken);
         let schools = [];
         if (schoolResponse.ok) {
             schools = await schoolResponse.json();
@@ -663,7 +552,6 @@ exports.getUsersData = async (req, res) => {
         }
 
         const grades = await Grade.findAll();
-
         let whereClause = {};
 
         if (user.role !== 'Master') {
@@ -674,7 +562,6 @@ exports.getUsersData = async (req, res) => {
         }
 
         const users = await User.findAll({ where: whereClause });
-
         const sortedUsers = users.sort((a, b) => {
             if (a.status === 'inactive' && b.status !== 'inactive') return -1;
             if (a.status !== 'inactive' && b.status === 'inactive') return 1;

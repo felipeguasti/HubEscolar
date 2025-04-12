@@ -2,7 +2,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { Sequelize } = require('sequelize');
-const schoolRoutes = require('./src/routes/schools');
 require('dotenv').config();
 const app = express();
 const port = process.env.SCHOOL_SERVICE_PORT || 3002;
@@ -11,7 +10,9 @@ const morgan = require('morgan');
 const logger = require('./src/services/loggingService');
 const { handleServiceError } = require('./src/services/errorHandlingService');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit'); // Importe o rateLimit
+const rateLimit = require('express-rate-limit');
+const schoolRoutes = require('./src/routes/schools');
+const gradesRoutes = require('./src/routes/grades');
 
 // Middleware para analisar o corpo das requisições com limite de tamanho
 app.use(bodyParser.json({ limit: '100kb' })); // Limita o tamanho do corpo JSON para 100KB
@@ -63,6 +64,8 @@ app.use(morgan('combined', { stream: logStream }));
 
 // Monta as rotas sob o prefixo /schools
 app.use('/schools', schoolRoutes);
+app.use('/grades', gradesRoutes);
+
 
 // Middleware de tratamento de erros global
 app.use((err, req, res, next) => {
