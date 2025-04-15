@@ -1,0 +1,24 @@
+{
+    "name": "report-service",
+    "version": "1.0.0",
+    "description": "Microserviço para geração de relatórios escolares com IA",
+    "main": "app-report-service.js",
+    "scripts": {
+        "start": "node app-report-service.js",
+        "dev": "nodemon app-report-service.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Felipe Guasti",
+    "license": "ISC",
+    "dependencies": {
+        "axios": "^1.8.4",
+        "body-parser": "^1.20.3",
+        "dotenv": "^16.5.0",
+        "express": "^4.21.2",
+        "jsonwebtoken": "^9.0.2",
+        "parser": "^0.1.4"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.0"
+    }
+}

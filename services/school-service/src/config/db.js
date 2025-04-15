@@ -1,3 +1,4 @@
+require('dotenv').config({ path: '../../.env' }); // Garante que o .env da raiz seja carregado
 const Sequelize = require('sequelize');
 
 // Credenciais do banco de dados externo
@@ -18,7 +19,7 @@ const dialect = "mysql";
 const sequelize = new Sequelize(database, username, password, {
     host: host,
     dialect: dialect,
-    logging: false, // Define se as mensagens de log do Sequelize serão exibidas (desabilitado neste caso)
+    logging: false,
 });
 
 // Testar a conexão

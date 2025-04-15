@@ -1,5 +1,8 @@
 const User = require('../models/User');
+const Log = require('../models/Log');
 const winston = require('winston');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
 const logger = winston.createLogger({
     level: 'info',
     format: winston.format.combine(
@@ -100,7 +103,7 @@ exports.adicionarUsuario = [
     body('password').notEmpty().withMessage('Senha é obrigatória'),
     body('role').notEmpty().withMessage('Papel é obrigatório'),
     body('cpf').optional().custom(validarCPF),
-    body('phone').optional().custom(validarTelefone),
+    body('phone').optional().custom(validarTelefone), // Telefone agora é opcional
     body('dateOfBirth').optional().custom(validarDataNascimento),
     body('gender').optional().isIn(['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer']).withMessage('Gênero inválido'),
     body('schoolId').optional(),
@@ -150,7 +153,7 @@ exports.adicionarUsuario = [
             const {
                 name,
                 email: novoEmail,
-                password,
+                password, // Usamos diretamente a senha do req.body
                 cpf,
                 phone,
                 dateOfBirth,
@@ -173,7 +176,6 @@ exports.adicionarUsuario = [
                 return res.status(400).json({ message: 'Usuário já existe.' });
             }
 
-            const defaultPassword = process.env.DEFAULT_PASSWORD;
             let finalDistrictId = formDistrictId;
             if (usuarioLogado.role !== 'Master') {
                 finalDistrictId = usuarioLogado.districtId;
@@ -181,7 +183,7 @@ exports.adicionarUsuario = [
             const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
 
             if (schoolId) {
-                const schoolServiceUrl = `<span class="math-inline">\{process\.env\.SCHOOL\_SERVICE\_URL\}/schools/</span>{schoolId}`;
+                const schoolServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/schools/${schoolId}`;
                 const schoolResponse = await fetchDataWithAuth(schoolServiceUrl, 'GET', null, accessToken);
                 if (!schoolResponse.ok) {
                     return res.status(400).json({ message: 'schoolId inválido.' });
@@ -189,7 +191,7 @@ exports.adicionarUsuario = [
             }
 
             if (finalDistrictId) {
-                const districtServiceUrl = `<span class="math-inline">\{process\.env\.DISTRICT\_SERVICE\_URL\}/districts/</span>{finalDistrictId}`;
+                const districtServiceUrl = `${process.env.DISTRICT_SERVICE_URL}/districts/${finalDistrictId}`;
                 const districtResponse = await fetchDataWithAuth(districtServiceUrl, 'GET', null, accessToken);
                 if (!districtResponse.ok) {
                     return res.status(400).json({ message: 'districtId inválido.' });
@@ -199,7 +201,7 @@ exports.adicionarUsuario = [
             const newUser = await User.create({
                 name,
                 email: novoEmail,
-                password: defaultPassword,
+                password, // Usamos diretamente a senha do req.body
                 cpf,
                 phone,
                 dateOfBirth,
@@ -225,9 +227,6 @@ exports.adicionarUsuario = [
             console.error(error);
             if (error.name === 'SequelizeValidationError') {
                 return res.status(400).json({ message: 'Erro de validação', errors: error.errors });
-            }
-            if (error.message === 'Senha padrão não definida no .env') {
-                return res.status(500).json({ message: 'Senha padrão não definida no arquivo .env' });
             }
             await logService.error('Erro ao criar usuário', { error: error.message });
             res.status(500).json({ message: 'Erro ao criar usuário.' });
@@ -310,7 +309,7 @@ exports.atualizarUsuario = [
             const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
 
             if (updatedData.schoolId) {
-                const schoolServiceUrl = `<span class="math-inline">\{process\.env\.SCHOOL\_SERVICE\_URL\}/schools/</span>{updatedData.schoolId}`;
+                const schoolServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/schools/${updatedData.schoolId}`;
                 const schoolResponse = await fetchDataWithAuth(schoolServiceUrl, 'GET', null, accessToken);
                 if (!schoolResponse.ok) {
                     return res.status(400).json({ message: 'schoolId inválido.' });
@@ -318,7 +317,7 @@ exports.atualizarUsuario = [
             }
 
             if (updatedData.districtId) {
-                const districtServiceUrl = `<span class="math-inline">\{process\.env\.DISTRICT\_SERVICE\_URL\}/districts/</span>{updatedData.districtId}`;
+                const districtServiceUrl = `${process.env.DISTRICT_SERVICE_URL}/districts/${updatedData.districtId}`;
                 const districtResponse = await fetchDataWithAuth(districtServiceUrl, 'GET', null, accessToken);
                 if (!districtResponse.ok) {
                     return res.status(400).json({ message: 'districtId inválido.' });
@@ -379,12 +378,23 @@ exports.deletarUsuario = async (req, res) => {
         if (!permissaoExclusao.permitido) {
             return res.status(403).json({ message: permissaoExclusao.mensagem });
         }
+
+        // 1. Excluir os logs associados ao usuário
+        await Log.destroy({
+            where: {
+                userId: id
+            }
+        });
+
+        // 2. Excluir o usuário
         await User.destroy({ where: { id } });
-        res.json({ message: 'Usuário excluído com sucesso.' });
+
+        res.json({ message: 'Usuário e logs associados excluídos com sucesso.' });
+
     } catch (error) {
-        console.error('Erro ao excluir o usuário:', error);
-        await logService.error('Erro ao excluir usuário', { error: error.message, id: req.params.id });
-        res.status(500).json({ message: error.message });
+        console.error('Erro ao excluir o usuário e seus logs:', error);
+        await logService.error('Erro ao excluir usuário e seus logs', { error: error.message, id: req.params.id });
+        res.status(500).json({ message: 'Erro ao excluir o usuário e seus logs.' });
     }
 };
 
@@ -469,28 +479,45 @@ exports.buscarUsuarioLogado = async (req, res) => {
 
 exports.resetarSenha = async (req, res) => {
     try {
-        const { id } = req.body;
+        console.log('users-service: Iniciando resetarSenha');
+        console.log('users-service: req.body:', req.body);
+        console.log('users-service: req.params:', req.params);
+
+        const id = req.body.userId || req.params.id;
+        console.log('users-service: ID a ser buscado:', id);
+
         const usuario = await User.findByPk(id);
+        console.log('users-service: Resultado da busca (usuário):', usuario);
 
         if (!usuario) {
+            console.log('users-service: Usuário não encontrado com ID:', id);
             return res.status(404).json({ message: 'Usuário não encontrado.' });
         }
 
+        let newPasswordToSet = req.body.newPassword;
         const defaultPassword = process.env.DEFAULT_PASSWORD;
 
-        if (!defaultPassword) {
-            return res.status(500).json({ message: 'Senha padrão não configurada.' });
+        if (!newPasswordToSet) { // Se newPassword for vazio (ou undefined)
+            console.log('users-service: newPassword não fornecida, usando DEFAULT_PASSWORD');
+            newPasswordToSet = defaultPassword;
+        } else {
+            console.log('users-service: newPassword fornecida:', newPasswordToSet);
         }
 
-        usuario.senha = defaultPassword;
+        if (!defaultPassword && !newPasswordToSet) {
+            return res.status(500).json({ message: 'Senha padrão não configurada e nenhuma nova senha fornecida.' });
+        }
+
+        usuario.password = newPasswordToSet || defaultPassword; // Use newPassword se fornecida, senão a padrão
         await usuario.save();
+        console.log('users-service: Senha do usuário com ID:', id, 'resetada com sucesso.');
 
         res.status(200).json({
             message: 'Senha resetada com sucesso!',
-            novaSenha: defaultPassword
+            novaSenha: newPasswordToSet || defaultPassword
         });
     } catch (error) {
-        console.error(error);
+        console.error('users-service: Erro ao resetar a senha:', error);
         res.status(500).json({ message: 'Erro ao resetar a senha.' });
     }
 };
@@ -500,9 +527,8 @@ exports.filterUsers = async (req, res) => {
         if (!req.user) {
             return res.status(401).json({ error: 'Usuário não autenticado' });
         }
-
         const user = await User.findByPk(req.user.id);
-        const whereClause = applyUserFilters(user, req.query);
+        const whereClause = applyUserFilters(user, req.query); // Use req.query para os filtros
 
         const users = await User.findAll({ where: whereClause });
 

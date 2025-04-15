@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const authService = require('../services/authService'); 
+const authService = require('../services/authService');
 const isAuthenticated = require('../middlewares/auth');
 
 // Rota para login (o sistema principal recebe as credenciais e chama o auth-service)
@@ -10,17 +10,25 @@ router.post('/login', async (req, res) => {
     try {
         const authResponse = await authService.login(email, password);
 
-        if (authResponse.accessToken && authResponse.refreshToken) {
+        if (authResponse && authResponse.accessToken && authResponse.refreshToken) {
             // Configurar cookies (opções de segurança importantes!)
             res.cookie('accessToken', authResponse.accessToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 3600000 }); // 1 hora
             res.cookie('refreshToken', authResponse.refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 2592000000 }); // 30 dias
 
             return res.status(200).json({ message: 'Login bem-sucedido', redirectTo: '/dashboard' });
+        } else if (authResponse && authResponse.message) {
+            // Se o auth-service retornar uma mensagem específica de falha (ex: credenciais inválidas)
+            return res.status(401).json({ message: authResponse.message });
         } else {
-            return res.status(401).json({ message: 'Credenciais inválidas' });
+            return res.status(401).json({ message: 'Erro de autenticação' });
         }
     } catch (error) {
         console.error('Erro durante o login:', error);
+        if (error.response) {
+            // Se o erro veio do auth-service (ou outro serviço com resposta HTTP)
+            return res.status(error.response.status).json(error.response.data);
+        }
+        // Se for um erro local ou sem resposta HTTP
         return res.status(500).json({ message: 'Erro ao fazer login', error: error.message });
     }
 });
@@ -35,7 +43,7 @@ router.post('/logout', (req, res) => {
     res.status(200).json({ message: 'Logout bem-sucedido', redirectTo: '/login' });
 });
 
-router.get('/me', async (req, res) => {
+router.get('/me', isAuthenticated, async (req, res) => {
     const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
     try {
         const userInfo = await authService.getUserInfoByToken(accessToken);
@@ -62,12 +70,14 @@ router.post('/refresh-token', async (req, res) => {
 
     try {
         const newTokens = await authService.refreshToken(refreshToken);
-        if (newTokens.accessToken && newTokens.refreshToken) {
+        if (newTokens && newTokens.accessToken && newTokens.refreshToken) {
             res.cookie('accessToken', newTokens.accessToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 3600000 });
             res.cookie('refreshToken', newTokens.refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 2592000000 });
             return res.status(200).json({ message: 'Tokens renovados com sucesso' });
+        } else if (newTokens && newTokens.message) {
+            return res.status(401).json({ message: newTokens.message });
         } else {
-            return res.status(401).json({ message: 'Refresh token inválido' });
+            return res.status(401).json({ message: 'Erro ao renovar tokens' });
         }
     } catch (error) {
         console.error('Erro ao renovar token:', error);
@@ -133,7 +143,5 @@ router.post('/reset-password/:token', async (req, res) => {
         return res.status(500).json({ message: 'Erro ao redefinir senha', error: error.message });
     }
 });
-
-
 
 module.exports = router;

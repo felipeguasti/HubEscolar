@@ -67,7 +67,6 @@
     router.put("/edit/:id", requireRole('Master'), async (req, res) => {
         const { id } = req.params;
         const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
-        console.log('[HubEscolar - /districts/edit/:id] Valor do accessToken antes de chamar o serviço:', accessToken);
         try {
             const updatedDistrict = await districtsService.updateDistrict(id, req.body, accessToken);
             return res.json(updatedDistrict);

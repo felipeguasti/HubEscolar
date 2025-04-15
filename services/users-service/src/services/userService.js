@@ -59,13 +59,24 @@ const validarCPF = (cpf) => {
 const validarTelefone = (telefone) => {
     // Remove todos os caracteres não numéricos
     telefone = telefone.replace(/[^\d]/g, '');
-    
-    // Verifica se tem entre 10 e 11 dígitos (com DDD)
-    if (telefone.length < 10 || telefone.length > 11) return false;
-    
-    // Verifica se começa com 9 (celular) ou 2-5 (fixo)
-    const primeiroDigito = telefone.charAt(telefone.length - 9);
-    return /^[2-5]|^9/.test(primeiroDigito);
+
+    // Verifica se o telefone está vazio (agora opcional)
+    if (!telefone) {
+        return true; // Telefone vazio é considerado válido
+    }
+
+    // Verifica se é celular (começa com 9)
+    if (telefone.startsWith('9')) {
+        return telefone.length >= 9 && telefone.length <= 12;
+    }
+
+    // Verifica se é fixo (começa com 2, 3, 4 ou 5)
+    if (/^[2-5]/.test(telefone)) {
+        return telefone.length >= 8 && telefone.length <= 11;
+    }
+
+    // Se não se encaixar em nenhum dos padrões
+    return false;
 };
 
 // Função para validar data de nascimento

@@ -15,16 +15,15 @@ const isAuthenticated = async (req, res, next) => {
         const validationResponse = await authService.verifyToken(accessToken);
 
         if (validationResponse && validationResponse.valid && validationResponse.userId) {
+            const userId = validationResponse.userId;
             try {
                 // Buscar os detalhes completos do usuário usando o usersService
-                const userDetails = await usersService.getUserById(validationResponse.userId, accessToken);
+                const userDetails = await usersService.getUserById(userId, accessToken);
 
                 if (userDetails) {
-                    req.user = {
-                        id: userDetails.id,
-                        role: userDetails.role, // Anexar a role do usuário
-                        // Adicione outras informações relevantes do usuário aqui, se necessário
-                    };
+                    // Excluir a senha antes de popular req.user
+                    const { password, ...userWithoutPassword } = userDetails;
+                    req.user = userWithoutPassword;
                     next();
                 } else {
                     return isAjaxRequest
@@ -32,7 +31,6 @@ const isAuthenticated = async (req, res, next) => {
                         : res.redirect('/login');
                 }
             } catch (error) {
-                console.error('Erro ao buscar detalhes do usuário:', error);
                 return isAjaxRequest
                     ? res.status(500).json({ message: 'Erro ao buscar detalhes do usuário' })
                     : res.redirect('/login');
@@ -43,7 +41,7 @@ const isAuthenticated = async (req, res, next) => {
                 : res.redirect('/login');
         }
     } catch (error) {
-        console.error('Erro ao verificar token:', error);
+        console.error('[AUTH MIDDLEWARE] Erro ao verificar token:', error);
         return isAjaxRequest
             ? res.status(500).json({ message: 'Erro interno ao verificar autenticação' })
             : res.redirect('/login');

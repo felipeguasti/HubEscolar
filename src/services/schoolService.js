@@ -1,4 +1,5 @@
 const axios = require('axios');
+require('dotenv').config(); // Garante que as variáveis de ambiente sejam carregadas
 const SCHOOL_SERVICE_URL = process.env.SCHOOL_SERVICE_URL || 'http://localhost:3002';
 
 const schoolService = {

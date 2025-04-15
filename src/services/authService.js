@@ -1,6 +1,7 @@
 const axios = require('axios');
-
+require('dotenv').config(); // Garante que as variáveis de ambiente sejam carregadas
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3004';
+const USERS_SERVICE_URL = process.env.USERS_SERVICE_URL || 'http://localhost:3001';
 
 const authService = {
     async login(email, password) {
@@ -41,10 +42,26 @@ const authService = {
 
     async getUserInfoByToken(accessToken) {
         try {
-            const response = await axios.post(`${AUTH_SERVICE_URL}/auth/validate-token`, {
+            const validationResponse = await axios.post(`${AUTH_SERVICE_URL}/auth/validate-token`, {
                 accessToken: accessToken
             });
-            return response.data;
+    
+            if (validationResponse.data.valid && validationResponse.data.userId) {
+                const userId = validationResponse.data.userId;
+                try {
+                    const userDetailsResponse = await axios.get(`${USERS_SERVICE_URL}/users/list/${userId}`, {
+                        headers: {
+                            Authorization: `Bearer ${accessToken}` // Adapte conforme a autenticação do users-service
+                        }
+                    });
+                    return userDetailsResponse.data; // Retorna os detalhes completos do usuário
+                } catch (error) {
+                    console.error('Erro ao buscar detalhes do usuário no users-service:', error.response ? error.response.data : error.message);
+                    throw error;
+                }
+            }
+    
+            return validationResponse.data; // Retorna a resposta básica em caso de falha na busca dos detalhes
         } catch (error) {
             console.error('Erro ao obter informações do usuário pelo token no auth-service:', error.response ? error.response.data : error.message);
             throw error;

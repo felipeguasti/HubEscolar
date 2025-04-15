@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const apiService = require('../services/apiService');
 const { body, param } = require('express-validator');
+require('dotenv').config();
 const USERS_SERVICE_URL = process.env.USERS_SERVICE_URL;
 const { JWT_EXPIRATION_TIME, JWT_REFRESH_EXPIRATION_TIME, getMidnightExpiration } = require('../services/constants');
 const logger = require('../services/logger');
@@ -102,7 +103,7 @@ const refreshToken = async (req, res, next) => {
         const userId = refreshTokenRecord.userId;
 
         logger.info(`Consultando users-service para obter informações do usuário ID: ${userId}`);
-        const response = await apiService.get(`${USERS_SERVICE_URL}/users/${userId}`);
+        const response = await apiService.get(`${USERS_SERVICE_URL}/users/filter?id=${userId}`);
 
         if (response.status === 200 && response.data) {
             const user = response.data;

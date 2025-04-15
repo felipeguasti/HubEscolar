@@ -14,7 +14,7 @@
 
         <!-- Gerenciar Usuários -->
         <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Coordenador' || user.role === 'Pedagogo' || user.role === 'Secretario'){ %>
-            <li><a href="/admin/users">Gerenciar Usuários</a></li>
+            <li><a href="/users">Gerenciar Usuários</a></li>
         <% } %>          
         
         <!-- Gerenciar Vendas (Apenas Master) -->
@@ -24,7 +24,7 @@
 
         <!-- Gerenciar Conteúdo -->
         <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Coordenador' || user.role === 'Pedagogo' || user.role === 'Secretario') { %>
-            <li><a href="/admin/content">Gerenciar Conteúdo</a></li>
+            <li><a href="/content">Gerenciar Conteúdo</a></li>
         <% } %>
 
         <!-- Gerenciar Ferramentas -->

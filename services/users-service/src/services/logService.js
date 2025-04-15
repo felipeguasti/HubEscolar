@@ -2,6 +2,7 @@ const winston = require('winston');
 const axios = require('axios');
 const Log = require('../models/Log');
 const { Op } = require('sequelize');
+require('dotenv').config();
 
 class LogService {
     constructor() {
@@ -46,12 +47,12 @@ class LogService {
 
     // Envia log para o serviço principal
     async sendToMainService(log) {
-        try {
-            await axios.post(`${this.mainServiceUrl}/api/logs`, log);
-        } catch (error) {
-            // Se falhar, apenas registra localmente
-            this.logger.error('Falha ao enviar log para o serviço principal', { error: error.message });
-        }
+        // try {
+        //     await axios.post(`${this.mainServiceUrl}/api/logs`, log);
+        // } catch (error) {
+        //     // Se falhar, apenas registra localmente
+        //     this.logger.error('Falha ao enviar log para o serviço principal', { error: error.message });
+        // }
     }
 
     // Salva log no banco de dados

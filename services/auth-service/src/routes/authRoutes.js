@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { login, refreshToken } = require('../controllers/authController');
+const authController = require('../controllers/authController');
 const authMiddleware = require('../middlewares/auth');
 const { body, param } = require('express-validator');
 const validationResultHandler = require('../middlewares/validationResultHandler');
@@ -18,16 +18,15 @@ const refreshTokenValidation = [
 ];
 
 // Rota para login (agora com rate limiter e validações)
-router.post('/login', loginLimiter, loginValidation, validationResultHandler, login);
+router.post('/login', loginLimiter, loginValidation, validationResultHandler, authController.login);
 
 // Nova rota para obter um novo token de acesso usando um refresh token
-router.post('/refresh-token', refreshTokenValidation, validationResultHandler, refreshToken);
+router.post('/refresh-token', refreshTokenValidation, validationResultHandler, authController.refreshToken);
 
 // Rota para validar um token existente
 router.post('/validate-token', [
     body('accessToken').notEmpty().withMessage('O access token é obrigatório.')
 ], validationResultHandler, authMiddleware, (req, res) => {
-    console.log('Requisição recebida para validar token');
     return res.status(200).json({ valid: true, userId: req.user ? req.user.id : null });
 });
 

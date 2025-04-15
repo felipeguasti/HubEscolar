@@ -1,0 +1,374 @@
+{
+    "atos_indisciplinares": {
+      "leves": [
+        {
+          "numero": "Art. 81",
+          "inciso": "I",
+          "texto": "ausentar-se das aulas ou dos prédios escolares, sem prévia justificativa ou autorização da direção ou dos professores da escola.",
+          "reportContentOptions": [
+            "Faltou à aula sem justificativa.",
+            "Saiu da escola sem permissão.",
+            "Não apresentou justificativa para a ausência."
+          ]
+        },
+        {
+          "numero": "Art. 81",
+          "inciso": "II",
+          "texto": "ter acesso, circular ou permanecer em locais restritos do prédio escolar.",
+          "reportContentOptions": [
+            "Entrou em área restrita.",
+            "Circulou em local proibido.",
+            "Permaneceu em área não autorizada."
+          ]
+        },
+        {
+          "numero": "Art. 81",
+          "inciso": "III",
+          "texto": "utilizar, sem a devida autorização, computadores, aparelhos de fax, telefones ou outros equipamentos e dispositivos eletrônicos de propriedade da escola.",
+          "reportContentOptions": [
+            "Usou computador da escola sem permissão.",
+            "Utilizou telefone da escola indevidamente.",
+            "Operou equipamento eletrônico escolar sem autorização."
+          ]
+        },
+        {
+          "numero": "Art. 81",
+          "inciso": "IV",
+          "texto": "utilizar, em salas de aula ou demais locais de aprendizado escolar, equipamentos eletrônicos como pagers, jogos portáteis, tocadores de música ou outros dispositivos de comunicação e entretenimento que perturbem o ambiente escolar ou prejudiquem o aprendizado.",
+          "reportContentOptions": [
+            "Usou pager durante a aula.",
+            "Jogou videogame na sala de aula.",
+            "Ouvia música que atrapalhava a aula.",
+            "Utilizou dispositivo eletrônico que prejudicou o aprendizado."
+          ]
+        },
+        {
+          "numero": "Art. 81",
+          "inciso": "V",
+          "texto": "usar telefone celular durante as aulas e ausentar-se das mesmas para atendê-lo nos corredores.",
+          "reportContentOptions": [
+            "Usou celular na aula.",
+            "Saiu da aula para atender o celular.",
+            "Atendeu o celular no corredor durante a aula."
+          ]
+        },
+        {
+          "numero": "Art. 81",
+          "inciso": "VI",
+          "texto": "promover, sem autorização da direção, coletas ou subscrições, sorteios, usando, para tais fins, o nome da unidade de ensino.",
+          "reportContentOptions": [
+            "Fez coleta não autorizada na escola.",
+            "Promoveu sorteio sem permissão.",
+            "Usou o nome da escola para subscrição indevida."
+          ]
+        },
+        {
+          "numero": "Art. 81",
+          "inciso": "VII",
+          "texto": "usar short e bermuda (acima do joelho), boné, óculos escuros, roupa curta e decotes dentro das dependências da unidade de ensino.",
+          "reportContentOptions": [
+            "Usou short acima do joelho.",
+            "Estava de bermuda na escola.",
+            "Utilizou boné em área interna.",
+            "Usou óculos escuros dentro da escola.",
+            "Vestia roupa curta ou com decote inadequado."
+          ]
+        },
+        {
+          "numero": "Art. 81",
+          "inciso": "VIII",
+          "texto": "namorar nas dependências da unidade de ensino.",
+          "reportContentOptions": [
+            "Namorou em área escolar.",
+            "Teve demonstrações de afeto inapropriadas na escola."
+          ]
+        },
+        {
+          "numero": "Art. 81",
+          "inciso": "IX",
+          "texto": "ocupar-se, durante a aula, de qualquer atividade que lhe seja alheia.",
+          "reportContentOptions": [
+            "Fez atividades não relacionadas à aula.",
+            "Distraiu-se com outras coisas durante a aula.",
+            "Não prestou atenção na explicação."
+          ]
+        }
+      ],
+      "graves": [
+        {
+          "numero": "Art. 82",
+          "inciso": "I",
+          "texto": "comportar-se de maneira a perturbar o processo educativo, como exemplo, fazendo barulho excessivo em classe, na biblioteca ou nos corredores da escola.",
+          "reportContentOptions": [
+            "Fez muito barulho na sala de aula.",
+            "Perturbou o estudo na biblioteca.",
+            "Causou algazarra nos corredores."
+          ]
+        },
+        {
+          "numero": "Art. 82",
+          "inciso": "II",
+          "texto": "desrespeitar, desacatar ou afrontar diretores, professores, funcionários ou colaboradores da escola.",
+          "reportContentOptions": [
+            "Desrespeitou o diretor.",
+            "Desacatou o professor.",
+            "Afrontou um funcionário da escola."
+          ]
+        },
+        {
+          "numero": "Art. 82",
+          "inciso": "III",
+          "texto": "violar as políticas adotadas pela Secretaria Estadual da Educação no tocante ao uso da internet na escola, acessando-a, por exemplo, para violação de segurança ou privacidade, ou para acesso a conteúdo não permitido ou inadequado para a idade e formação dos alunos.",
+          "reportContentOptions": [
+            "Violou a política de uso da internet da escola.",
+            "Acessou conteúdo proibido na internet da escola.",
+            "Tentou burlar a segurança da rede escolar."
+          ]
+        },
+        {
+          "numero": "Art. 82",
+          "inciso": "IV",
+          "texto": "ativar, injustificadamente, alarmes de incêndio ou qualquer outro dispositivo de segurança da escola.",
+          "reportContentOptions": [
+            "Acionou o alarme de incêndio sem motivo.",
+            "Ativou dispositivo de segurança indevidamente."
+          ]
+        },
+        {
+          "numero": "Art. 82",
+          "inciso": "V",
+          "texto": "portar livros, revistas, fotografias ou outros materiais pornográficos dentro da unidade de ensino.",
+          "reportContentOptions": [
+            "Portava material pornográfico na escola.",
+            "Trouxe revista pornográfica para a escola.",
+            "Tinha fotos pornográficas em sua posse na escola."
+          ]
+        },
+        {
+          "numero": "Art. 82",
+          "inciso": "VI",
+          "texto": "estimular colegas à desobediência ou desrespeito às normas regimentais e regulamentos internos da unidade de ensino.",
+          "reportContentOptions": [
+            "Incitou colegas a desobedecerem.",
+            "Estimulou o desrespeito às regras da escola.",
+            "Influenciou outros alunos a descumprirem normas."
+          ]
+        },
+        {
+          "numero": "Art. 82",
+          "inciso": "VII",
+          "texto": "provocar desordem de qualquer natureza no âmbito da unidade de ensino e no entorno.",
+          "reportContentOptions": [
+            "Causou desordem na escola.",
+            "Provocou tumulto nas dependências da escola.",
+            "Gerou confusão no entorno da escola."
+          ]
+        },
+        {
+          "numero": "Art. 82",
+          "inciso": "VIII",
+          "texto": "produzir ou colaborar para o risco de lesões em integrantes da comunidade escolar, resultantes de condutas imprudentes ou da utilização inadequada de objetos cotidianos que podem causar danos físicos, como isqueiros, fivelas de cinto, guarda-chuvas, braceletes, etc.",
+          "reportContentOptions": [
+            "Colocou em risco a segurança de outros com conduta imprudente.",
+            "Usou objeto de forma perigosa, podendo causar lesões.",
+            "Manuseou isqueiro de forma inadequada na escola."
+          ]
+        },
+        {
+          "numero": "Art. 82",
+          "inciso": "IX",
+          "texto": "comportar-se, no transporte escolar, de modo a representar risco de danos ou lesões ao condutor, aos demais passageiros, ao veículo ou aos passantes, como correr pelos corredores, atirar objetos pelas janelas, balançar o veículo etc.",
+          "reportContentOptions": [
+            "Correu no ônibus escolar.",
+            "Atirou objetos da janela do transporte escolar.",
+            "Balançou o veículo escolar, colocando outros em risco."
+          ]
+        },
+        {
+          "numero": "Art. 82",
+          "inciso": "X",
+          "texto": "comparecer à escola sob efeito de substâncias nocivas à saúde e à convivência social.",
+          "reportContentOptions": [
+            "Veio para a escola sob efeito de álcool.",
+            "Compareceu à escola sob efeito de drogas.",
+            "Apresentou sinais de uso de substâncias nocivas."
+          ]
+        },
+        {
+          "numero": "Art. 82",
+          "inciso": "XI",
+          "texto": "expor ou distribuir materiais dentro do estabelecimento escolar que violem as normas ou políticas oficialmente definidas pela Secretaria Estadual da Educação ou pela escola.",
+          "reportContentOptions": [
+            "Expôs material que viola normas da escola.",
+            "Distribuiu conteúdo proibido na unidade de ensino.",
+            "Divulgou material contrário às políticas educacionais."
+          ]
+        },
+        {
+          "numero": "Art. 82",
+          "inciso": "XII",
+          "texto": "intimidar o ambiente escolar com ameaça de bomba.",
+          "reportContentOptions": [
+            "Ameaçou com bomba na escola.",
+            "Intimidou o ambiente escolar com falsa ameaça."
+          ]
+        }
+      ],
+      "infracionais": [
+        {
+          "numero": "Art. 83",
+          "inciso": "I",
+          "texto": "ameaçar, intimidar ou agredir fisicamente qualquer membro da comunidade escolar.",
+          "reportContentOptions": [
+            "Ameaçou colega de agressão.",
+            "Intimidou professor.",
+            "Agrediu fisicamente outro aluno."
+          ]
+        },
+        {
+          "numero": "Art. 83",
+          "inciso": "II",
+          "texto": "utilizar práticas de bullying na unidade de ensino.",
+          "reportContentOptions": [
+            "Praticou bullying contra colega.",
+            "Humilhou sistematicamente outro aluno.",
+            "Intimidou colega de forma repetitiva."
+          ]
+        },
+        {
+          "numero": "Art. 83",
+          "inciso": "III",
+          "texto": "empregar gestos ou expressões verbais que impliquem insultos ou ameaças a terceiros, incluindo hostilidade ou intimidação, mediante o uso de apelidos racistas ou preconceituosos.",
+          "reportContentOptions": [
+            "Insultou colega com palavras ofensivas.",
+            "Ameaçou outro aluno verbalmente.",
+            "Usou apelido racista contra colega.",
+            "Empregou termo preconceituoso para se referir a outro."
+          ]
+        },
+        {
+          "numero": "Art. 83",
+          "inciso": "IV",
+          "texto": "emitir comentários ou insinuações de conotação sexual agressiva ou desrespeitosa, ou apresentar qualquer conduta de natureza sexualmente ofensiva.",
+          "reportContentOptions": [
+            "Fez comentários sexuais agressivos.",
+            "Emiteu insinuações desrespeitosas de cunho sexual.",
+            "Teve conduta sexualmente ofensiva."
+          ]
+        },
+        {
+          "numero": "Art. 83",
+          "inciso": "V",
+          "texto": "exibir ou distribuir textos, literatura ou materiais difamatórios, racistas ou preconceituosos.",
+          "reportContentOptions": [
+            "Exibiu material difamatório na escola.",
+            "Distribuiu texto racista entre os alunos.",
+            "Mostrou conteúdo preconceituoso."
+          ]
+        },
+        {
+          "numero": "Art. 83",
+          "inciso": "VI",
+          "texto": "divulgar, por meio de adornos, camisas, propagandas ou qualquer outro tipo de material, o uso de drogas e entorpecentes, dentro da unidade de ensino.",
+          "reportContentOptions": [
+            "Usou camiseta com apologia às drogas.",
+            "Divulgou o uso de entorpecentes na escola.",
+            "Exibiu adorno que promovia o uso de drogas."
+          ]
+        },
+        {
+          "numero": "Art. 83",
+          "inciso": "VII",
+          "texto": "participar, estimular ou organizar incidente de violência grupal ou generalizada.",
+          "reportContentOptions": [
+            "Participou de briga em grupo.",
+            "Estimulou a violência entre alunos.",
+            "Organizou confusão generalizada."
+          ]
+        },
+        {
+          "numero": "Art. 83",
+          "inciso": "VIII",
+          "texto": "danificar ou adulterar registros e documentos escolares, por meio de qualquer método, inclusive o uso de computadores ou outros meios eletrônicos.",
+          "reportContentOptions": [
+            "Danosificou registro escolar.",
+            "Adulterou documento da escola.",
+            "Modificou dados escolares no computador."
+          ]
+        },
+        {
+          "numero": "Art. 83",
+          "inciso": "IX",
+          "texto": "incorrer nas seguintes fraudes ou práticas ilícitas nas atividades escolares:\na) comprar, vender, furtar, transportar ou distribuir conteúdos totais ou parciais de provas a serem realizadas ou suas respostas corretas;\nb) substituir ou ser substituído por outro aluno na realização de provas ou avaliações;\nc) substituir seu nome ou demais dados pessoais quando realizar provas ou avaliações escolares;\nd) plagiar, ou seja, apropriar-se do trabalho de outro e utilizá-lo como se fosse seu, sem dar o devido crédito e fazer menção ao autor, como no caso de cópia de trabalhos de outros alunos ou de conteúdos divulgados pela internet ou por qualquer outra fonte de conhecimento;",
+          "reportContentOptions": [
+            "Comprou/vendeu conteúdo de prova.",
+            "Substituiu/foi substituído em prova.",
+            "Falsificou nome em avaliação.",
+            "Cometeu plágio em trabalho escolar."
+          ]
+        },
+        {
+          "numero": "Art. 83",
+          "inciso": "X",
+          "texto": "danificar ou destruir equipamentos, materiais ou instalações escolares, escrever, rabiscar ou produzir marcas em qualquer parede, vidraça, porta ou quadra de esportes dos edifícios escolares.",
+          "reportContentOptions": [
+            "Danosificou equipamento da escola.",
+            "Destruiu material escolar.",
+            "Rabisco parede/porta da escola.",
+            "Vandalizou a quadra de esportes."
+          ]
+        },
+        {
+          "numero": "Art.83",
+          "inciso": "XI",
+          "texto": "incentivar ou participar de atos de vandalismo que provoquem dano intencional a equipamentos, materiais e instalações escolares ou a pertences da equipe escolar, estudantes ou terceiros.",
+          "reportContentOptions": [
+            "Incentivou vandalismo na escola.",
+            "Participou de ato de vandalismo.",
+            "Causou dano intencional ao patrimônio escolar."
+          ]
+        },
+        {
+          "numero": "Art. 83",
+          "inciso": "XII",
+          "texto": "consumir, portar, distribuir ou vender substâncias controladas, tais como bebidas alcoólicas, cigarros ou outras drogas lícitas ou ilícitas no recinto escolar.",
+          "reportContentOptions": [
+            "Consumiu álcool na escola.",
+            "Portava cigarro em área escolar.",
+            "Distribuiu drogas ilícitas na escola.",
+            "Vendeu substância controlada na escola."
+          ]
+        },
+        {
+          "numero": "Art. 83",
+          "inciso": "XIII",
+          "texto": "portar, facilitar o ingresso ou utilizar qualquer tipo de arma, explosivos ou objetos contundentes que atentem contra a integridade física.",
+          "reportContentOptions": [
+            "Portava arma na escola.",
+            "Facilitou a entrada de arma na escola.",
+            "Utilizou objeto contundente de forma perigosa."
+          ]
+        },
+        {
+          "numero": "Art. 83",
+          "inciso": "XIV",
+          "texto": "apropriar-se de objetos que pertençam a outra pessoa ou subtraí-los, sem a devida autorização ou sob ameaça.",
+          "reportContentOptions": [
+          "Pegou objeto de colega sem permissão.",
+          "Subtraiu pertence de outro aluno.",
+          "Apropriou-se de objeto alheio sob ameaça."
+        ]
+      },
+      {
+        "numero": "Art. 83",
+        "inciso": "XV",
+        "texto": "apresentar qualquer conduta proibida pela legislação brasileira, sobretudo que viole a Constituição Federal, o Estatuto da Criança e do Adolescente – ECA – e/ou o Código Penal.",
+        "reportContentOptions": [
+          "Teve conduta ilegal (Constituição Federal).",
+          "Violou o Estatuto da Criança e do Adolescente (ECA).",
+          "Praticou ato previsto no Código Penal."
+        ]
+      }
+    ]
+  }
+}

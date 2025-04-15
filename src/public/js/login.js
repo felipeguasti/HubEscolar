@@ -5,11 +5,9 @@ if (logoutButtonElement) {
 
 document.addEventListener('DOMContentLoaded', function() {
     const isLoginPage = window.location.pathname.includes("login");
-    checkAuthAndUpdateButtons()
 
     if (isLoginPage) {
-        redirectToDashboardIfAuthenticated()
-
+        handleAuthCheck();
         const loginForm = document.getElementById("login-form");
         const submitBtn = document.getElementById("submit-btn");
         const messageEl = document.getElementById("message");
@@ -70,8 +68,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     } else {
                         // Falha no login
+                        console.log('Falha no login:', data);
                         console.error('Erro no login:', data.message);
-                        showPopup(data.message || 'Erro ao processar o login. Tente novamente.');
+                        showPopup(`${data.message}: ${data.error}` || 'Erro ao processar o login. Tente novamente.');
                     }
                 } catch (error) {
                     console.error('Erro ao enviar login:', error);
@@ -82,98 +81,78 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
         }
-
-        async function redirectToDashboardIfAuthenticated() {
-            try {
-                const response = await fetch('/auth/me');
-        
-                if (response.ok) {
-                    const currentPath = window.location.pathname;
-                    const isDashboardPage = currentPath === '/dashboard';
-        
-                    if (!isDashboardPage) {
-                        window.location.href = '/dashboard';
-                    }
-                } else if (response.status === 401) {
-                    // Não fazer nada se a resposta for 401 (Não Autorizado)
-                    // Isso significa que o usuário não está logado, o que é esperado na página de login.
-                    console.log('Usuário não autenticado (401) - permanecendo na página de login.');
-                } else {
-                    // Logar outros erros que não sejam 401
-                    //console.error('Erro ao verificar autenticação:', response.status, response.statusText);
-                }
-            } catch (error) {
-                console.error('Erro ao verificar autenticação (rede ou outros):', error);
-            }
-        }        
     }  
 
 });
 
-async function checkAuthAndUpdateButtons() {
-    const loginButton = document.getElementById('login-button');
-    const logoutButton = document.getElementById('logout-btn');
-    const dashboardButton = document.getElementById('login-button'); // Usamos o mesmo botão para Login/Dashboard
+let hasRedirected = false;
 
-    if (!loginButton) {
-        console.warn('Botão de login não encontrado com ID: login-button');
-        return;
-    }
-    if (!logoutButton) {
-        console.warn('Botão de logout não encontrado com ID: logout-btn');
+async function handleAuthCheck() {
+    if (hasRedirected) {
         return;
     }
 
     try {
         const response = await fetch('/auth/me');
+        const isAuthenticated = response.ok;
 
-        if (response.ok) {
-            console.log('Usuário autenticado - mostrando Dashboard e Logout.');
-            loginButton.style.display = 'none'; // Oculta o link de "Login"
-            logoutButton.style.display = 'block';
-            dashboardButton.style.display = 'block'; // Garante que o link apareça como "Dashboard"
-            dashboardButton.textContent = 'Dashboard';
-            dashboardButton.href = '/dashboard';
-
-            // Se você tiver outros botões/elementos autenticados
-            const otherAuthenticatedButtons = document.querySelectorAll('.authenticated-only');
-            otherAuthenticatedButtons.forEach(button => {
-                button.style.display = 'block';
-            });
-
-        } else {
-            console.log('Usuário não autenticado - mostrando Login.');
-            loginButton.style.display = 'block';
-            logoutButton.style.display = 'none';
-            dashboardButton.style.display = 'block'; // Garante que o link apareça como "Login" inicialmente
-            dashboardButton.textContent = 'Login';
-            dashboardButton.href = '/login';
-
-            // Esconde outros botões/elementos autenticados
-            const otherAuthenticatedButtons = document.querySelectorAll('.authenticated-only');
-            otherAuthenticatedButtons.forEach(button => {
-                button.style.display = 'none';
-            });
-
+        if (isAuthenticated) {
             const currentPath = window.location.pathname;
+            if (isAuthenticated) {
+                // Não faz nada além de atualizar os botões
+            }
+        } else if (response.status === 401) {
+            const currentPath = window.location.pathname;
+            const protectedPages = ['/dashboard', '/users', '/district', '/grade'];
             const isLoginPage = currentPath === '/login';
-            const protectedPages = ['/dashboard', '/outra-pagina-protegida'];
-
             if (protectedPages.includes(currentPath) && !isLoginPage) {
+                hasRedirected = true;
                 window.location.href = '/login';
             }
+        } else {
+            console.error('Erro ao verificar autenticação:', response.status, response.statusText);
         }
+        // Lógica para checkAuthAndUpdateButtons
+        const loginButton = document.getElementById('login-button');
+        const logoutButton = document.getElementById('logout-btn');
+        const dashboardButton = document.getElementById('login-button'); // Reutilizando o botão
+
+        if (!loginButton) console.warn('Botão de login não encontrado com ID: login-button');
+        if (!logoutButton) console.warn('Botão de logout não encontrado com ID: logout-btn');
+        if (!dashboardButton) console.warn('Botão de dashboard/login não encontrado com ID: login-button');
+
+        if (loginButton && logoutButton && dashboardButton) {
+            if (isAuthenticated) {
+                console.log('Usuário autenticado - mostrando Dashboard e Logout.');
+                loginButton.style.display = 'none';
+                logoutButton.style.display = 'block';
+                dashboardButton.style.display = 'block';
+                dashboardButton.textContent = 'Dashboard';
+                dashboardButton.href = '/dashboard';
+                document.querySelectorAll('.authenticated-only').forEach(button => button.style.display = 'block');
+            } else {
+                console.log('Usuário não autenticado - mostrando Login.');
+                loginButton.style.display = 'block';
+                logoutButton.style.display = 'none';
+                dashboardButton.style.display = 'block';
+                dashboardButton.textContent = 'Login';
+                dashboardButton.href = '/login';
+                document.querySelectorAll('.authenticated-only').forEach(button => button.style.display = 'none');
+            }
+        }
+
     } catch (error) {
-        console.error('Erro ao verificar autenticação para botões:', error);
-        // Em caso de erro, mostre apenas o botão de login como padrão
-        loginButton.style.display = 'block';
-        logoutButton.style.display = 'none';
-        dashboardButton.style.display = 'block';
-        dashboardButton.textContent = 'Login';
-        dashboardButton.href = '/login';
-        const otherAuthenticatedButtons = document.querySelectorAll('.authenticated-only');
-        otherAuthenticatedButtons.forEach(button => {
-            button.style.display = 'none';
-        });
+        console.error('Erro ao verificar autenticação:', error);
+        const loginButton = document.getElementById('login-button');
+        const logoutButton = document.getElementById('logout-btn');
+        const dashboardButton = document.getElementById('login-button');
+        if (loginButton && logoutButton && dashboardButton) {
+            loginButton.style.display = 'block';
+            logoutButton.style.display = 'none';
+            dashboardButton.style.display = 'block';
+            dashboardButton.textContent = 'Login';
+            dashboardButton.href = '/login';
+            document.querySelectorAll('.authenticated-only').forEach(button => button.style.display = 'none');
+        }
     }
 }

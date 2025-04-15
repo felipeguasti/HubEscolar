@@ -81,8 +81,11 @@ router.get("/", async (req, res) => {
 // Rota para listar todas as turmas (dados JSON)
 router.get("/list", async (req, res, next) => {
     const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+    const schoolId = req.query.schoolId;
+
     try {
-        await gradeService.getAllGrades(req, res, accessToken);
+        const result = await gradeService.getAllGrades(accessToken, schoolId);
+        res.json(result);
     } catch (error) {
         next(error);
     }

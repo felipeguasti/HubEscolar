@@ -8,6 +8,7 @@
             <h1>Administração de Usuários</h1>
             <p>Gerenciamento dos usuários do sistema.</p>
         </header>
+        <input type="hidden" id="userRole" value="<%= user.role %>">
 
         <% if (users.some(user => user.status === 'inactive')) { %> 
             <!-- Apenas um div invisível com a mensagem -->
@@ -16,10 +17,9 @@
         <div class="topPageElements">
             <!-- Botão para adicionar novo usuário -->
             <button id="addUsers" class="btn btn-addUsers">➕ Adicionar usuário</button>
-        
+            
             <% if (['Master', 'Inspetor', 'Diretor', 'Coordenador', 'Pedagogo', 'Secretario'].includes(user.role)) { %>
                 <div class="user-filter">
-
                     <div>
                         <label for="roleFilter">Cargo:</label>
                         <select id="roleFilter">
@@ -209,10 +209,10 @@
                         </select>
             
                         <label for="registerSchool">Escola:</label>
-                        <select id="registerSchool" name="schoolId" <% if (userRole !== 'Master' || userRole !== 'Inspetor') { %> disabled <% } %>>
+                        <select id="registerSchool" name="schoolId" <% if (user.role !== 'Master' && user.role !== 'Inspetor') { %> disabled <% } %>>
                             <option value="">Selecione uma escola</option>
                             <% schools.forEach(function(school) { %>
-                                <option value="<%= school.id %>" <% if (user.role !== 'Master' || userRole !== 'Inspetor' && user.schoolId === school.id) { %> selected <% } %>><%= school.name %></option>
+                                <option value="<%= school.id %>" <% if (user.role !== 'Master' && user.role !== 'Inspetor' && user.schoolId === school.id) { %> selected <% } %>><%= school.name %></option>
                             <% }); %>
                         </select>
             

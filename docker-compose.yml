@@ -10,13 +10,14 @@ services:
       - users-service
       - school-service
       - district-service
+      - report-service 
     networks:
       - hubescolar-network
     volumes:
       - ./logs:/app/logs
     restart: unless-stopped
     env_file:
-      - .env 
+      - .env
 
   users-service:
     build: ./services/users-service
@@ -29,7 +30,7 @@ services:
       - ./services/users-service/logs:/app/logs
     restart: unless-stopped
     env_file:
-      - ./services/users-service/.env 
+      - ./services/users-service/.env
 
   auth-service:
     build: ./services/auth-service
@@ -57,7 +58,7 @@ services:
       - ./services/school-service/logs:/app/logs
     restart: unless-stopped
     env_file:
-      - ./services/school-service/.env 
+      - ./services/school-service/.env
     depends_on:
       - mysql
 
@@ -75,6 +76,21 @@ services:
       - ./services/district-service/.env
     depends_on:
       - mysql
+
+  report-service:
+    build: ./services/report-service
+    container_name: report-service
+    ports:
+      - '3005:3005'
+    networks:
+      - hubescolar-network
+    volumes:
+      - ./services/report-service/logs:/app/logs 
+    restart: unless-stopped
+    env_file:
+      - ./services/report-service/.env
+    depends_on:
+      - users-service
 
   mysql:
     image: mysql:8.0

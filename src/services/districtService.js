@@ -1,5 +1,6 @@
 // Em D:\Documents\GitHub\hubescolar\src\services\districtService.js
 const axios = require('axios');
+require('dotenv').config(); // Garante que as variáveis de ambiente sejam carregadas
 
 const DISTRICT_SERVICE_URL = process.env.DISTRICT_SERVICE_URL || 'http://localhost:3003';
 

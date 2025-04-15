@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const isUsers = window.location.pathname.includes("users");
     if (isUsers) {
+        handleAuthCheck();
         const showPopupButton = document.getElementById("inactiveUsersMessage");
         const popupShown = sessionStorage.getItem('popupShown');
         const userLoggedIn = sessionStorage.getItem('userLoggedIn');
@@ -182,31 +183,49 @@ document.addEventListener('DOMContentLoaded', function() {
             listenerBtnReset();
         }
         //Busca escolas pelo distrito e preenche o select de escolas.
-        async function loadSchools(district) {
-            const schoolSelect = document.getElementById("schoolFilter");
-        
-            if (!district) {
-                schoolSelect.innerHTML = `<option value="">Selecione um distrito primeiro</option>`;
-                return;
-            }
-        
-            try {
-                const response = await fetch(`/users/filter?districtId=${encodeURIComponent(district)}`);
-                const data = await response.json();
-        
-                // Garantir que estamos pegando escolas do jeito certo
-                const uniqueSchools = [...new Map(data.schools.map(school => [school.id, school])).values()];
-        
-                if (uniqueSchools.length > 0) {
-                    schoolSelect.innerHTML = `<option value="">Selecione uma escola</option>` +
-                        uniqueSchools.map(school => `<option value="${school.id}">${school.name}</option>`).join("");
-                } else {
-                    schoolSelect.innerHTML = `<option value="">Nenhuma escola encontrada</option>`;
-                }
-            } catch (error) {
-                console.error("Erro ao buscar escolas:", error);
-            }
-        }
+        async function loadSchools(district) {
+                const schoolSelect = document.getElementById("schoolFilter");
+            
+                if (!district) {
+                    schoolSelect.innerHTML = `<option value="">Selecione um distrito primeiro</option>`;
+                    return;
+                }
+            
+                try {
+                    const response = await fetch(`/users/filter?districtId=${encodeURIComponent(district)}`);
+                    const data = await response.json();
+            
+                    // Garantir que estamos pegando escolas do jeito certo
+                    const uniqueSchools = [...new Map(data.schools.map(school => [school.id, school])).values()];
+            
+                    if (uniqueSchools.length > 0) {
+                        schoolSelect.innerHTML = `<option value="">Selecione uma escola</option>` +
+                            uniqueSchools.map(school => `<option value="${school.id}">${school.name}</option>`).join("");
+                        
+                        // Adicionar event listener para carregar as turmas quando a escola mudar
+                        schoolSelect.addEventListener('change', async () => {
+                            const schoolId = schoolSelect.value;
+                            const gradeSelect = document.getElementById("classFilter");
+            
+                            if (!schoolId) {
+                                gradeSelect.innerHTML = `<option value="">Selecione uma escola primeiro</option>`;
+                                return;
+                            }
+            
+                            try {
+                                const grades = await fetchGradesBySchool(schoolId);
+                                updateGradeSelect(grades); // Assumindo que você tem essa função para atualizar o select de turmas
+                            } catch (error) {
+                                console.error("Erro ao buscar turmas por escola:", error);
+                            }
+                        });
+                    } else {
+                        schoolSelect.innerHTML = `<option value="">Nenhuma escola encontrada</option>`;
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar escolas:", error);
+                }
+            }
         
 
         //Busca turmas baseadas no distrito e escola selecionados e preenche o select de turmas.
@@ -503,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showLoading();
         
             // Requisição para buscar os dados do usuário
-            fetch(`/users/${userId}`)
+            fetch(`/users/list/${userId}`)
                 .then(response => response.json())
                 .then(data => {
                     // Preencher as informações no modal com os dados do usuário
@@ -710,7 +729,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log(formData);
             showLoading();
             // Requisição para criar um novo usuário
-            fetch('/users', {
+            fetch('/users/create', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -799,7 +818,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function openEditModal(userId) {
             showLoading();
-            fetch(`/users/${userId}`)
+            fetch(`/users/list/${userId}`)
                 .then(response => response.json())
                 .then(async (data) => {
                     document.getElementById('editUserId').value = data.id;
@@ -1008,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         async function fetchGradesBySchool(schoolId) {
             try {
-                const response = await fetch(`/grades?schoolId=${schoolId}`);
+                const response = await fetch(`/grades/list?schoolId=${schoolId}`);
                 if (!response.ok) {
                     throw new Error(`Erro na requisição: ${response.status}`);
                 }
@@ -1089,29 +1108,28 @@ document.addEventListener('DOMContentLoaded', function() {
             openModal('resetPasswordModal');
         }
 
-        // Função para reiniciar a senha de um usuário
         function resetPassword() {
             const userId = document.getElementById('resetPasswordUserId').value;
-            
+        
             // Exibir popup de loading
             showLoading();
-            
+        
             // Enviar a requisição para resetar a senha
-            fetch(`/auth/reset-password`, {
+            fetch(`/users/reset-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ userId, resetByAdmin: true }) // Incluindo o ID do usuário e a flag resetByAdmin
+                body: JSON.stringify({ userId, resetByAdmin: true }) // Mantendo o corpo original
             })
-            .then(response => response.json())  // Tratando a resposta como JSON
+            .then(response => response.json()) // Tratando a resposta como JSON
             .then(data => {
-                if (data.message === 'Senha redefinida com sucesso para a senha padrão.') {
+                if (data.message === 'Senha resetada com sucesso!') { // Condição atualizada para a mensagem correta
                     hideLoadingWithMessage(`Senha redefinida com sucesso! Nova senha: ${data.novaSenha}`, () => {
-                        location.reload();  // Recarregar a página após a redefinição
+                        location.reload(); // Recarregar a página após a redefinição
                     });
                 } else {
-                    hideLoadingWithMessage('Erro ao reiniciar a senha');
+                    hideLoadingWithMessage(data.message || 'Erro ao reiniciar a senha'); // Exibe a mensagem de erro do backend
                 }
             })
             .catch(error => {

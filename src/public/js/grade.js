@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const isGrade = window.location.pathname.includes("grade");
     if(isGrade){
+        handleAuthCheck();
         const showPopupButton = document.getElementById("inactiveGradesMessage");
         const popupShown = sessionStorage.getItem('popupShown');
         const userLoggedIn = sessionStorage.getItem('userLoggedIn');

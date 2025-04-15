@@ -83,7 +83,6 @@ exports.createSchool = [
 
 exports.getSchools = [
   async (req, res) => {
-    console.log('schoolController.getSchool ATIVADO'); // Adicione este log
     try {
       const districtId = req.query.districtId;
       let schools;
