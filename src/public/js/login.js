@@ -93,29 +93,38 @@ async function handleAuthCheck() {
     }
 
     try {
-        const response = await fetch('/auth/me');
-        const isAuthenticated = response.ok;
+        const response = await fetch('/auth/me', { redirect: 'manual' }); // Impedir redirecionamento
 
-        if (isAuthenticated) {
-            const currentPath = window.location.pathname;
-            if (isAuthenticated) {
-                // Não faz nada além de atualizar os botões
-            }
-        } else if (response.status === 401) {
+        let isAuthenticated = false;
+        if (response.status === 200) {
+            isAuthenticated = true;
+        } else if (response.status === 302) {
+            isAuthenticated = false; // Usuário não autenticado, foi redirecionado
             const currentPath = window.location.pathname;
             const protectedPages = ['/dashboard', '/users', '/district', '/grade'];
             const isLoginPage = currentPath === '/login';
             if (protectedPages.includes(currentPath) && !isLoginPage) {
                 hasRedirected = true;
-                window.location.href = '/login';
+                window.location.href = '/login'; // <---- ESTE É O REDIRECIONAMENTO NO FRONT
+            }
+        } else if (response.status === 401) {
+            // Lógica para 401 (não autorizado) se o servidor retornar isso
+            isAuthenticated = false;
+            const currentPath = window.location.pathname;
+            const protectedPages = ['/dashboard', '/users', '/district', '/grade'];
+            const isLoginPage = currentPath === '/login';
+            if (protectedPages.includes(currentPath) && !isLoginPage) {
+                hasRedirected = true;
+                window.location.href = '/login'; 
             }
         } else {
             console.error('Erro ao verificar autenticação:', response.status, response.statusText);
         }
-        // Lógica para checkAuthAndUpdateButtons
+
+        // Lógica para checkAuthAndUpdateButtons (mantém o restante da sua lógica)
         const loginButton = document.getElementById('login-button');
         const logoutButton = document.getElementById('logout-btn');
-        const dashboardButton = document.getElementById('login-button'); // Reutilizando o botão
+        const dashboardButton = document.getElementById('login-button');
 
         if (!loginButton) console.warn('Botão de login não encontrado com ID: login-button');
         if (!logoutButton) console.warn('Botão de logout não encontrado com ID: logout-btn');

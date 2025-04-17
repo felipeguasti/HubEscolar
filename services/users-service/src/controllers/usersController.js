@@ -39,6 +39,7 @@ const {
 } = require('../services/permissionService');
 const {
     applyUserFilters,
+    applyUserListFilters,
     validarCPF,
     validarTelefone,
     validarDataNascimento,
@@ -236,12 +237,27 @@ exports.adicionarUsuario = [
 
 exports.listarUsuarios = async (req, res) => {
     try {
-        const usuarios = await User.findAll();
+        let whereClause = {};
+
+        console.log('req.query:', req.query); // Log dos parâmetros da query
+
+        if (Object.keys(req.query).length > 0) {
+            whereClause = applyUserListFilters(req.query);
+            console.log('whereClause (com filtros):', whereClause); // Log da whereClause com filtros
+        } else {
+            console.log('whereClause (sem filtros):', whereClause); // Log da whereClause sem filtros
+        }
+
+        const usuarios = await User.findAll({
+            where: whereClause,
+            attributes: { exclude: ['password'] }
+        });
+
         res.json(usuarios);
     } catch (error) {
-        console.error('Erro ao listar usuários:', error);
-        await logService.error('Erro ao listar usuários', { error: error.message });
-        res.status(500).json({ message: 'Erro ao listar usuários.' });
+        console.error('Erro ao listar/filtrar usuários:', error);
+        await logService.error('Erro ao listar/filtrar usuários', { error: error.message });
+        res.status(500).json({ message: 'Erro ao listar/filtrar usuários.' });
     }
 };
 

@@ -90,11 +90,12 @@ router.post('/create', isAuthenticated, async (req, res) => {
     }
 });
 
-// Rota para listar usuários (chama o users-service)
+// No seu api-gateway (onde as rotas estão definidas)
 router.get('/list', isAuthenticated, async (req, res) => {
     const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
     try {
-        const users = await usersService.getAllUsers(accessToken);
+        // Passa os parâmetros da query para o users-
+        const users = await usersService.getUsers(accessToken, req.query);
         return res.json(users);
     } catch (error) {
         console.error('Erro ao listar usuários:', error);

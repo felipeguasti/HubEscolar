@@ -254,9 +254,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error("Erro ao buscar turmas:", error);
             }
         }
-
-        
-        //Carrega os conteúdos únicos e preenche o select de conteúdos.
         
         async function loadContentOptions() {
             const contentSelect = document.getElementById("contentFilter");

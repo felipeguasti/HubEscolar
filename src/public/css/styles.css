@@ -1166,6 +1166,18 @@ header .menu-principal {
 /* FIM DO ESTILO PARA AS PÁGINAS DA ÁREA ADMINISTRATIVA */
 
 /* INÍCIO DO LAYOUT DO POPUP */
+#generic-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
 /* Popup Overlay */
 .popup-overlay {
     position: fixed;
@@ -1180,36 +1192,42 @@ header .menu-principal {
     z-index: 9999;
 }
 
-/* Conteúdo do Popup */
-.popup-content {
-background: #fff;
-padding: 20px;
-border-radius: 8px;
-text-align: center;
-max-width: 400px;
-width: 90%;
-box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+#generic-popup .popup-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 80%;
+    max-height: 80vh;
+    position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Mensagem do Popup */
-.popup-message {
-margin-bottom: 20px;
-font-size: 16px;
+#generic-popup .popup-message {
+    margin-bottom: 20px;
+    overflow-y: auto;
+    max-height: calc(80vh - 100px); 
+    padding-right: 10px;
 }
 
-/* Botão OK */
-.popup-ok-button {
-padding: 10px 20px;
-background-color: #007BFF;
-color: white;
-border: none;
-border-radius: 5px;
-cursor: pointer;
+#generic-popup .popup-ok-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    align-self: flex-end;
+    margin-top: 10px;
 }
 
-/* Botão ao passar o mouse */
-.popup-ok-button:hover {
-background-color: #0056b3;
+
+#generic-popup .popup-ok-button:hover {
+    background-color: var(--primary-hover);
+}
+
+#generic-popup.hidden {
+    display: none;
 }
 
 /* Classe para esconder o popup */
@@ -1824,6 +1842,362 @@ display: none;
     color: #e74c3c;
 }
 
+/* INÍCIO DA PÁGINA REPORTS */
+
+/* Estilos para o Cabeçalho do Relatório (Ajustado) */
+.report-body {
+    display: flex;
+    flex-direction: column; /* Alinha os filhos (header e formulário) verticalmente */
+    width: 100%; /* Ocupa a largura disponível dentro do .admin-master-container */
+    /* Outros estilos que você queira aplicar ao corpo do relatório */
+}
+
+#report-header {
+    text-align: center;
+    margin-bottom: 10px; /* Adiciona espaço abaixo do cabeçalho */
+    margin-top: 20px; /* Adiciona margem no topo do cabeçalho */
+}
+
+#report-header-tittle {
+    font-family: var(--heading-font);
+    color: var(--primary-color);
+    font-size: 2em; /* Tamanho maior para o título principal */
+    margin: 0;
+}
+
+#report-header-description {
+    color: var(--subtext-color);
+    font-size: 0.8em;
+    margin: 0;
+}
+
+main.report-form-main {
+    background-color: var(--form-bg);
+    padding: 15px 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 80%; /* Define a largura para 80% em telas maiores */
+    max-width: 900px; /* Mantém uma largura máxima */
+    margin: 5px auto; /* Centraliza o main horizontalmente e adiciona margem vertical */
+}
+
+
+.report-form-section-title {
+    font-family: var(--heading-font);
+    color: var(--primary-color);
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.report-form-group {
+    margin-bottom: 20px;
+}
+
+.report-form-label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--subtext-color);
+    font-weight: bold;
+}
+
+.report-form-input,
+.report-form-textarea,
+.report-form-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 16px;
+    color: var(--text-color);
+    box-sizing: border-box;
+    margin-bottom: 5px;
+}
+
+/* Estilos para o Botão de Envio */
+.report-form-button {
+    background-color: var(--primary-color);
+    color: var(--form-bg);
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: auto;
+    display: block;
+    margin-top: 30px;
+}
+
+.report-form-button:hover {
+    background-color: var(--primary-hover);
+}
+
+/* Estilos Refinados para o Switch (Ativar IA) - Cor ao Ativar Corrigida */
+.report-form-switch-label {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    height: 28px;
+    cursor: pointer;
+}
+
+.report-form-switch-input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.report-form-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .3s;
+    border-radius: 14px;
+    width: 55px; /* Largura fixa do slider */
+}
+
+.report-form-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.report-form-switch-input:checked + .report-form-slider {
+    background-color: var(--primary-color); /* Cor quando ativado */
+}
+
+.report-form-switch-input:checked + .report-form-slider:before {
+    transform: translateX(31px); /* Ajuste do deslocamento */
+}
+
+.report-form-switch-text {
+    margin-left: 65px;
+    color: var(--text-color);
+    font-weight: bold;
+    font-size: 1em;
+}
+
+.report-form-ia-description {
+    color: var(--subtext-color);
+    font-size: 0.85em;
+    margin-top: 3px;
+}
+
+/* Estilos para Campos Ocultos */
+.report-form-hidden {
+    display: none;
+}
+
+#report-form-autocomplete-results {
+    list-style-type: none; /* Tirar os bullets */
+    padding: 0;
+    margin: 0;
+    border: 1px solid #ccc; /* Adicionar uma borda para delimitar a área */
+    position: relative; /* Posicionar abaixo do input */
+    background-color: white;
+    z-index: 10; /* Garantir que fique acima de outros elementos */
+    max-height: 200px; /* Altura máxima para scroll */
+    overflow-y: auto; /* Adicionar barra de rolagem se necessário */
+    min-width: calc(100% - 2px); /* Largura mínima igual ao input (ajuste conforme necessário) */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Adicionar uma leve sombra */
+}
+
+#report-form-autocomplete-results li {
+    padding: 8px 12px;
+    cursor: pointer; /* Indica que é clicável */
+}
+
+#report-form-autocomplete-results li:hover {
+    background-color: #f0f0f0; /* Efeito de hover */
+    color: #333; /* Mudar a cor do texto no hover (opcional) */
+}
+
+#report-form-autocomplete-results li.autocomplete-item-inactive {
+    color: #999;
+    font-style: italic; 
+    cursor: not-allowed; 
+}
+
+#report-form-autocomplete-results li.autocomplete-item-inactive:hover {
+    background-color: #eee;
+    color: #999;
+}
+
+/* Estilos para a tabela de alunos selecionados (AJUSTADO) */
+#report-form-selected-students {
+    width: 100%;
+    margin-bottom: 20px;
+    border-collapse: collapse; 
+    font-size: 0.9em; 
+}
+
+/* Estilos para o cabeçalho da tabela (AJUSTADO) */
+.report-form-table-head {
+    background-color: #f2f2f2; /* Cor de fundo levemente cinza */
+    font-weight: bold; /* Texto do cabeçalho em negrito */
+    color: #333; /* Cor do texto do cabeçalho */
+}
+
+.report-form-table-header {
+    padding: 8px 15px; /* DIMINUÍDO: Espaçamento interno das células do cabeçalho */
+    text-align: left; /* Alinhamento do texto à esquerda por padrão */
+    border-bottom: 1px solid #ddd; /* Borda inferior para separação */
+}
+
+/* Estilos para o corpo da tabela (AJUSTADO) */
+.report-form-table-body tr {
+    border-bottom: 1px solid #eee; /* Adiciona uma linha sutil entre as linhas */
+    /* REMOVIDO: Espaçamento vertical adicional da linha (se houver) */
+}
+
+.report-form-table-body tr:nth-child(even) {
+    background-color: #f9f9f9; /* Cor de fundo levemente diferente para linhas pares */
+}
+
+.report-form-table-body tr:last-child {
+    border-bottom: 1px solid #ddd; /* Borda inferior para a última linha */
+}
+
+.report-form-table-body td {
+    padding: 6px 15px; /* DIMINUÍDO: Espaçamento interno das células do corpo */
+    text-align: left; /* Alinhamento do texto à esquerda */
+}
+
+/* Estilos para a coluna de ações (botão de remover) (SEM ALTERAÇÕES) */
+.report-form-table-body .actions-cell {
+    text-align: center; /* Centraliza o conteúdo da célula de ações */
+}
+
+.remove-student {
+    background-color: #f44336; /* Cor de fundo vermelha para o botão de remover */
+    color: white; /* Texto branco */
+    border: none; /* Remove a borda padrão do botão */
+    padding: 6px 10px; /* DIMINUÍDO: Espaçamento interno do botão */
+    text-align: center; /* Centraliza o texto dentro do botão */
+    text-decoration: none; /* Remove sublinhado (se houver) */
+    display: inline-block; /* Permite definir largura e altura */
+    font-size: 0.8em; /* DIMINUÍDO: Tamanho da fonte do botão */
+    border-radius: 5px; /* Bordas arredondadas */
+    cursor: pointer; /* Muda o cursor ao passar por cima */
+    transition: background-color 0.3s ease; /* Transição suave para a cor de fundo */
+}
+
+.remove-student:hover {
+    background-color: #d32f2f; /* Cor de fundo mais escura ao passar o mouse */
+}
+
+/* Oculta a tabela por padrão (como definido no seu style inline) (SEM ALTERAÇÕES) */
+.report-form-selected-students {
+    display: none;
+}
+
+/* Estilos para a tabela de relatórios do dia */
+.reports-table-title {
+    font-family: var(--heading-font);
+    color: var(--primary-color);
+    font-size: 1.5em;
+    margin: 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border-color);
+    width: 80%;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.reports-table-selected {
+    width: 80%;
+    max-width: 900px;
+    margin: 20px auto;
+    border-collapse: collapse;
+    background-color: var(--form-bg);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.reports-table-head {
+    background-color: #f2f2f2;
+}
+
+.reports-table-header {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: bold;
+    color: var(--text-color);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.report-table-body tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.report-table-body tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.report-table-body tr:last-child {
+    border-bottom: none;
+}
+
+.report-table-body td {
+    padding: 10px 15px;
+    color: var(--text-color);
+}
+
+/* Botões de ação na tabela */
+.view-report-btn,
+.delete-report-btn {
+    padding: 6px 12px;
+    margin: 2px 4px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    min-width: 80px; /* Define uma largura mínima igual para ambos */
+    width: 100px; /* Largura fixa para ambos os botões */
+    text-align: center; /* Centraliza o texto */
+    display: inline-block; /* Garante que os botões respeitem a largura */
+    box-sizing: border-box; /* Inclui padding e borda na largura total */
+}
+
+.view-report-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+}
+
+.view-report-btn:hover {
+    background-color: white;
+    color: var(--primary-color);
+}
+
+.delete-report-btn {
+    background-color: white;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.delete-report-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
 /* INÍCIO DO ESTILO RESPONSIVO */
 @media (min-width: 768px) {
     .form-container {
@@ -1952,6 +2326,120 @@ display: none;
         border-radius: 5px;
         cursor: pointer;
     }
+
+    main.report-form-main {
+        width: 95%;
+        margin: 15px; /* Ajustando a margem para telas menores */
+        padding: 20px;
+    }
+
+    .report-form-section-title {
+        font-size: 1.5em;
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+    }
+
+    .report-form-group {
+        margin-bottom: 15px;
+    }
+
+    .report-form-label {
+        font-size: 1em;
+        margin-bottom: 5px;
+    }
+
+    .report-form-input,
+    .report-form-textarea,
+    .report-form-select {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    #report-form-autocomplete-results {
+        font-size: 14px;
+    }
+
+    #report-form-autocomplete-results li {
+        padding: 8px;
+    }
+
+    .report-form-selected-students th,
+    .report-form-selected-students td {
+        padding: 8px;
+        font-size: 0.9em;
+    }
+
+    .report-form-switch-label {
+        height: 24px;
+    }
+
+    .report-form-slider {
+        width: 45px;
+    }
+
+    .report-form-slider:before {
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+    }
+
+    .report-form-switch-input:checked + .report-form-slider:before {
+        transform: translateX(26px);
+    }
+
+    .report-form-switch-text {
+        font-size: 0.85em;
+        margin-left: 55px;
+    }
+
+    .report-form-radio-group {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .report-form-radio-label {
+        font-size: 1em;
+    }
+
+    .report-form-button {
+        padding: 10px 15px;
+        font-size: 16px;
+        margin-top: 20px;
+    }
+
+    .report-form-slider:before {
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+    }
+    .reports-table-title,
+    .reports-table-selected {
+        width: 95%;
+    }
+
+    .reports-table-header,
+    .report-table-body td {
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+
+    /* Botões em coluna em telas menores */
+    .report-table-body td:last-child {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        align-items: stretch;
+    }
+
+    .view-report-btn,
+    .delete-report-btn {
+        width: 100%;
+        min-width: unset;
+        margin: 2px 0;
+    }
 }
 
 /* Responsividade dashboard (telas de até 768px) */
@@ -2005,6 +2493,19 @@ display: none;
         color: #000;
         font-size: 14px;
     }
+    #report-header {
+        margin-top: 15px;
+        margin-bottom: 20px;
+    }
+
+    #report-header-tittle {
+        font-size: 2em;
+        margin-bottom: 3px;
+    }
+
+    #report-header-description {
+        font-size: 1em;
+    }
 }
 
 /* Estilo para o menu do dashboard em telas maiores */
@@ -2054,6 +2555,74 @@ display: none;
     .admin-card-btn {
         padding: 8px;
         font-size: 0.9em;
+    }
+    .report-form-main {
+        width: 100%;
+        margin: 5px;
+        border-radius: 0;
+    }
+
+    .report-form-section-title {
+        font-size: 1.3em;
+    }
+
+    .report-form-label {
+        font-size: 0.9em;
+    }
+
+    .report-form-input,
+    .report-form-textarea,
+    .report-form-select {
+        font-size: 12px;
+    }
+
+    #report-form-autocomplete-results {
+        font-size: 12px;
+    }
+
+    .report-form-selected-students th,
+    .report-form-selected-students td {
+        font-size: 0.8em;
+        padding: 6px;
+    }
+
+    .report-form-button {
+        font-size: 14px;
+    }
+
+    .report-form-switch-text {
+        font-size: 0.8em;
+        margin-left: 50px;
+    }
+    
+    #report-header {
+        margin-top: 10px;
+        margin-bottom: 15px;
+    }
+
+    #report-header-tittle {
+        font-size: 1.8em;
+        margin-bottom: 2px;
+    }
+
+    #report-header-description {
+        font-size: 0.9em;
+    }
+    .reports-table-title {
+        font-size: 1.2em;
+    }
+
+    .reports-table-header,
+    .report-table-body td {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+
+    /* Ajuste adicional para os botões em telas muito pequenas */
+    .view-report-btn,
+    .delete-report-btn {
+        padding: 6px;
+        font-size: 13px;
     }
 }
 

@@ -27,6 +27,7 @@ const districtsRoutes = require('./src/routes/districtsRoutes');
 const schoolsRoutes = require('./src/routes/schoolRoutes');
 const gradeRoutes = require('./src/routes/gradesRoutes');
 const dashboardRoutes = require('./src/routes/dashboard');
+const reportRoutes = require('./src/routes/reportRoutes');
 console.log('[HubEscolar - app.js] Módulos de rotas importados.');
 
 // Validação das variáveis de ambiente
@@ -116,6 +117,9 @@ app.use('/classes', classesRoute);
 console.log('[HubEscolar - app.js] Rotas de classes carregadas.');
 app.use('/dashboard', dashboardRoutes);
 console.log('[HubEscolar - app.js] Rotas de dashboard carregadas.');
+app.use('/reports', reportRoutes);
+console.log('[HubEscolar - app.js] Rotas de relatórios carregadas.');
+
 
 
 

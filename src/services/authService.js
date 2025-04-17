@@ -51,10 +51,10 @@ const authService = {
                 try {
                     const userDetailsResponse = await axios.get(`${USERS_SERVICE_URL}/users/list/${userId}`, {
                         headers: {
-                            Authorization: `Bearer ${accessToken}` // Adapte conforme a autenticação do users-service
+                            Authorization: `Bearer ${accessToken}`
                         }
                     });
-                    return userDetailsResponse.data; // Retorna os detalhes completos do usuário
+                    return userDetailsResponse.data;
                 } catch (error) {
                     console.error('Erro ao buscar detalhes do usuário no users-service:', error.response ? error.response.data : error.message);
                     throw error;

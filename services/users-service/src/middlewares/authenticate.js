@@ -4,7 +4,8 @@ require('dotenv').config(); // Carregue as variáveis de ambiente
 const authenticate = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1] || req.cookies.accessToken;
-    console.log(token);
+    console.log('Authenticate Middleware - req.query:', req.query);
+
 
     if (!token) {
         return res.status(401).json({ message: 'Token de autenticação não fornecido.' });

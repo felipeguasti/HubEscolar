@@ -1,4 +1,4 @@
-const protectedPages = ['/dashboard', '/profile'];
+const protectedPages = ['/dashboard', '/profile', '/settings', '/users', '/turmas', '/conteudos', '/reports', '/users'];
 const currentPath = window.location.pathname;
 const userRole = sessionStorage.getItem("user.role");
 const logoutButton = document.getElementById('logout-btn');
@@ -85,14 +85,21 @@ function atualizarListaUsuarios(users) {
         usersContainer.appendChild(userElement);
     });
 }
-// Função showPopup para usar com Promise
+// Função showPopup para usar com Promise (aceita texto simples e HTML)
 function showPopup(message, callback) {
     const popup = document.getElementById("generic-popup");
     const messageContainer = popup.querySelector(".popup-message");
     const okButton = popup.querySelector(".popup-ok-button");
 
-    // Define a mensagem no popup
-    messageContainer.textContent = message;
+    // Verifica se a mensagem parece conter HTML
+    const isHTML = /<[a-z][\s\S]*>/i.test(message);
+
+    // Define a mensagem no popup usando textContent para texto simples e innerHTML para HTML
+    if (isHTML) {
+        messageContainer.innerHTML = message;
+    } else {
+        messageContainer.textContent = message;
+    }
 
     // Exibe o popup
     popup.classList.remove("hidden");
@@ -100,22 +107,29 @@ function showPopup(message, callback) {
     // Garante que o botão OK esteja visível
     okButton.style.display = "inline-block";
 
-    // Evita que o popup seja fechado ao clicar fora
-    popup.removeEventListener('click', closePopup);  // Removido para garantir que o clique fora não feche
-    popup.addEventListener('click', function (e) {
-        e.stopPropagation(); // Impede que o clique fora do conteúdo feche o popup
-    });
+    // Adiciona o evento para fechar ao clicar fora
+    const handleOutsideClick = (e) => {
+        if (e.target === popup) {
+            popup.classList.add("hidden");
+            if (callback) callback();
+            document.removeEventListener('click', handleOutsideClick);
+        }
+    };
+
+    document.addEventListener('click', handleOutsideClick);
 
     // Retorna uma Promise para aguardar o clique do usuário
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         // Adiciona o evento de clique no botão OK para fechar o popup
         okButton.onclick = () => {
-            popup.classList.add("hidden");  // Oculta o popup
-            resolve();  // Resolva a Promise quando o botão OK for clicado
-            if (callback) callback();  // Chama o callback, se fornecido
+            popup.classList.add("hidden");
+            document.removeEventListener('click', handleOutsideClick);
+            resolve();
+            if (callback) callback();
         };
     });
 }
+
 // Se precisar de um listener de fechamento ao clicar fora, deixe isso:
 function closePopup(event) {
     const popup = document.getElementById("generic-popup");

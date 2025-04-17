@@ -105,16 +105,6 @@ User.init({
   zip: {
     type: DataTypes.STRING,
     allowNull: true,
-    validate: {
-      isNumeric: {
-        args: true,
-        msg: 'O CEP deve conter apenas números.'
-      },
-      len: {
-        args: [8, 8],
-        msg: 'O CEP deve conter 8 caracteres.'
-      }
-    }
   },
 
   // Status do usuário

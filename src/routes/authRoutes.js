@@ -2,8 +2,15 @@ const express = require('express');
 const router = express.Router();
 const authService = require('../services/authService');
 const isAuthenticated = require('../middlewares/auth');
+const moment = require('moment-timezone');
 
-// Rota para login (o sistema principal recebe as credenciais e chama o auth-service)
+function getMidnightExpirationInMilliseconds() {
+    const now = moment().tz('America/Sao_Paulo'); // Define o timezone para Brasil (São Paulo)
+    const midnight = moment().tz('America/Sao_Paulo').endOf('day');
+    const diffInMillis = midnight.diff(now, 'milliseconds');
+    return diffInMillis;
+}
+
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -11,13 +18,21 @@ router.post('/login', async (req, res) => {
         const authResponse = await authService.login(email, password);
 
         if (authResponse && authResponse.accessToken && authResponse.refreshToken) {
-            // Configurar cookies (opções de segurança importantes!)
-            res.cookie('accessToken', authResponse.accessToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 3600000 }); // 1 hora
-            res.cookie('refreshToken', authResponse.refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 2592000000 }); // 30 dias
+            const midnightExpiry = getMidnightExpirationInMilliseconds();
+
+            res.cookie('accessToken', authResponse.accessToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: midnightExpiry > 0 ? midnightExpiry : 86400000 // Segurança para casos extremos (24 horas)
+            });
+            res.cookie('refreshToken', authResponse.refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 2592000000 // 30 dias
+            });
 
             return res.status(200).json({ message: 'Login bem-sucedido', redirectTo: '/dashboard' });
         } else if (authResponse && authResponse.message) {
-            // Se o auth-service retornar uma mensagem específica de falha (ex: credenciais inválidas)
             return res.status(401).json({ message: authResponse.message });
         } else {
             return res.status(401).json({ message: 'Erro de autenticação' });
@@ -25,10 +40,8 @@ router.post('/login', async (req, res) => {
     } catch (error) {
         console.error('Erro durante o login:', error);
         if (error.response) {
-            // Se o erro veio do auth-service (ou outro serviço com resposta HTTP)
             return res.status(error.response.status).json(error.response.data);
         }
-        // Se for um erro local ou sem resposta HTTP
         return res.status(500).json({ message: 'Erro ao fazer login', error: error.message });
     }
 });

@@ -99,16 +99,17 @@ const usersService = {
         }
     },
 
-    async getUsers(accessToken) {
+    async getUsers(accessToken, query) {
         try {
             const response = await axios.get(`${USERS_SERVICE_URL}/users/list`, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                 },
+                params: query,
             });
             return response.data;
         } catch (error) {
-            logger.error(`Erro ao buscar usuário ${id} no users-service:`, error.response ? error.response.data : error.message);
+            logger.error(`Erro ao buscar usuários no users-service:`, error.response ? error.response.data : error.message);
             throw error;
         }
     },
