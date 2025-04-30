@@ -1,10 +1,11 @@
-const express = require('express');
+import express from 'express';
+import { body, param } from 'express-validator';
+import { authController } from '../controllers/authController.js';
+import { authMiddleware } from '../middlewares/auth.js';
+import { validationResultHandler } from '../middlewares/validationResultHandler.js';
+import { loginLimiter } from '../middlewares/rateLimitMiddleware.js';
+
 const router = express.Router();
-const authController = require('../controllers/authController');
-const authMiddleware = require('../middlewares/auth');
-const { body, param } = require('express-validator');
-const validationResultHandler = require('../middlewares/validationResultHandler');
-const { loginLimiter } = require('../middlewares/rateLimitMiddleware');
 
 // Validações para login
 const loginValidation = [
@@ -52,4 +53,4 @@ router.post('/reset-password/:token', [
     return res.status(200).json({ message: 'Senha redefinida com sucesso.' });
 });
 
-module.exports = router;
+export default router;

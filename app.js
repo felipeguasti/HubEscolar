@@ -28,6 +28,8 @@ const schoolsRoutes = require('./src/routes/schoolRoutes');
 const gradeRoutes = require('./src/routes/gradesRoutes');
 const dashboardRoutes = require('./src/routes/dashboard');
 const reportRoutes = require('./src/routes/reportRoutes');
+const featureRoutes = require('./src/routes/featureRoutes');
+const headerRoutes = require('./src/routes/headerRoutes');
 console.log('[HubEscolar - app.js] Módulos de rotas importados.');
 
 // Validação das variáveis de ambiente
@@ -69,16 +71,11 @@ console.log('[HubEscolar - app.js] Passport session configurado.');
 app.use(flash());
 console.log('[HubEscolar - app.js] Middleware flash carregado.');
 
-// Servir arquivos estáticos (redundante, já feito acima)
-// app.use(express.static(path.join(__dirname, 'src', 'public')));
-
 // Configuração do motor de visualização e layouts
 app.set('view engine', 'ejs');
 console.log('[HubEscolar - app.js] View engine configurado para EJS.');
 app.set('views', path.join(__dirname, 'src', 'views'));
 console.log('[HubEscolar - app.js] Diretório de views definido.');
-// app.use(expressLayouts); // Já carregado acima
-// app.set('layout', 'partials/main-layout'); // Já definido acima
 
 // Configuração do Multer
 const upload = multer({
@@ -119,7 +116,10 @@ app.use('/dashboard', dashboardRoutes);
 console.log('[HubEscolar - app.js] Rotas de dashboard carregadas.');
 app.use('/reports', reportRoutes);
 console.log('[HubEscolar - app.js] Rotas de relatórios carregadas.');
-
+app.use('/features', featureRoutes);
+console.log('[HubEscolar - app.js] Rotas de ferramentas carregadas.');
+app.use('/reports/headers', headerRoutes);
+console.log('[HubEscolar - app.js] Rotas de cabeçalhos carregadas.');
 
 
 

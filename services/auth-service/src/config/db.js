@@ -1,4 +1,7 @@
-const Sequelize = require('sequelize');
+import { Sequelize } from 'sequelize';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Credenciais do banco de dados externo
 const database = "u612973268_broadcast";
@@ -15,11 +18,16 @@ const dialect = "mysql";
 // const dialect = process.env.MYSQL_DIALECT;
 
 // Inicializar a conexão com o banco de dados
-const sequelize = new Sequelize(database, username, password, {
-    host: host,
-    dialect: dialect,
-    logging: false, // Define se as mensagens de log do Sequelize serão exibidas (desabilitado neste caso)
-});
+export const sequelize = new Sequelize(
+    process.env.DB_NAME || "u612973268_broadcast",
+    process.env.DB_USER || "u612973268_broadcast",
+    process.env.DB_PASSWORD || "E1=iTrLXsvk",
+    {
+        host: "localhost",
+        dialect: 'mysql',
+        logging: false
+    }
+);
 
 // Testar a conexão
 sequelize.authenticate()
@@ -29,6 +37,3 @@ sequelize.authenticate()
     .catch(err => {
         console.error('Erro ao conectar ao MySQL: (Banco de dados local)', err);
     });
-
-// Exportar a instância do Sequelize para ser utilizada em outras partes do projeto
-module.exports = sequelize;

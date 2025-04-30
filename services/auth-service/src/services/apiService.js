@@ -1,7 +1,7 @@
-const axios = require('axios');
-const logger = require('./logger'); // Importe o logger
+import axios from 'axios';
+import logger from './logger.js';
 
-const apiService = {
+export const apiService = {
     async get(url) {
         try {
             const response = await axios.get(url);
@@ -22,7 +22,7 @@ const apiService = {
         } catch (error) {
             logger.error(`Erro ao fazer POST em ${url}:`, error.message);
             logger.debug(`Detalhes do erro POST em ${url}:`, error);
-            throw error; // Rejogue o erro para ser tratado no controller
+            throw error;
         }
     },
 
@@ -34,7 +34,7 @@ const apiService = {
         } catch (error) {
             logger.error(`Erro ao fazer PUT em ${url}:`, error.message);
             logger.debug(`Detalhes do erro PUT em ${url}:`, error);
-            throw error; // Rejogue o erro para ser tratado no controller
+            throw error;
         }
     },
 
@@ -46,9 +46,9 @@ const apiService = {
         } catch (error) {
             logger.error(`Erro ao fazer DELETE em ${url}:`, error.message);
             logger.debug(`Detalhes do erro DELETE em ${url}:`, error);
-            throw error; // Rejogue o erro para ser tratado no controller
+            throw error;
         }
     },
 };
 
-module.exports = apiService;
+export default apiService;

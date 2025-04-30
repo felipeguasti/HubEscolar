@@ -1,13 +1,16 @@
-// src/middlewares/errorHandler.js
-const errorHandler = (err, req, res, next) => {
-    console.error('Erro detectado:', err);
-    console.error('Stack trace:', err.stack);
+import logger from '../services/logger.js';
+
+export const errorHandler = (err, req, res, next) => {
+    logger.error('Erro detectado:', err);
+    logger.error('Stack trace:', err.stack);
 
     if (err.response && err.response.status && err.config && err.config.url) {
         const { status, data } = err.response;
         const serviceUrl = err.config.url;
         const serviceName = getServiceNameFromUrl(serviceUrl);
         const errorMessage = `Erro ao comunicar com o serviço ${serviceName} (Status: ${status}).`;
+
+        logger.error(errorMessage, { status, serviceUrl, data });
 
         if (status === 400) {
             return res.status(400).json({ message: 'Requisição inválida.' });
@@ -45,4 +48,4 @@ function getServiceNameFromUrl(url) {
     }
 }
 
-module.exports = errorHandler;
+export default errorHandler;

@@ -3,10 +3,90 @@ const express = require('express');
 const router = express.Router();
 const reportService = require('../services/reportService');
 const usersService = require('../services/usersService');
+const mediaService = require('../services/mediaService');
 const isAuthenticated = require('../middlewares/auth');
+const { now } = require('moment');
 
 router.use(isAuthenticated);
 
+router.get('/', async (req, res) => {
+    try {
+        const loggedInUser = req.user;
+        const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+
+        // Get full user data
+        const userData = await usersService.getUserById(loggedInUser.id, accessToken);
+
+        res.render('reports/index', {
+            title: 'Relatórios',
+            user: userData
+        });
+    } catch (error) {
+        console.error('Erro ao carregar página de relatórios:', error);
+        res.status(500).send('Erro ao carregar página de relatórios');
+    }
+});
+
+router.get('/center', async (req, res) => {
+    try {
+        const loggedInUser = req.user;
+        const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+
+        // Get full user data
+        const userData = await usersService.getUserById(loggedInUser.id, accessToken);
+
+        // Get reports from service
+        const reports = await reportService.listReports(accessToken, {
+            page: 1,
+            limit: 10,
+            sortBy: 'createdAt',
+            order: 'DESC'
+        });
+
+        // Create stats object
+            const stats = {
+            total: reports?.total || 0,
+            pending: reports?.items?.filter(r => r.status === 'pending')?.length || 0,
+            delivered: reports?.items?.filter(r => r.status === 'delivered')?.length || 0, // Mudar de signed para delivered
+            archived: reports?.items?.filter(r => r.status === 'archived')?.length || 0
+        };
+
+        res.render('reports/center', {
+            title: 'Central de Advertências',
+            user: userData,
+            reports: reports?.items || [],
+            pagination: {
+                current: 1,
+                pages: Math.ceil((reports?.total || 0) / 10)
+            },
+            stats // Pass the stats object to the template
+        });
+
+    } catch (error) {
+        console.error('Erro ao carregar central de advertências:', error);
+        res.status(500).send('Erro ao carregar central de advertências');
+    }
+});
+// Rota para o centro de relatórios
+router.get('/meetings', async (req, res) => {
+    try {
+        const loggedInUser = req.user;
+        const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+
+        // Get full user data
+        const userData = await usersService.getUserById(loggedInUser.id, accessToken);
+
+        res.render('reports/meetings', {
+            title: 'Atas e Registros',
+            user: userData
+        });
+    } catch (error) {
+        console.error('Erro ao carregar central de relatórios:', error);
+        res.status(500).send('Erro ao carregar central de relatórios');
+    }
+});
+
+module.exports = router;
 // Rota para renderizar a página de criação de relatórios
 router.get('/behavior', async (req, res) => {
     try {
@@ -32,7 +112,7 @@ router.get('/behavior', async (req, res) => {
             nameWithClass: `${student.name} (${student.userClass || 'Sem turma'})`
         }));
 
-        res.render('behavior', {
+        res.render('reports/behavior', {
             title: 'Advertências',
             user: loggedInUser,
             students: formattedStudents,
@@ -121,6 +201,41 @@ router.get("/list", async (req, res) => {
     }
 });
 
+// Rota para gerar PDF do relatório
+router.get("/:id/print", async (req, res) => {
+    try {
+        const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+        const reportId = req.params.id;
+        const schoolId = req.user.schoolId;
+        
+        if (!accessToken) {
+            return res.status(401).json({ error: 'Token de autorização não fornecido.' });
+        }
+
+        // 1. Buscar URLs dos logos
+        const logos = await mediaService.getLogosUrl(schoolId, accessToken);
+        // 3. Gerar PDF com as URLs dos logos
+        const pdfBuffer = await reportService.generateReportPDF(
+            accessToken, 
+            reportId,
+            logos
+        );
+
+        // Set response headers for PDF download
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=advertencia-${reportId}.pdf`);
+        
+        return res.send(pdfBuffer);
+
+    } catch (error) {
+        console.error('Erro ao gerar PDF do relatório:', error);
+        return res.status(500).json({ 
+            message: 'Erro ao gerar PDF do relatório', 
+            error: error.message 
+        });
+    }
+});
+
 // Rota para deletar um relatório
 router.delete("/delete/:id", async (req, res) => {
     try {
@@ -141,6 +256,48 @@ router.delete("/delete/:id", async (req, res) => {
         console.error('Erro ao deletar relatório:', error);
         return res.status(500).json({ 
             message: 'Erro ao deletar relatório', 
+            error: error.message 
+        });
+    }
+});
+
+// Rota para registrar entrega do relatório
+router.post("/:id/deliver", async (req, res) => {
+    try {
+        const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+        const reportId = req.params.id;
+        const { method, parentResponse, signedBy, signedAt, deliveredAt } = req.body;
+        
+        if (!accessToken) {
+            return res.status(401).json({ error: 'Token de autorização não fornecido.' });
+        }
+
+        if (!method) {
+            return res.status(400).json({ error: 'Método de entrega não fornecido.' });
+        }
+
+        // Chamar o serviço para registrar a entrega
+        await reportService.registerDelivery(
+            accessToken, 
+            reportId, 
+            {
+                method,
+                parentResponse,
+                signedBy,
+                deliveredBy: req.user.id,
+                signedAt
+            }
+        );
+
+        return res.status(200).json({ 
+            message: 'Entrega registrada com sucesso',
+            reportId 
+        });
+
+    } catch (error) {
+        console.error('Erro ao registrar entrega:', error);
+        return res.status(500).json({ 
+            message: 'Erro ao registrar entrega', 
             error: error.message 
         });
     }

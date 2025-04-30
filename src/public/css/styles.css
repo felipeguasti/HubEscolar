@@ -2198,7 +2198,772 @@ main.report-form-main {
     color: white;
 }
 
+/*INÍCIO DO ESTILO DA PÁGINA SETTINGS*/
+.features-body {
+    flex: 1;
+    padding: 30px;
+    background-color: var(--bg-color);
+}
+
+.features-header {
+    margin-bottom: 30px;
+}
+
+.features-header-title {
+    font-family: var(--heading-font);
+    color: var(--primary-color);
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.features-header-description {
+    color: var(--subtext-color);
+    font-size: 16px;
+}
+
+.features-main {
+    background-color: var(--form-bg);
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.features-section {
+    margin-bottom: 30px;
+}
+
+.features-section-title {
+    font-family: var(--heading-font);
+    color: var(--text-color);
+    font-size: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* Estilo do campo de busca de usuários */
+.features-form-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.features-form-label {
+    display: block;
+    color: var(--text-color);
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    font-family: var(--heading-font);
+}
+
+.features-form-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--text-color);
+    background-color: var(--form-bg);
+    transition: all 0.3s ease;
+}
+
+.features-form-input:focus {
+    outline: none;
+    border-color: var(--focus-color);
+    box-shadow: 0 0 0 2px rgba(185, 255, 102, 0.2);
+}
+
+/* Lista de resultados da busca */
+.features-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--form-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-top: 4px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+}
+
+.features-search-results::-webkit-scrollbar {
+    width: 8px;
+}
+
+.features-search-results::-webkit-scrollbar-track {
+    background: var(--bg-color);
+}
+
+.features-search-results::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 4px;
+}
+
+.features-search-results li {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.features-search-results li:last-child {
+    border-bottom: none;
+}
+
+.features-search-results li:hover {
+    background-color: var(--bg-color);
+}
+
+/* Mostrar resultados quando houver itens */
+.features-search-results:not(:empty) {
+    display: block;
+}
+
+.features-button {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.features-button:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.features-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 20px;
+}
+
+.features-table th {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--heading-font);
+    font-weight: bold;
+    text-align: left;
+    padding: 15px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.features-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-color);
+    vertical-align: middle;
+}
+
+.features-table tr:hover {
+    background-color: rgba(185, 255, 102, 0.1);
+}
+
+.feature-status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-active {
+    background-color: var(--focus-color);
+    color: var(--primary-color);
+}
+
+.status-inactive {
+    background-color: var(--border-color);
+    color: var(--subtext-color);
+}
+
+.btn-action {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 8px;
+}
+
+.btn-edit {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.btn-edit:hover {
+    background-color: var(--border-color);
+}
+
+.btn-toggle {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-toggle:hover {
+    background-color: var(--primary-hover);
+}
+
+/* Feature Modal Form Styles */
+#featureForm textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-family: var(--font-family);
+    font-size: 14px;
+    color: var(--text-color);
+    background-color: var(--form-bg);
+    resize: vertical;
+    min-height: 100px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+#featureForm textarea:focus {
+    outline: none;
+    border-color: var(--focus-color);
+    box-shadow: 0 0 0 2px rgba(185, 255, 102, 0.2);
+}
+
+#featureForm textarea::placeholder {
+    color: var(--subtext-color);
+}
+
+/* Estilo da tabela de features */
+.feature-form-selected-users {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 15px;
+    background-color: var(--form-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* Cabeçalho da tabela */
+.feature-form-table-head {
+    background-color: var(--primary-color);
+}
+
+.feature-form-table-header {
+    padding: 15px 20px;
+    text-align: left;
+    color: var(--form-bg);
+    font-family: var(--heading-font);
+    font-weight: 500;
+    font-size: 14px;
+}
+
+/* Corpo da tabela */
+.feature-form-table-body tr {
+    transition: all 0.2s ease;
+}
+
+.feature-form-table-body tr:nth-child(even) {
+    background-color: var(--bg-color);
+}
+
+.feature-form-table-body tr:hover {
+    background-color: rgba(185, 255, 102, 0.1);
+}
+
+.feature-form-table-body td {
+    padding: 8px 12px; /* Padding reduzido */
+    vertical-align: middle;
+}
+
+/* Coluna de ferramentas */
+.feature-tag {
+    padding: 2px 6px;
+    margin: 2px;
+    font-size: 12px;
+    background-color: var(--focus-color);
+    border-radius: 3px;
+}
+
+.remove-feature {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    margin-left: 5px;
+    cursor: pointer;
+    padding: 0 3px;
+    font-size: 12px;
+}
+
+/* Botão de remover usuário */
+.remove-user {
+    background-color: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 12px;
+}
+
+.remove-user:hover {
+    background-color: var(--primary-color);
+    color: var(--form-bg);
+}
+
+/* Último td sem borda inferior */
+.feature-form-table-body tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status da feature */
+.feature-status {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-active {
+    background-color: var(--focus-color);
+    color: var(--primary-color);
+}
+
+.status-inactive {
+    background-color: var(--border-color);
+    color: var(--subtext-color);
+}
+
+/* Estilo do dropdown de features e botão adicionar */
+.feature-select {
+    width: 170px;
+    padding: 4px 8px;
+    margin-right: 4px;
+    height: 30px;
+    font-size: 13px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--form-bg);
+}
+
+.feature-select:focus {
+    outline: none;
+    border-color: var(--focus-color);
+    box-shadow: 0 0 0 2px rgba(185, 255, 102, 0.2);
+}
+
+.btn-add-feature {
+    width: 30px; /* Largura fixa */
+    height: 30px; /* Altura igual ao select */
+    padding: 0;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.btn-add-feature:hover {
+    background-color: var(--primary-hover);
+    color: var(--primary-color);
+}
+
+/* Container para o select e botão */
+.feature-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    white-space: nowrap;
+}
+
+/* Container das features */
+.user-features-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    max-width: 300px; /* Limita largura do container de features */
+}
+
+/* Inactive feature styles */
+.feature-inactive {
+    background-color: #f8f9fa;
+    color: var(--subtext-color);
+}
+
+.feature-inactive td {
+    opacity: 0.7;
+}
+
+.feature-inactive .status-badge.inactive {
+    background-color: #e9ecef;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.feature-inactive .btn {
+    opacity: 0.8;
+}
+
+/* New hover style for inactive features */
+.feature-inactive:hover {
+    background-color: #ffe6e6 !important; /* Light red on hover */
+    transition: background-color 0.3s ease;
+}
+
+.feature-inactive:hover td {
+    opacity: 1; /* Full opacity on hover */
+}
+
+/* INÍCIO DO ESTILO DO DASHBOARD DAS FEATURES */
+
+.features-dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .features-dashboard-header {
+    margin-bottom: 3rem;
+    text-align: center;
+  }
+  
+  .features-category {
+    margin-bottom: 2rem;
+  }
+  
+  .category-title {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+  }
+  
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .feature-card {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+  }
+  
+  .feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+  
+  .feature-card-content {
+    padding: 1.5rem;
+    flex-grow: 1;
+  }
+  
+  .feature-title {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+  }
+  
+  .feature-description {
+    color: var(--text-color);
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  
+  .feature-card-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+  }
+  
+  .feature-access {
+    color: var(--primary-color);
+    font-weight: 500;
+  }
+
+
+/* INÍCIO DO ESTILO DO CENTER DOS RELATÓRIOS */
+
+.reports-center-container {
+    padding: 2rem;
+    background-color: var(--bg-color);
+}
+
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: var(--form-bg);
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.stat-card h3 {
+    color: var(--text-color);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card p {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.filters-container {
+    background: var(--form-bg);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    min-width: 200px;
+}
+
+.reports-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.report-card {
+    background: var(--form-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.report-card.pending { border-left: 4px solid #ffc107; }
+.report-card.delivered { border-left: 4px solid #28a745; }
+.report-card.archived { border-left: 4px solid #6c757d; }
+
+.report-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.report-header h3 {
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.report-date {
+    color: var(--subtext-color);
+    font-size: 0.9rem;
+}
+
+.report-body {
+    padding: 1rem;
+}
+
+.report-body p {
+    margin: 0.5rem 0;
+    color: var(--text-color);
+}
+
+.report-actions {
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-view,
+.btn-print,
+.btn-delivery {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.btn-view {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-print {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.btn-delivery {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-view:hover,
+.btn-print:hover,
+.btn-delivery:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.pagination {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.page-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    background: var(--form-bg);
+    color: var(--text-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.page-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.page-btn:hover:not(.active) {
+    background: var(--bg-color);
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--form-bg);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 20px;
+    position: relative;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-color);
+}
+
+.modal-body {
+    padding: 20px 0;
+}
+
+.report-info h3 {
+    color: var(--primary-color);
+    margin: 20px 0 10px;
+}
+
+.report-info p {
+    margin: 8px 0;
+    line-height: 1.4;
+}
+/* FIM DO ESTILO DO CENTER DOS RELATÓRIOS */
+
+/*INÍCIO DO ESTILO DO REPORT ADMIN */
+
+.header-config-container {
+padding: 2rem;
+background: #fff;
+border-radius: 8px;
+box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.logo-upload-container {
+display: flex;
+align-items: center;
+gap: 1rem;
+margin-bottom: 1rem;
+}
+
+.logo-upload-container img {
+width: 100px;
+height: 100px;
+object-fit: contain;
+border: 1px solid #ddd;
+border-radius: 4px;
+}
+
+.logo-input {
+display: none;
+}
+
+.form-group {
+margin-bottom: 1.5rem;
+}
+
+.form-actions {
+display: flex;
+gap: 1rem;
+margin-top: 2rem;
+}
+/* FIM DO ESTILO DO REPORT ADMIN */
+
 /* INÍCIO DO ESTILO RESPONSIVO */
+/* 1. RESPONSIVIDADE - FORMULÁRIOS */
 @media (min-width: 768px) {
     .form-container {
         flex-direction: row;
@@ -2211,9 +2976,10 @@ main.report-form-main {
     }
 }
 
+/* 2. RESPONSIVIDADE - HEADER E NAVEGAÇÃO */
 @media (max-width: 768px) {
     header {
-        flex-direction: column; /* Alinhar verticalmente quando a tela for menor */
+        flex-direction: column;
         text-align: center;
         height: auto;
     }
@@ -2222,234 +2988,11 @@ main.report-form-main {
         flex-direction: column;
         gap: 10px;
     }
-    .presentation {
-        flex-direction: column;
-        padding: 20px;
-    }
-    
-    .presentation-text, .presentation-image {
-        width: 100%;
-    }
-    
-    .tools-container, .reviews-container, .plans-container {
-        flex-direction: column;
-    }
-    
-    .tool, .review, .plan {
-        width: 100%;
-        margin-bottom: 20px;
-    }
 
-    .tool-card {
-        width: 100%; 
-        padding: 20px;
-        box-sizing: border-box;
-    }
-
-    .tools-panel {
-        padding: 10px;
-    }
-    
-    .tools-panel h2 {
-        display: block;
-        margin-bottom: 20px;
-    }
-
-    .tools-header {
-        display: block;
-        margin-bottom: 40px;
-    }
-
-    .blog-container {
-        flex-direction: column;
-    }
-
-    .banner-navigation {
-        flex-direction: column;
-    }
-
-    .banner {
-        width: 100%;
-        margin-bottom: 10px;
-    }
-
-    .blog-sidebar {
-        margin-top: 20px;
-    }
-
-    .admin-master-cards {
-        flex-direction: column;
-    }
-
-    .modal-content {
-        width: 100%;
-    }
-
-    /* Resetando a estilização para dispositivos pequenos */
-    .topPageElements {
-        flex-direction: column;
-        align-items: flex-start;
-        width: 100%; /* Para garantir que ocupe toda a largura da tela */
-    }
-
-    #addUsers, #addDistrict {
-        width: 100%; /* Adiciona a largura total para o botão */
-        margin-bottom: 10px; /* Espaço entre os elementos */
-    }
-
-    /* Filtros ocupando toda a largura disponível */
-    .user-filter {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        align-items: stretch;
-    }
-
-    /* Resetando e estilizando os dropdowns de novo */
-    .user-filter select {
-        width: 100% !important; /* Forçando a largura total */
-        height: 40px; /* Aumentando a altura dos dropdowns */
-        padding: 10px; /* Mais espaço dentro do dropdown */
-        margin-bottom: 10px; /* Espaço entre os filtros */
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        font-size: 14px;
-        box-sizing: border-box; /* Garante que o padding não interfira no tamanho */
-    }
-
-    /* Botão de filtro */
-    #filterUsers, #cleanFilter {
-        width: 100%; /* Ocupa a largura total */
-        padding: 10px;
-        font-size: 14px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-
-    main.report-form-main {
-        width: 95%;
-        margin: 15px; /* Ajustando a margem para telas menores */
-        padding: 20px;
-    }
-
-    .report-form-section-title {
-        font-size: 1.5em;
-        margin-bottom: 15px;
-        padding-bottom: 8px;
-    }
-
-    .report-form-group {
-        margin-bottom: 15px;
-    }
-
-    .report-form-label {
-        font-size: 1em;
-        margin-bottom: 5px;
-    }
-
-    .report-form-input,
-    .report-form-textarea,
-    .report-form-select {
-        padding: 8px;
-        font-size: 14px;
-    }
-
-    #report-form-autocomplete-results {
-        font-size: 14px;
-    }
-
-    #report-form-autocomplete-results li {
-        padding: 8px;
-    }
-
-    .report-form-selected-students th,
-    .report-form-selected-students td {
-        padding: 8px;
-        font-size: 0.9em;
-    }
-
-    .report-form-switch-label {
-        height: 24px;
-    }
-
-    .report-form-slider {
-        width: 45px;
-    }
-
-    .report-form-slider:before {
-        height: 16px;
-        width: 16px;
-        left: 3px;
-        bottom: 3px;
-    }
-
-    .report-form-switch-input:checked + .report-form-slider:before {
-        transform: translateX(26px);
-    }
-
-    .report-form-switch-text {
-        font-size: 0.85em;
-        margin-left: 55px;
-    }
-
-    .report-form-radio-group {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-
-    .report-form-radio-label {
-        font-size: 1em;
-    }
-
-    .report-form-button {
-        padding: 10px 15px;
-        font-size: 16px;
-        margin-top: 20px;
-    }
-
-    .report-form-slider:before {
-        height: 16px;
-        width: 16px;
-        left: 3px;
-        bottom: 3px;
-    }
-    .reports-table-title,
-    .reports-table-selected {
-        width: 95%;
-    }
-
-    .reports-table-header,
-    .report-table-body td {
-        padding: 8px 10px;
-        font-size: 14px;
-    }
-
-    /* Botões em coluna em telas menores */
-    .report-table-body td:last-child {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        align-items: stretch;
-    }
-
-    .view-report-btn,
-    .delete-report-btn {
-        width: 100%;
-        min-width: unset;
-        margin: 2px 0;
-    }
-}
-
-/* Responsividade dashboard (telas de até 768px) */
-@media (max-width: 768px) {
-    /* Exibe o ícone de menu (hamburguer) */
     .menu-toggle {
         display: block;
     }
 
-    /* Esconde o menu por padrão */
     .menu {
         display: none;
         flex-direction: column;
@@ -2457,76 +3000,89 @@ main.report-form-main {
         position: absolute;
         top: 60px;
         right: 0;
-        background-color: #fff;  /* Fundo branco */
+        background-color: #fff;
         width: 100%;
         box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
         padding: 20px 10px;
         margin: 0;
         list-style: none;
-        z-index: 9999; /* Garantir que o menu fique sobre o conteúdo */
+        z-index: 9999;
     }
 
-    /* Torna o menu visível quando a classe "active" for adicionada */
     .menu.active {
         display: flex;
     }
+}
 
-    /* Responsividade do conteúdo */
-    header {
-        position: relative;
+/* 3. RESPONSIVIDADE - CONTEÚDO PRINCIPAL */
+@media (max-width: 768px) {
+    .presentation {
+        flex-direction: column;
+        padding: 20px;
+    }
+    
+    .presentation-text, 
+    .presentation-image {
+        width: 100%;
+    }
+    
+    .tools-container, 
+    .reviews-container, 
+    .plans-container {
+        flex-direction: column;
+    }
+    
+    .tool-card {
+        width: 100%;
+        padding: 20px;
+        box-sizing: border-box;
     }
 
-    .menu li {
-        font-size: 16px;
-        text-align: center;
+    .tools-panel {
         padding: 10px;
+    }
+}
+
+/* 4. RESPONSIVIDADE - DASHBOARD */
+@media (max-width: 768px) {
+    .admin-master-cards {
+        flex-direction: column;
+    }
+
+    .topPageElements {
+        flex-direction: column;
+        align-items: flex-start;
         width: 100%;
     }
 
-    .menu li a {
-        text-decoration: none;
-        color: #000;
-        font-size: 16px;
-    }
-    .menu li button {
-        text-decoration: none;
-        color: #000;
-        font-size: 14px;
-    }
-    #report-header {
-        margin-top: 15px;
-        margin-bottom: 20px;
-    }
-
-    #report-header-tittle {
-        font-size: 2em;
-        margin-bottom: 3px;
-    }
-
-    #report-header-description {
-        font-size: 1em;
-    }
-}
-
-/* Estilo para o menu do dashboard em telas maiores */
-@media (min-width: 769px) {
-    .menu-toggle {
-        display: none; /* Esconde o ícone de hambúrguer em telas grandes */
-    }
-
-    .menu {
+    .user-filter {
         display: flex;
-        flex-direction: row;
-        gap: 20px;
-    }
-
-    .menu li {
-        font-size: 16px;
-        text-align: left;
+        flex-direction: column;
+        width: 100%;
+        align-items: stretch;
     }
 }
 
-/* Responsividade dashboard (telas de até 480px) */
+/* 5. RESPONSIVIDADE - RELATÓRIOS */
+@media (max-width: 768px) {
+    main.report-form-main {
+        width: 95%;
+        margin: 15px;
+        padding: 20px;
+    }
+
+    .report-form-section-title {
+        font-size: 1.5em;
+        margin-bottom: 15px;
+    }
+
+    .reports-table-title,
+    .reports-table-selected {
+        width: 95%;
+    }
+}
+
+/* 6. RESPONSIVIDADE - DISPOSITIVOS PEQUENOS (480px) */
 @media (max-width: 480px) {
     .admin-master-container {
         padding: 5px;
@@ -2536,207 +3092,103 @@ main.report-form-main {
         display: none;
     }
 
-    .admin-master-content {
-        padding: 10px;
-    }
-
-    .sidebar-menu li {
-        font-size: 12px;
-    }
-
-    .admin-master-header h1 {
-        font-size: 1.3em;
-    }
-
-    .admin-master-header p {
-        font-size: 0.9em;
-    }
-
-    .admin-card-btn {
-        padding: 8px;
-        font-size: 0.9em;
-    }
     .report-form-main {
         width: 100%;
         margin: 5px;
         border-radius: 0;
     }
-
-    .report-form-section-title {
-        font-size: 1.3em;
-    }
-
-    .report-form-label {
-        font-size: 0.9em;
-    }
-
-    .report-form-input,
-    .report-form-textarea,
-    .report-form-select {
-        font-size: 12px;
-    }
-
-    #report-form-autocomplete-results {
-        font-size: 12px;
-    }
-
-    .report-form-selected-students th,
-    .report-form-selected-students td {
-        font-size: 0.8em;
-        padding: 6px;
-    }
-
-    .report-form-button {
-        font-size: 14px;
-    }
-
-    .report-form-switch-text {
-        font-size: 0.8em;
-        margin-left: 50px;
-    }
-    
-    #report-header {
-        margin-top: 10px;
-        margin-bottom: 15px;
-    }
-
-    #report-header-tittle {
-        font-size: 1.8em;
-        margin-bottom: 2px;
-    }
-
-    #report-header-description {
-        font-size: 0.9em;
-    }
-    .reports-table-title {
-        font-size: 1.2em;
-    }
-
-    .reports-table-header,
-    .report-table-body td {
-        padding: 6px 8px;
-        font-size: 12px;
-    }
-
-    /* Ajuste adicional para os botões em telas muito pequenas */
-    .view-report-btn,
-    .delete-report-btn {
-        padding: 6px;
-        font-size: 13px;
-    }
 }
 
-/* Responsividade do Rodapé (telas pequenas) */
+/* 7. RESPONSIVIDADE - RODAPÉ */
 @media (max-width: 768px) {
-    /* Container do rodapé */
     .footer-container {
         padding: 20px;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
     }
 
     .footer-content {
-        display: flex;
         flex-direction: column;
-        align-items: center;
         gap: 20px;
-        width: 100%;
-    }
-
-    /* Seções do rodapé */
-    .footer-section {
-        width: 100%;
-        text-align: center;
-    }
-
-    .footer-section.about,
-    .footer-section.contact,
-    .footer-section.links {
-        padding: 0;
-    }
-
-    /* Links úteis no rodapé */
-    .footer-section.links ul {
-        padding: 0;
-        margin: 0;
-        list-style-type: none;
-    }
-
-    .footer-section.links ul li {
-        margin-bottom: 10px;
-    }
-
-    .footer-section.links ul li a {
-        text-decoration: none;
-        font-size: 14px;
-        color: inherit; /* Garante que a cor original seja mantida */
-    }
-
-    .footer-section.links ul li button {
-        text-decoration: none;
-        font-size: 14px;
-        color: inherit; /* Garante que a cor original seja mantida */
-    }
-
-    /* Ajustar as imagens do contato */
-    .imageContact {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-    }
-
-    .imageContact a img {
-        width: 30px;
-        height: 30px;
-    }
-
-    /* Rodapé inferior */
-    .footer-bottom {
-        text-align: center;
-        font-size: 12px;
-        padding-top: 20px;
-        margin-top: 20px;
-        width: 100%;
-    }
-
-    /* Reduzir o tamanho do texto no rodapé em telas pequenas */
-    .footer-bottom a {
-        font-size: 12px;
     }
 }
 
-/* Responsividade do Rodapé (telas ainda menores, até 480px) */
 @media (max-width: 480px) {
-    /* Ajustar o padding */
     .footer-container {
         padding: 15px;
     }
 
     .footer-section h3 {
         font-size: 18px;
+    }
+}
+
+/* 8. RESPONSIVIDADE - PÁGINA DE CONFIGURAÇÕES */
+@media (max-width: 768px) {
+    .feature-body {
+        padding: 10px;
+    }
+
+    .feature-header-title {
+        font-size: 20px;
+    }
+
+    .feature-header-description {
+        font-size: 12px;
+    }
+
+    .feature-table-container {
+        padding: 10px;
+        overflow-x: auto; /* Permite rolagem horizontal em telas pequenas */
+    }
+
+    .feature-table {
+        min-width: 600px; /* Garante largura mínima para visualização */
+    }
+
+    .feature-table th,
+    .feature-table td {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .feature-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .feature-body {
+        padding: 5px;
+    }
+
+    .feature-header-title {
+        font-size: 18px;
+    }
+
+    .feature-btn-new {
+        width: 100%; /* Botão ocupa largura total em telas muito pequenas */
         margin-bottom: 10px;
     }
 
-    .footer-section p {
-        font-size: 14px;
-    }
-
-    /* Ajuste dos botões */
-    .footer-section.about button {
-        font-size: 14px;
-        padding: 8px 20px;
-    }
-
-    /* Ajustar a largura das imagens */
-    .imageContact a img {
-        width: 25px;
-        height: 25px;
-    }
-
-    /* Ajustar a largura dos links úteis */
-    .footer-section.links ul li a {
-        font-size: 13px;
-        color: inherit; /* Garante que a cor original seja mantida */
+    .feature-table td .feature-btn {
+        display: block;
+        width: 100%;
+        margin: 2px 0;
     }
 }
+
+/* 9. RESPONSIVIDADE - DASHBOARD DE FEATURES */
+
+@media (max-width: 768px) {
+    .features-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .features-dashboard-container {
+      padding: 1rem;
+    }
+  }
+
+/* FIM DO ESTILO RESPONSIVO */

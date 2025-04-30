@@ -22,18 +22,6 @@ app.use(bodyParser.json({ limit: '100kb' })); // Limita o tamanho do corpo JSON 
 // Use o helmet para segurança dos headers HTTP
 app.use(helmet());
 
-// Configuração do rate limiter
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // Limite de 100 requisições por IP dentro da janela de tempo
-    message: 'Muitas requisições foram feitas deste IP, por favor, tente novamente após 15 minutos.',
-    standardHeaders: true, // Retorna informações de rate limit nos headers `RateLimit-*`
-    legacyHeaders: false, // Não retorna os headers `X-RateLimit-*` legados
-});
-
-// Aplica o rate limiter a todas as rotas
-app.use(limiter);
-
 // Stream para o Winston
 const logStream = {
     write: message => logger.http(message.trim()),
@@ -42,10 +30,36 @@ const logStream = {
 // Middleware de logging HTTP com Morgan
 app.use(morgan('combined', { stream: logStream }));
 
-// Monta as rotas sob o prefixo /schools
-app.use('/schools', schoolRoutes);
-app.use('/grades', gradesRoutes);
+app.use(authMiddleware);
 
+// Configuração do rate limiter
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: (req) => {
+        logger.debug(`Rate limit check - User: ${req.user?.id}, Role: ${req.user?.role}`);
+        
+        if (req.user) {
+            return 1000; // 1000 requisições para usuários logados
+        }
+        return 100; // 100 requisições para não autenticados
+    },
+    message: (req) => ({
+        error: req.user 
+            ? 'Limite de requisições excedido para usuário autenticado' 
+            : 'Muitas requisições deste IP, por favor tente novamente mais tarde'
+    }),
+    standardHeaders: true, // Retorna informações de rate limit nos headers `RateLimit-*`
+    legacyHeaders: false, // Não retorna os headers `X-RateLimit-*` legados
+    skip: (req) => {
+        // Adiciona log para debug do skip
+        logger.debug(`Skip check - User Role: ${req.user?.role}`);
+        return req.user?.role === 'Master';
+    }
+});
+
+// Monta as rotas sob o prefixo /schools
+app.use('/schools', limiter, schoolRoutes);
+app.use('/grades', limiter, gradesRoutes);
 
 // Middleware de tratamento de erros global
 app.use((err, req, res, next) => {

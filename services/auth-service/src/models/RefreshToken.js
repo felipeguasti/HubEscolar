@@ -1,10 +1,9 @@
-// src/models/RefreshToken.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db'); // Assumindo que você tem um arquivo de configuração do Sequelize
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/db.js';
 
-const RefreshToken = sequelize.define('RefreshToken', {
+export const RefreshToken = sequelize.define('RefreshToken', {
     token: {
-        type: DataTypes.STRING(256), // Tamanho adequado para um token seguro
+        type: DataTypes.STRING(256),
         allowNull: false,
         unique: true,
     },
@@ -12,10 +11,10 @@ const RefreshToken = sequelize.define('RefreshToken', {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: 'Users', // Nome da tabela de usuários no seu banco de dados
+            model: 'Users',
             key: 'id',
         },
-        onDelete: 'CASCADE', // Se o usuário for excluído, os refresh tokens também serão
+        onDelete: 'CASCADE',
     },
     expiresAt: {
         type: DataTypes.DATE,
@@ -29,6 +28,7 @@ const RefreshToken = sequelize.define('RefreshToken', {
         allowNull: false,
         type: DataTypes.DATE,
     },
+}, {
+    tableName: 'refresh_tokens',
+    timestamps: true
 });
-
-module.exports = RefreshToken;

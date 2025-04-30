@@ -2,9 +2,15 @@
   "name": "auth-service",
   "version": "1.0.0",
   "main": "app-auth-service.js",
+  "type": "module",
   "scripts": {
     "start": "node app-auth-service.js",
-    "dev": "nodemon app-auth-service.js"
+    "dev": "nodemon app-auth-service.js",
+    "migrate": "sequelize-cli db:migrate",
+    "migrate:undo": "sequelize-cli db:migrate:undo",
+    "migrate:undo:all": "sequelize-cli db:migrate:undo:all",
+    "test": "mocha --experimental-modules tests/**/*.test.js --exit",
+    "test:watch": "mocha tests/**/*.test.js --watch"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +33,10 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
-    "sequelize-cli": "^6.6.2"
+    "chai": "^5.2.0",
+    "mocha": "^11.1.0",
+    "sequelize-cli": "^6.6.2",
+    "sinon": "^20.0.0",
+    "supertest": "^7.1.0"
   }
 }

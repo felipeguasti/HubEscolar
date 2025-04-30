@@ -1,7 +1,7 @@
-const { validationResult } = require('express-validator');
-const logger = require('../services/logger'); // Importe o logger
+import { validationResult } from 'express-validator';
+import logger from '../services/logger.js';
 
-const validationResultHandler = (req, res, next) => {
+export const validationResultHandler = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         logger.warn('Erros de validação encontrados:', errors.array());
@@ -10,4 +10,4 @@ const validationResultHandler = (req, res, next) => {
     next();
 };
 
-module.exports = validationResultHandler;
+export default validationResultHandler;

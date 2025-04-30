@@ -5,6 +5,7 @@ const sequelize = require('./src/config/db');
 const Report = require('./src/models/Report');
 const reportRoutes = require('./src/routes/reportRoutes');
 const ollamaRoutes = require('./src/routes/ollamaRoutes');
+const headerRoutes = require('./src/routes/headerRoutes');
 const logger = require('./src/services/loggingService');
 
 const app = express();
@@ -22,6 +23,7 @@ app.use((req, res, next) => {
 // Usar as rotas
 app.use('/reports', reportRoutes);
 app.use('/ai', ollamaRoutes);
+app.use('/headers', headerRoutes);
 
 // Rota de status
 app.get('/status', (req, res) => {

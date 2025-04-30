@@ -24,11 +24,8 @@ app.use(cors({
 // Middleware para parsear JSON
 app.use(express.json());
 
-// Rate limiting
-app.use(rateLimiter);
-
 // Rotas
-app.use('/districts', districtsRoutes);
+app.use('/districts', rateLimiter, districtsRoutes);
 app.use('/health', healthRoutes);
 
 // Middleware de tratamento de erros

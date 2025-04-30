@@ -1,4 +1,5 @@
 const Sequelize = require('sequelize');
+require('dotenv').config();
 
 // Credenciais do banco de dados externo
 const database = "u612973268_broadcast";

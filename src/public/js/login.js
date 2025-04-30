@@ -101,7 +101,7 @@ async function handleAuthCheck() {
         } else if (response.status === 302) {
             isAuthenticated = false; // Usuário não autenticado, foi redirecionado
             const currentPath = window.location.pathname;
-            const protectedPages = ['/dashboard', '/users', '/district', '/grade'];
+            const protectedPages = ['/dashboard', '/users', '/district', '/grade', '/features/settings'];
             const isLoginPage = currentPath === '/login';
             if (protectedPages.includes(currentPath) && !isLoginPage) {
                 hasRedirected = true;
@@ -111,7 +111,7 @@ async function handleAuthCheck() {
             // Lógica para 401 (não autorizado) se o servidor retornar isso
             isAuthenticated = false;
             const currentPath = window.location.pathname;
-            const protectedPages = ['/dashboard', '/users', '/district', '/grade'];
+            const protectedPages = ['/dashboard', '/users', '/district', '/grade', '/features/settings'];
             const isLoginPage = currentPath === '/login';
             if (protectedPages.includes(currentPath) && !isLoginPage) {
                 hasRedirected = true;

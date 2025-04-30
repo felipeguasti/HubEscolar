@@ -28,12 +28,12 @@
         <% } %>
 
         <!-- Gerenciar Ferramentas -->
-        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Secretario') { %>
-            <li><a href="/admin/tools/management">Gerenciar Ferramentas</a></li>
+        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Secretario') { %>
+            <li><a href="/features/settings">Gerenciar Ferramentas</a></li>
         <% } %>
         <% if (user.role !== 'Aluno') { %>
         <!-- Acessar as Ferramentas -->
-        <li><a href="/admin/tools">Acessar as Ferramentas</a></li>
+        <li><a href="/features">Acessar as Ferramentas</a></li>
         <% } %>
         <!-- Configurações Globais (Apenas Master) -->
         <% if (user.role === 'Master') { %>

@@ -79,6 +79,53 @@ Report.init({
     type: DataTypes.DATE,
     allowNull: true,
     comment: 'Data e hora agendada para reunião com responsáveis'
+  },
+
+  // Status do relatório
+  status: {
+    type: DataTypes.ENUM('pending', 'delivered', 'archived'),
+    defaultValue: 'pending',
+    allowNull: false,
+    comment: 'Status atual do relatório (pendente, entregue, arquivado)'
+  },
+
+  // Entrega
+  deliveredAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Data e hora em que o relatório foi entregue'
+  },
+  deliveredBy: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: 'ID do usuário que registrou a entrega'
+  },
+  deliveryMethod: {
+    type: DataTypes.ENUM('print', 'email', 'whatsapp'),
+    allowNull: true,
+    comment: 'Método usado para entregar o relatório'
+  },
+  deliveryConfirmation: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    comment: 'Protocolo ou confirmação de entrega (número WhatsApp, email, etc)'
+  }, 
+  parentResponse: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    comment: 'Resposta ou observação dos responsáveis'
+  },
+
+  // Assinatura
+  signedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Data e hora em que o relatório foi assinado'
+  },
+  signedBy: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    comment: 'Nome de quem assinou o relatório'
   }
 }, {
   sequelize,

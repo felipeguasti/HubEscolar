@@ -47,7 +47,7 @@ const {
 } = require('../services/userService');
 
 const tentativasCriacao = new Map();
-const MAX_TENTATIVAS = 5;
+const MAX_TENTATIVAS = 20;
 const TEMPO_BLOQUEIO = 15 * 60 * 1000;
 
 // Função auxiliar para fazer fetch com autorização
@@ -81,19 +81,28 @@ exports.buscarUsuarioPorEmail = async (req, res) => {
     }
 };
 
-const verificarTentativas = (ip) => {
+const verificarTentativas = (ip, isAuthenticated) => {
+    // Se o usuário estiver autenticado, não conta tentativas
+    if (isAuthenticated) {
+        return { bloqueado: false };
+    }
+
     const agora = Date.now();
     const tentativas = tentativasCriacao.get(ip) || { contador: 0, ultimaTentativa: 0 };
+    
     if (agora - tentativas.ultimaTentativa > TEMPO_BLOQUEIO) {
         tentativas.contador = 0;
     }
+    
     tentativas.contador++;
     tentativas.ultimaTentativa = agora;
     tentativasCriacao.set(ip, tentativas);
+    
     if (tentativas.contador > MAX_TENTATIVAS) {
         const tempoRestante = Math.ceil((TEMPO_BLOQUEIO - (agora - tentativas.ultimaTentativa)) / 1000 / 60);
         return { bloqueado: true, tempoRestante };
     }
+    
     return { bloqueado: false };
 };
 
@@ -120,7 +129,8 @@ exports.adicionarUsuario = [
 
     async (req, res) => {
         const ip = req.ip || req.connection.remoteAddress;
-        const verificação = verificarTentativas(ip);
+        const isAuthenticated = !!req.user;
+        const verificação = verificarTentativas(ip, isAuthenticated);
         if (verificação.bloqueado) {
             return res.status(429).json({ message: `Muitas tentativas de criação. Tente novamente em ${verificação.tempoRestante} minutos.` });
         }
@@ -235,7 +245,7 @@ exports.adicionarUsuario = [
     }
 ];
 
-exports.listarUsuarios = async (req, res) => {
+exports.listarUsuariosValidados = async (req, res) => {
     try {
         let whereClause = {};
 
@@ -257,6 +267,69 @@ exports.listarUsuarios = async (req, res) => {
     } catch (error) {
         console.error('Erro ao listar/filtrar usuários:', error);
         await logService.error('Erro ao listar/filtrar usuários', { error: error.message });
+        res.status(500).json({ message: 'Erro ao listar/filtrar usuários.' });
+    }
+};
+
+exports.listarUsuarios = async (req, res) => {
+    try {
+        // Verificar autenticação
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ message: 'Usuário não autenticado.' });
+        }
+
+        const requesterData = await User.findByPk(req.user.id);
+        if (!requesterData) {
+            return res.status(404).json({ message: 'Usuário não encontrado.' });
+        }
+
+        let whereClause = {};
+        console.log('req.query:', req.query);
+
+        // Buscar todos os usuários primeiro
+        const allUsers = await User.findAll({
+            attributes: { exclude: ['password'] }
+        });
+
+        // Filtrar manualmente com JavaScript
+        let filteredUsers = allUsers;
+
+        // Filtro por nome (case insensitive)
+        if (req.query.query) {
+            filteredUsers = filteredUsers.filter(user => 
+                user.name.toLowerCase().includes(req.query.query.toLowerCase())
+            );
+        }
+
+        // Filtro por role
+        if (req.query.role) {
+            filteredUsers = filteredUsers.filter(user => 
+                user.role === req.query.role
+            );
+        }
+
+        // Filtro por distrito
+        if (req.query.districtId && req.query.districtId !== '') {
+            filteredUsers = filteredUsers.filter(user => 
+                // Convert both to strings for comparison
+                String(user.districtId) === String(req.query.districtId)
+            );
+        }
+
+
+        // Restrições baseadas no papel do usuário
+        if (requesterData.role !== 'Master' && requesterData.role !== 'Inspetor') {
+            filteredUsers = filteredUsers.filter(user => 
+                user.schoolId === requesterData.schoolId && 
+                user.districtId === requesterData.districtId
+            );
+        }
+
+        console.log(`Quantidade de usuários encontrados: ${filteredUsers.length}`);
+        res.json(filteredUsers);
+
+    } catch (error) {
+        console.error('Erro ao listar/filtrar usuários:', error);
         res.status(500).json({ message: 'Erro ao listar/filtrar usuários.' });
     }
 };

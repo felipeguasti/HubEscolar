@@ -1,0 +1,47 @@
+<section class="admin-master-container">
+  <%- include('../partials/admin-sidebar') %>
+  <main class="admin-master-content">
+    <header class="admin-master-header">
+      <h1>Configuração dos cabeçalhos</h1>
+      <p>Preencha os campos abaixo para configurar o cabeçalho dos relatórios e atas.</p>
+    </header>
+
+    <div class="header-config-container">
+      <form id="headerForm" class="header-form" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="schoolLogo">Logo da Escola</label>
+          <div class="logo-upload-container">
+            <img id="schoolLogoPreview" src="<%= header.schoolLogo || '/medias/images/no-image-logo.png' %>" alt="Logo da Escola">
+            <input type="file" id="schoolLogo" name="schoolLogo" accept="image/*" class="logo-input">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('schoolLogo').click()">
+              Escolher Logo
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="districtLogo">Logo da Autarquia</label>
+          <div class="logo-upload-container">
+            <img id="districtLogoPreview" src="<%= header.districtLogo || '/medias/images/no-image-logo.png' %>" alt="Logo da Autarquia">
+            <input type="file" id="districtLogo" name="districtLogo" accept="image/*" class="logo-input">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('districtLogo').click()">
+              Escolher Logo
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+            <label for="line1">Linha 1 do cabeçalho</label>
+            <input type="text" id="line1" name="line1" class="form-control" value="<%= header?.line1 || '' %>" required>
+            <label for="line2">Linha 2 do cabeçalho</label>
+            <input type="text" id="line2" name="line2" class="form-control" value="<%= header?.line2 || '' %>" required>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Salvar Configurações</button>
+          <button type="button" class="btn btn-danger" onclick="deleteHeader()">Excluir Configurações</button>
+        </div>
+      </form>
+    </div>
+  </main>
+</section>

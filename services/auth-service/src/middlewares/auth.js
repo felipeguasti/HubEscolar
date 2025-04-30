@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const logger = require('../services/logger'); // Importe o logger
+import jwt from 'jsonwebtoken';
+import logger from '../services/logger.js';
 
-const authMiddleware = (req, res, next) => {
+export const authMiddleware = (req, res, next) => {
     let token = null;
 
     if (req.originalUrl === '/auth/validate-token' && req.body.accessToken) {
@@ -21,9 +21,8 @@ const authMiddleware = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // Mantemos a informação do usuário decodificado na requisição
+        req.user = decoded;
         next();
-
     } catch (err) {
         logger.error('Erro na validação do token:', err.message);
 
@@ -37,4 +36,4 @@ const authMiddleware = (req, res, next) => {
     }
 };
 
-module.exports = authMiddleware;
+export default authMiddleware;

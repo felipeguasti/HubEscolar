@@ -23,7 +23,7 @@
         <% } %>
 
         <!-- Card 2: Gerenciar Turmas -->
-        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Secretario') { %>
+        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Secretario' || user.role === 'Diretor') { %>
           <div class="admin-card">
             <h3>Gerenciar as Turmas das Escolas</h3>
             <p>Controle as turmas das escolas do sistema e acrescente o nome dos alunos.</p>
@@ -59,11 +59,11 @@
         <% } %>
     
         <!-- Card 6: Gerenciar Ferramentas -->
-        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Secretario') { %>
+        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Secretario') { %>
           <div class="admin-card">
             <h3>Gerenciar Ferramentas</h3>
             <p>Altere as configurações das ferramentas disponíveis.</p>
-            <a href="/admin/tools/management" class="admin-card-btn">Acessar</a>
+            <a href="/features/settings" class="admin-card-btn">Acessar</a>
           </div>
         <% } %>
     
@@ -72,7 +72,7 @@
           <div class="admin-card">
             <h3>Acessar as Ferramentas</h3>
             <p>Acesse as ferramentas disponíveis em nossa plataforma.</p>
-            <a href="/admin/tools" class="admin-card-btn">Acessar</a>
+            <a href="/features" class="admin-card-btn">Acessar</a>
           </div>
         <% } %>
     

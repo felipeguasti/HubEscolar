@@ -1,0 +1,51 @@
+<section class="admin-master-container">
+    <%- include('../partials/admin-sidebar') %>  
+    <main class="admin-master-content">
+        <!-- Header Section -->
+        <header class="admin-master-header">
+            <h1>Minhas Ferramentas</h1>
+            <p>Acesse suas ferramentas disponíveis</p>
+        </header>
+        <!-- Features Grid -->
+        <section class="features-dashboard-content">
+            <% if (Object.values(groupedFeatures).every(group => group.length === 0)) { %>
+                <div class="no-features-message">
+                    <h2>Nenhuma ferramenta disponível</h2>
+                    <p>
+                        <% if (['Coordenador', 'Pedagogo', 'Professor', 'Diretor', 'Aluno', 'Secretario'].includes(user.role)) { %>
+                            Para solicitar acesso às ferramentas, por favor entre em contato com a secretaria da sua escola.
+                        <% } else if (['Inspetor', 'Master'].includes(user.role)) { %>
+                            Para solicitar acesso às ferramentas, por favor entre em contato com a Secretaria de Educação.
+                        <% } %>
+                    </p>
+                </div>
+            <% } else { %>
+                <% Object.entries(groupedFeatures).forEach(([category, features]) => { %>
+                    <% if (features.length > 0) { %>
+                        <div class="features-category">
+                            <h2 class="category-title">
+                            <%= category === 'administrative' ? 'Administrativo' :
+                                category === 'academic' ? 'Acadêmico' :
+                                category === 'reports' ? 'Relatórios' : 'Outros' %>
+                            </h2>
+                            
+                            <div class="features-grid">
+                            <% features.forEach(feature => { %>
+                                <a href="<%= feature.route %>" class="feature-card">
+                                <div class="feature-card-content">
+                                    <h3 class="feature-title"><%= feature.name %></h3>
+                                    <p class="feature-description"><%= feature.description %></p>
+                                </div>
+                                <div class="feature-card-footer">
+                                    <span class="feature-access">Acessar →</span>
+                                </div>
+                                </a>
+                            <% }) %>
+                            </div>
+                        </div>
+                    <% } %>
+                <% }) %>
+            <% } %>
+        </section>
+    </main>
+</section>

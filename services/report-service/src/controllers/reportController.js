@@ -1,10 +1,14 @@
 const userService = require('../services/userService');
 const aiService = require('../services/aiService');
+const headerService = require('../services/headerService');
 const logger = require('../services/loggingService');
 const faltasDisciplinares = require('../../faltas_disciplinares.json');
 const direitosDeveres = require('../../direitos_deveres.json');
 const Report = require('../models/Report');
 const { Op } = require('sequelize');
+const PDFDocument = require('pdfkit');
+const axios = require('axios');
+const USERS_SERVICE_URL = process.env.USERS_SERVICE_URL;
 
 async function createReport(req, res) {
     try {
@@ -184,7 +188,7 @@ async function createManualReport(req, res) {
       }
 
       // 9. Montar o texto do relatório
-      let reportText = `O(a) aluno(a), ${student.name}, ${student.class ? `do ${student.class},` : 'da turma não informada,'} na data de hoje, ${hoje}, foi atendido(a) pelo(a) ${requesterUserDetails ? requesterUserDetails.role : 'usuário(a)'} ${requesterUserDetails ? requesterUserDetails.name : 'não identificado(a)'}`;
+      let reportText = `O(a) aluno(a), ${student.name}, ${student.class ? `do ${student.class},` : 'da turma não informada,'} na data de hoje, ${hoje}, foi atendido(a) pelo(a) ${requesterUserDetails ? requesterUserDetails.role : 'usuário'}(a) ${requesterUserDetails ? requesterUserDetails.name : 'não identificado(a)'}`;
 
       if (suspended && suspensionDuration > 0) {
           reportText += ` e foi suspenso(a) por ${suspensionDuration} dia(s)`;
@@ -288,6 +292,18 @@ async function deleteReport(req, res) {
 
 async function listReports(req, res) {
     try {
+        // Log do usuário que faz a requisição
+        logger.info(`Usuário fazendo a requisição - ID: ${req.user.id}, Role: ${req.user.role}`);
+
+        // Verificar o role do usuário
+        const requesterUser = req.user;
+        if (!requesterUser || ['Master', 'Inspetor', 'Aluno'].includes(requesterUser.role)) {
+            logger.warn(`Acesso negado para usuário com role ${requesterUser?.role || 'não definido'}`);
+            return res.status(403).json({ 
+                error: 'Você não tem permissão para visualizar relatórios.' 
+            });
+        }
+
         const {
             id,
             studentId,
@@ -305,7 +321,7 @@ async function listReports(req, res) {
         const accessToken = authorizationHeader ? authorizationHeader.split(' ')[1] : null;
 
         // Se ID for fornecido, buscar relatório específico
-        console.log(`ID fornecido: ${req.query.id}`);
+        logger.info(`ID fornecido: ${req.query.id}`);
         if (id) {
             const report = await Report.findByPk(id);
             
@@ -319,18 +335,37 @@ async function listReports(req, res) {
             try {
                 const studentData = await userService.fetchUser(report.studentId, accessToken);
                 const creatorData = await userService.fetchUser(report.createdById, accessToken);
+                // Buscar dados do usuário logado
+                const requesterData = await userService.fetchUser(req.user.id, accessToken);
 
-                const enrichedReport = {
-                    ...reportData,
-                    studentName: studentData?.name || 'Nome não disponível',
-                    createdByName: creatorData?.name || 'Nome não disponível'
-                };
+                // Log detalhado para debug
+                logger.info(`
+                    Verificando permissões:
+                    StudentData: ${JSON.stringify(studentData)}
+                    CreatorData: ${JSON.stringify(creatorData)}
+                    RequesterData: ${JSON.stringify(requesterData)}
+                    SchoolId Match (Requester-Student): ${studentData.schoolId === requesterData.schoolId}
+                    DistrictId Match (Requester-Student): ${studentData.districtId === requesterData.districtId}
+                `);
 
-                return res.status(200).json({
-                    total: 1,
-                    limit: 1,
-                    offset: 0,
-                    reports: [enrichedReport]
+                // Verificar se o aluno pertence à mesma escola/distrito do usuário logado
+                if (studentData.schoolId === requesterData.schoolId && 
+                    studentData.districtId === requesterData.districtId) {
+                    return res.status(200).json({
+                        total: 1,
+                        limit: 1,
+                        offset: 0,
+                        reports: [{
+                            ...reportData,
+                            studentName: studentData?.name || 'Nome não disponível',
+                            createdByName: creatorData?.name || 'Nome não disponível'
+                        }]
+                    });
+                }
+                
+                // Se não pertencer à mesma escola/distrito
+                return res.status(403).json({ 
+                    error: 'Você não tem permissão para ver este relatório.' 
                 });
             } catch (error) {
                 logger.warn(`Erro ao buscar dados de usuários para o relatório ${id}`);
@@ -367,10 +402,19 @@ async function listReports(req, res) {
             }
         }
 
+        // Log dos filtros recebidos
+        logger.info(`Filtros recebidos na requisição: ${JSON.stringify(req.query)}`);
+
         // Log para debug
         logger.info(`Filtros aplicados: ${JSON.stringify(whereClause)}`);
 
-        const { count, rows: reports } = await Report.findAndCountAll({
+        // Primeiro, vamos obter o total de relatórios que atendem aos critérios
+        const totalCount = await Report.count({
+            where: whereClause
+        });
+
+        // Depois, buscamos os relatórios paginados
+        const { rows: reports } = await Report.findAndCountAll({
             where: whereClause,
             limit: parseInt(limit),
             offset: parseInt(offset),
@@ -382,7 +426,14 @@ async function listReports(req, res) {
 
         const authToken = req.headers.authorization?.split(' ')[1];
 
-        // Buscar nomes dos alunos e criadores
+        // Log após buscar os relatórios
+        logger.info(`Quantidade de relatórios encontrados: ${totalCount}`);
+        logger.info(`Relatórios antes do enriquecimento: ${JSON.stringify(reports.map(r => r.id))}`);
+
+        // Durante o enriquecimento dos relatórios
+        const requesterData = await userService.fetchUser(req.user.id, authToken);
+        logger.info(`Dados do usuário solicitante: SchoolId: ${requesterData.schoolId}, DistrictId: ${requesterData.districtId}`);
+
         const enrichedReports = await Promise.all(reports.map(async (report) => {
             const reportData = report.toJSON();
             
@@ -390,26 +441,46 @@ async function listReports(req, res) {
                 const studentData = await userService.fetchUser(report.studentId, authToken);
                 const creatorData = await userService.fetchUser(report.createdById, authToken);
                 
-                return {
-                    ...reportData,
-                    studentName: studentData?.name || 'Nome não disponível',
-                    createdByName: creatorData?.name || 'Nome não disponível'
-                };
+                // Verificar se o aluno pertence à mesma escola/distrito do usuário logado
+                if (studentData.schoolId === requesterData.schoolId && 
+                    studentData.districtId === requesterData.districtId) {
+                    
+                    logger.info(`
+                        Relatório ID: ${report.id}
+                        Aluno ID: ${studentData.id}
+                        Escola do Aluno: ${studentData.schoolId}
+                        Distrito do Aluno: ${studentData.districtId}
+                        Criador ID: ${creatorData.id}
+                        Escola do Criador: ${creatorData.schoolId}
+                        Distrito do Criador: ${creatorData.districtId}
+                    `);
+
+                    return {
+                        ...reportData,
+                        studentName: studentData?.name || 'Nome não disponível',
+                        createdByName: creatorData?.name || 'Nome não disponível'
+                    };
+                }
+                return null; // Retorna null se não pertencer à mesma escola/distrito
+                
             } catch (error) {
-                logger.warn(`Erro ao buscar dados de usuários para o relatório ${report.id}`);
-                return {
-                    ...reportData,
-                    studentName: 'Nome não disponível',
-                    createdByName: 'Nome não disponível'
-                };
+                logger.warn(`Erro ao buscar dados de usuários para o relatório ${report.id}: ${error.message}`);
+                return null;
             }
         }));
-        
+
+        // Filtrar relatórios nulos (que não pertencem à mesma escola/distrito)
+        const filteredReports = enrichedReports.filter(report => report !== null);
+
+        // Log dos relatórios após o enriquecimento e filtragem
+        logger.info(`Relatórios após enriquecimento e filtragem: ${filteredReports.length}`);
+
         return res.status(200).json({
-            total: count,
+            total: totalCount, // Total geral de registros
+            filtered: filteredReports.length, // Quantidade após filtros de escola/distrito
             limit: parseInt(limit),
             offset: parseInt(offset),
-            reports: enrichedReports
+            reports: filteredReports
         });
 
     } catch (error) {
@@ -417,10 +488,305 @@ async function listReports(req, res) {
         return res.status(500).json({ error: 'Erro ao listar relatórios.' });
     }
 }
-  
+
+async function generateReportPDF(reportId, requesterUser, authToken, logos) {
+    try {
+        logger.info(`Iniciando geração de PDF para o relatório ID: ${reportId}`);
+        logger.info('Logos recebidos:', logos);
+
+        // 1. Buscar o relatório
+        const report = await Report.findByPk(reportId);
+        if (!report) {
+            logger.warn(`Relatório ID ${reportId} não encontrado`);
+            throw new Error('Relatório não encontrado.');
+        }
+
+        // 2. Buscar dados dos usuários com melhor tratamento de erro
+        let creatorDetails, requesterDetails;
+        try {
+            // Buscar dados em paralelo com Promise.all
+            const [creatorResponse, requesterResponse] = await Promise.all([
+                axios.get(`${USERS_SERVICE_URL}/users/list/${report.createdById}`, {
+                    headers: { Authorization: `Bearer ${authToken}` },
+                    timeout: 5000 // 5 segundos timeout
+                }).catch(error => {
+                    logger.error(`Erro ao buscar dados do criador: ${error.message}`);
+                    return { data: { 
+                        name: 'Nome não disponível',
+                        role: report.createdByRole,
+                        schoolId: null
+                    }};
+                }),
+                
+                axios.get(`${USERS_SERVICE_URL}/users/list/${requesterUser.id}`, {
+                    headers: { Authorization: `Bearer ${authToken}` },
+                    timeout: 5000
+                }).catch(error => {
+                    logger.error(`Erro ao buscar dados do solicitante: ${error.message}`);
+                    return { data: { 
+                        name: requesterUser.name || 'Nome não disponível',
+                        role: requesterUser.role
+                    }};
+                })
+            ]);
+
+            creatorDetails = creatorResponse.data;
+            requesterDetails = requesterResponse.data;
+
+            logger.info('Dados dos usuários obtidos:', { 
+                creator: { id: creatorDetails.id, schoolId: creatorDetails.schoolId },
+                requester: { id: requesterDetails.id }
+            });
+
+            // 3. Tentar obter o header com fallback para valores padrão
+            const header = await headerService.getOrCreateHeader(
+                creatorDetails.schoolId, 
+                authToken
+            ).catch(error => {
+                logger.error('Erro ao obter header');
+                return {
+                    line1: 'LINHA 1 NÃO DISPONÍVEL',
+                    line2: 'LINHA 2 NÃO DISPONÍVEL',
+                    cachedSchoolName: 'NOME DA ESCOLA'
+                };
+            });
+
+            // 4. Gerar o PDF
+            return new Promise((resolve, reject) => {
+                const doc = new PDFDocument({
+                    size: 'A4',
+                    margin: 50,
+                    autoFirstPage: true
+                });
+
+                const chunks = [];
+                doc.on('data', chunk => chunks.push(chunk));
+                doc.on('end', () => resolve(Buffer.concat(chunks)));
+                doc.on('error', reject);
+
+                try {
+                    // Header Layout - Usando os logos recebidos via parâmetro
+                    logger.info('Tentando carregar logos:', {
+                        districtLogo: logos.districtLogo,
+                        schoolLogo: logos.schoolLogo
+                    });
+
+                    // Ajustando posicionamento e tamanho das logos
+                    if (logos.districtLogo) {
+                        try {
+                            doc.image(
+                                logos.districtLogo, 
+                                50,    // x position 
+                                30,    // y position
+                                {
+                                    width: 60,
+                                    align: 'left',
+                                    valign: 'top'
+                                }
+                            );
+                            logger.info('Logo do distrito carregada com sucesso');
+                        } catch (error) {
+                            logger.error('Erro ao carregar logo do distrito:', error.message);
+                        }
+                    }
+
+                    if (logos.schoolLogo) {
+                        try {
+                            doc.image(
+                                logos.schoolLogo, 
+                                485,   // x position
+                                30,    // y position
+                                {
+                                    width: 60,
+                                    align: 'right',
+                                    valign: 'top'
+                                }
+                            );
+                            logger.info('Logo da escola carregada com sucesso');
+                        } catch (error) {
+                            logger.error('Erro ao carregar logo da escola:', error.message);
+                        }
+                    }
+
+                    // Center text information - Reduzindo espaçamento do cabeçalho
+                    doc.font('Helvetica-Bold')
+                       .fontSize(12)
+                       .moveDown(0.2)
+                       .text(header.line1.toUpperCase(), { align: 'center' })
+                       .moveDown(0.1)
+                       .text(header.line2.toUpperCase(), { align: 'center' })
+                       .moveDown(0.1)
+                       .fontSize(10)
+                       .text(header.cachedSchoolName.toUpperCase(), { align: 'center' })
+                       .moveDown(2); // Aumentado espaço antes do título
+
+                    // Title
+                    doc.fontSize(16)
+                       .text('ADVERTÊNCIA DISCIPLINAR', { align: 'center' })
+                       .moveDown();
+
+                       doc.font('Helvetica')
+                       .fontSize(12)
+                       .text(report.content, {
+                           align: 'justify',
+                           lineGap: 2
+                       })
+                       .moveDown();
+
+                    // Parent response section
+                    if (report.parentResponse) {
+                        doc.moveDown()
+                        .font('Helvetica-Bold')
+                        .text('Resposta do Responsável:', { continued: true })
+                        .font('Helvetica')
+                        .text(` ${report.parentResponse}`, {
+                            align: 'justify',
+                            lineGap: 2
+                        })
+                        .moveDown();
+                    }
+
+                    // If the report was delivered, add delivery info
+                    if (report.deliveredAt) {
+                        doc.moveDown()
+                           .font('Helvetica')
+                           .fontSize(10)
+                           .text(`Entregue em: ${new Date(report.deliveredAt).toLocaleString('pt-BR')}`)
+                           .text(`Método de entrega: ${
+                               report.deliveryMethod === 'print' ? 'Impresso' :
+                               report.deliveryMethod === 'email' ? 'E-mail' :
+                               report.deliveryMethod === 'whatsapp' ? 'WhatsApp' :
+                               'Não especificado'
+                           }`)
+                           .moveDown();
+                    }
+
+                    addFooterWithSignatures(doc, requesterDetails, creatorDetails);
+                    doc.end();  
+                } catch (error) {
+                    reject(error);
+                }
+            });
+
+        } catch (error) {
+            logger.error('Erro detalhado ao gerar PDF:', {
+                message: error.message,
+                reportId,
+                creatorId: report.createdById,
+                requesterId: requesterUser.id
+            });
+            throw new Error(`Falha ao gerar PDF: ${error.message}`);
+        }
+
+    } catch (error) {
+        logger.error(`Erro ao gerar PDF: ${error.message}`);
+        throw error;
+    }
+}
+
+// Helper function for footer with signatures
+function addFooterWithSignatures(doc, requesterDetails, creatorDetails) {
+    const bottomMargin = 50;
+    const footerText = `Relatório criado por ${requesterDetails.name} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} de ${new Date().toLocaleDateString('pt-BR')}.`;
+    
+    // Cálculos mais precisos das alturas
+    const lineHeight = doc.currentLineHeight(true);
+    const underlineHeight = doc.heightOfString('_');
+    const nameHeight = doc.heightOfString('Nome');
+    
+    // Altura do bloco de assinatura do responsável
+    const responsibleSignatureHeight = underlineHeight + // linha da assinatura
+                                     nameHeight +        // texto "Assinatura do Responsável"
+                                     lineHeight * 2;     // espaço entre blocos
+    
+    // Altura do bloco de assinatura do criador
+    const creatorSignatureHeight = underlineHeight +    // linha da assinatura
+                                 nameHeight * 2 +       // cargo + nome do criador
+                                 lineHeight;            // espaço após assinatura
+    
+    // Altura do footer text
+    const footerTextHeight = doc.heightOfString(footerText);
+    
+    // Altura total com espaçamentos
+    const totalFooterHeight = responsibleSignatureHeight + 
+                            creatorSignatureHeight + 
+                            footerTextHeight + 
+                            (lineHeight * 4); // espaço extra para separação
+
+    // Se precisar de nova página
+    if (doc.y + totalFooterHeight > doc.page.height - bottomMargin) {
+        doc.addPage();
+    }
+
+    // Posicionar na parte inferior da página
+    const startY = doc.page.height - totalFooterHeight - bottomMargin;
+    doc.y = startY;
+
+    // Assinaturas com espaçamento controlado
+    doc.text('_______________________________', { align: 'center' })
+       .text('Assinatura do Responsável', { align: 'center' })
+       .moveDown(2)
+       .text('_______________________________', { align: 'center' })
+       .text(`Assinatura do(a) ${
+           creatorDetails.role === 'Master' ? 'Master' : 
+           creatorDetails.role === 'Diretor' ? 'Diretor(a)' :
+           creatorDetails.role === 'Coordenador' ? 'Coordenador(a)' :
+           creatorDetails.role === 'Professor' ? 'Professor(a)' :
+           creatorDetails.role === 'Secretario' ? 'Secretário(a)' :
+           creatorDetails.role === 'Pedagogo' ? 'Pedagogo(a)' : 
+           creatorDetails.role
+       }`, { align: 'center' })
+       .text(`${creatorDetails.name}`, { align: 'center' })
+       .moveDown(2);
+
+    // Footer text no final da página
+    doc.fontSize(10)
+       .text(footerText, 50, doc.page.height - bottomMargin - footerTextHeight, {
+           align: 'right',
+           width: doc.page.width - 100
+       });
+}
+
+async function registerDelivery(reportId, deliveryData) {
+    try {
+        logger.info(`Registrando entrega para relatório ID: ${reportId}`);
+        
+        // 1. Buscar o relatório
+        const report = await Report.findByPk(reportId);
+        if (!report) {
+            logger.warn(`Relatório ID ${reportId} não encontrado`);
+            throw new Error('Relatório não encontrado');
+        }
+
+        // 2. Preparar dados da entrega
+        const now = new Date();
+        const updateData = {
+            status: 'delivered',
+            deliveredAt: deliveryData.deliveredAt,
+            deliveredBy: deliveryData.deliveredBy,
+            deliveryMethod: deliveryData.method,
+            parentResponse: deliveryData.parentResponse,
+            signedAt: deliveryData.signedAt || now,  // Usa data da assinatura do frontend ou now como fallback
+            signedBy: deliveryData.signedBy
+        };
+
+        // 3. Atualizar relatório
+        await report.update(updateData);
+
+        logger.info(`Entrega registrada com sucesso para relatório ID: ${reportId}`, updateData);
+        return report;
+
+    } catch (error) {
+        logger.error(`Erro ao registrar entrega do relatório: ${error.message}`);
+        throw error;
+    }
+}
+
 module.exports = {
-  createReport,
-  createManualReport,
-  deleteReport,
-  listReports
+    createReport,
+    createManualReport,
+    deleteReport,
+    listReports,
+    generateReportPDF,
+    registerDelivery
 };

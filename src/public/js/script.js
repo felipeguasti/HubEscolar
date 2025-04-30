@@ -1,4 +1,4 @@
-const protectedPages = ['/dashboard', '/profile', '/settings', '/users', '/turmas', '/conteudos', '/reports', '/users'];
+const protectedPages = ['/dashboard', '/profile', '/settings', '/users', '/turmas', '/conteudos', '/reports', '/users', '/features/settings'];
 const currentPath = window.location.pathname;
 const userRole = sessionStorage.getItem("user.role");
 const logoutButton = document.getElementById('logout-btn');

@@ -105,6 +105,35 @@ const reportService = {
         }
     },
 
+    async generateReportPDF(accessToken, reportId, logos) {
+        try {
+            logger.info(`Iniciando geração de PDF para o relatório ID: ${reportId}`);
+            logger.info('Logos sendo enviados:', logos);
+
+            // Construir query string com os logos
+            const queryParams = new URLSearchParams();
+            if (logos?.schoolLogo) queryParams.append('schoolLogo', logos.schoolLogo);
+            if (logos?.districtLogo) queryParams.append('districtLogo', logos.districtLogo);
+
+            const response = await axios.get(
+                `${REPORT_SERVICE_BASE_URL}/reports/${reportId}/print?${queryParams.toString()}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    responseType: 'arraybuffer' // Important for PDF binary data
+                }
+            );
+
+            logger.info(`PDF gerado com sucesso para o relatório ID: ${reportId}`);
+            return response.data;
+        } catch (error) {
+            logger.error('Erro ao gerar PDF do relatório via report-service:', 
+                error.response ? error.response.data : error.message);
+            throw error;
+        }
+    },
+
     async deleteReport(accessToken, reportId) {
         try {
             const response = await axios.delete(
@@ -119,6 +148,30 @@ const reportService = {
             return response.data;
         } catch (error) {
             logger.error('Erro ao deletar relatório via report-service:', 
+                error.response ? error.response.data : error.message);
+            throw error;
+        }
+    },
+
+    async registerDelivery(accessToken, reportId, deliveryData) {
+        try {
+            logger.info(`Registrando entrega para o relatório ID: ${reportId}`);
+            logger.info('Dados da entrega:', deliveryData);
+
+            const response = await axios.post(
+                `${REPORT_SERVICE_BASE_URL}/reports/${reportId}/deliver`,
+                deliveryData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    }
+                }
+            );
+
+            logger.info(`Entrega registrada com sucesso para o relatório ID: ${reportId}`);
+            return response.data;
+        } catch (error) {
+            logger.error('Erro ao registrar entrega via report-service:', 
                 error.response ? error.response.data : error.message);
             throw error;
         }

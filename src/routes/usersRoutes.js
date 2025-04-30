@@ -19,12 +19,27 @@ router.get('/', isAuthenticated, async (req, res) => {
         // Chamar o users-service para obter a lista de usuários
         let users = await usersService.getUsers(accessToken);
 
-        // Filtrar usuários com base na role (isso idealmente estaria no users-service)
+        // Filtrar usuários com base na role
         let filteredUsers = users;
         if (loggedInUser.role !== 'Master') {
-            filteredUsers = await usersService.filterUsers(loggedInUser.role, loggedInUser.districtId, loggedInUser.schoolId, accessToken);
-        } else {
+            // Criar objeto de filtros baseado no role
+            const filters = {
+                districtId: loggedInUser.districtId,
+                ...(loggedInUser.role !== 'Inspetor' && { schoolId: loggedInUser.schoolId })
+            };
+            
+            const response = await usersService.filterUsers(filters, accessToken);
+            // Garantir que filteredUsers seja sempre um array
+            filteredUsers = response.users || response || [];
         }
+
+        // Agora podemos usar map com segurança
+        const usersWithCorrectedDates = filteredUsers.map(user => ({
+            ...user,
+            createdAt: user.createdAt ? new Date(user.createdAt) : null,
+            updatedAt: user.updatedAt ? new Date(user.updatedAt) : null,
+            dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth) : null
+        }));
 
         // Chamar o districts-service para obter a lista de distritos
         const districts = await districtsService.getAllDistricts(accessToken, 1, 100);
@@ -41,13 +56,6 @@ router.get('/', isAuthenticated, async (req, res) => {
             editingUser = await usersService.getUserById(req.query.userId, accessToken);
         }
 
-        const usersWithCorrectedDates = filteredUsers.map(user => ({
-            ...user,
-            createdAt: user.createdAt ? new Date(user.createdAt) : null,
-            updatedAt: user.updatedAt ? new Date(user.updatedAt) : null,
-            dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth) : null // Se você usa essa data na view
-        }));
-
         res.render('users', {
             title: 'Usuários',
             user: loggedInUser,
@@ -61,6 +69,7 @@ router.get('/', isAuthenticated, async (req, res) => {
             userRole: loggedInUser.role,
             currentUserId: loggedInUser.id
         });
+
     } catch (err) {
         console.error('[USERS-DISTRICT - /] Erro ao buscar dados para a página de usuários:', err);
         res.status(500).send('Erro ao carregar a página de usuários');
@@ -165,6 +174,7 @@ router.get('/list/:id', isAuthenticated, async (req, res) => {
 router.get('/filter', isAuthenticated, async (req, res) => {
     const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
     try {
+        console.log('Filtros recebidos:', req.query); // Log para debug
         const filteredUsers = await usersService.filterUsers(req.query, accessToken);
         return res.json(filteredUsers);
     } catch (error) {
