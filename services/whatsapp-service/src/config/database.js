@@ -1,34 +1,62 @@
+require('dotenv').config();
+
+// Development configuration (default)
+const development = {
+  username: "u612973268_broadcast",
+  password: "E1=iTrLXsvk",
+  database: "u612973268_broadcast",
+  host: "localhost",
+  dialect: "mysql",
+  logging: false
+};
+
+// Test configuration
+const test = {
+  username: process.env.MYSQL_USER || "u612973268_broadcast",
+  password: process.env.MYSQL_PASSWORD || "E1=iTrLXsvk",
+  database: process.env.MYSQL_DATABASE || "u612973268_broadcast_test",
+  host: process.env.MYSQL_HOST || "localhost",
+  dialect: "mysql",
+  logging: false
+};
+
+// Production configuration
+const production = {
+  username: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_DATABASE,
+  host: process.env.MYSQL_HOST,
+  dialect: "mysql",
+  logging: false
+};
+
+// Export configurations for Sequelize CLI
+module.exports = {
+  development,
+  test,
+  production
+};
+
+// Export Sequelize instance for models
 const Sequelize = require('sequelize');
+const sequelize = new Sequelize(
+  development.database,
+  development.username,
+  development.password,
+  {
+    host: development.host,
+    dialect: development.dialect,
+    logging: development.logging
+  }
+);
 
-// Credenciais do banco de dados externo
-const database = "u612973268_broadcast";
-const username = "u612973268_broadcast";
-const password = "E1=iTrLXsvk";
-const host = "localhost";
-const dialect = "mysql";
-
-// Credenciais do banco de dados (obtidas das variáveis de ambiente)
-// const database = process.env.MYSQL_DATABASE;
-// const username = process.env.MYSQL_USER;
-// const password = process.env.MYSQL_PASSWORD;
-// const host = process.env.MYSQL_HOST; // Padrão: localhost
-// const dialect = process.env.MYSQL_DIALECT;
-
-// Inicializar a conexão com o banco de dados
-const sequelize = new Sequelize(database, username, password, {
-    host: host,
-    dialect: dialect,
-    logging: false, // Define se as mensagens de log do Sequelize serão exibidas (desabilitado neste caso)
-});
-
-// Testar a conexão
+// Test connection
 sequelize.authenticate()
-    .then(() => {
-        console.log('Conexão com MySQL estabelecida com sucesso! (Banco de dados local)');
-    })
-    .catch(err => {
-        console.error('Erro ao conectar ao MySQL: (Banco de dados local)', err);
-    });
+  .then(() => {
+    console.log('Conexão com MySQL estabelecida com sucesso!');
+  })
+  .catch(err => {
+    console.error('Erro ao conectar ao MySQL:', err);
+  });
 
-// Exportar a instância do Sequelize para ser utilizada em outras partes do projeto
-module.exports = sequelize;
+module.exports.sequelize = sequelize;

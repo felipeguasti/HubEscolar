@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "u612973268_broadcast",
+    "password": "E1=iTrLXsvk",
+    "database": "u612973268_broadcast",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "u612973268_broadcast",
+    "password": "E1=iTrLXsvk",
+    "database": "u612973268_broadcast",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "u612973268_broadcast",
+    "password": "E1=iTrLXsvk",
+    "database": "database_production",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}

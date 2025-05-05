@@ -31,6 +31,7 @@ exports.getDistrictById = async (req, res, next) => {
         let schoolServiceStatus = 'UP';
         try {
             const accessToken = req.headers.authorization ? req.headers.authorization.split(' ')[1] : null;
+            console.log('Esse é o token dos tokens:', accessToken); // ADICIONE ESTE LOG
             const schools = await schoolService.getAllSchools(accessToken);
             console.log("Resposta do schoolService (getDistrictById):", schoolsResponse); // ADICIONE ESTE LOG
             districtSchools = schools.filter(school => school.districtId === district.id);

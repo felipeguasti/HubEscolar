@@ -25,6 +25,7 @@ const auth = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log("Token decodificado (school-service):", decoded);
         req.user = decoded; // Mantemos a informação do usuário decodificado na requisição
         next();
 

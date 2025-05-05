@@ -121,8 +121,6 @@ console.log('[HubEscolar - app.js] Rotas de ferramentas carregadas.');
 app.use('/reports/headers', headerRoutes);
 console.log('[HubEscolar - app.js] Rotas de cabeçalhos carregadas.');
 
-
-
 // Rota inicial
 app.get('/', (req, res) => {
     res.render('index', {
@@ -195,9 +193,12 @@ console.log('[HubEscolar - app.js] Middleware para servir arquivos estáticos em
 
 // Middleware para registrar requisições
 app.use((req, res, next) => {
-    res.on('finish', () => {
-        console.log(`[HubEscolar - app.js] ${req.method} ${req.url} - Status: ${res.statusCode}`);
-    });
+    // Skip logging for Chrome DevTools requests
+    if (!req.url.includes('/.well-known/appspecific/com.chrome.devtools.json')) {
+        res.on('finish', () => {
+            console.log(`[HubEscolar - app.js] ${req.method} ${req.url} - Status: ${res.statusCode}`);
+        });
+    }
     next();
 });
 console.log('[HubEscolar - app.js] Middleware de registro de requisições carregado.');

@@ -1,5 +1,5 @@
 const axios = require('axios');
-const SCHOOL_SERVICE_URL = process.env.SCHOOL_SERVICE_URL || 'http://localhost:3002';
+const logger = require('../services/logger');
 
 class SchoolService {
     constructor(cacheService) {
@@ -17,37 +17,77 @@ class SchoolService {
         this.cacheService = cacheService;
     }
     
-    
-    // No seu schoolService.js (no HubEscolar)
-    async getAllSchools(accessToken, districtId) {
+    async getAllSchools(token, districtId) {
         try {
-            const params = {};
-            if (districtId) {
-                params.districtId = districtId;
+            // Validate token first
+            if (!token) {
+                logger.error('Token não fornecido ao buscar escolas');
+                throw new Error('Token de autorização é necessário');
             }
-            const response = await axios.get(`${SCHOOL_SERVICE_URL}/schools/list`, {
+
+            logger.info(`Buscando escolas${districtId ? ` para o distrito ${districtId}` : ''}`);
+            logger.debug('Token recebido:', token); // Debug log to check token
+            
+            // Ensure token has Bearer prefix
+            const authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+            
+            // Prepara os parâmetros da requisição
+            const requestConfig = {
                 headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-                params: params,
+                    'Authorization': authToken,
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            // Adiciona o districtId aos parâmetros apenas se ele for fornecido
+            if (districtId) {
+                requestConfig.params = { districtId };
+            }
+
+            logger.debug('Request config:', {
+                url: '/schools/list',
+                headers: requestConfig.headers,
+                params: requestConfig.params
             });
+
+            const response = await this.client.get('/schools/list', requestConfig);
+
+            logger.info(`Escolas encontradas${districtId ? ` para o distrito ${districtId}` : ''}:`, response.data);
             return response.data;
+
         } catch (error) {
-            console.error('Erro ao buscar todas as escolas no school-service:', error.response ? error.response.data : error.message);
-            throw error;
+            logger.error('Erro ao buscar escolas:', {
+                error: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+                districtId: districtId || 'não fornecido',
+                token: token ? 'presente' : 'ausente'
+            });
+            throw new Error(`Erro ao buscar escolas: ${error.message}`);
         }
     }
-    
 
-    async getSchoolById(id) {
+    async getSchoolById(id, token) {
         try {
-            const response = await this.client.get(`/schools/${id}`);
+            logger.info(`Buscando escola com ID ${id}`);
+            
+            const response = await this.client.get(`/schools/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
             return response.data;
         } catch (error) {
-            console.error('Erro ao buscar escola:', error.message);
-            throw error;
+            logger.error(`Erro ao buscar escola ${id}:`, {
+                error: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
+            throw new Error(`Erro ao buscar escola: ${error.message}`);
         }
     }
 }
 
-module.exports = new SchoolService(); 
+// Exporta uma única instância do serviço
+module.exports = new SchoolService();

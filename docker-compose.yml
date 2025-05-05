@@ -76,6 +76,7 @@ services:
       - ./services/district-service/.env
     depends_on:
       - mysql
+      - redis
 
   report-service:
     build: ./services/report-service
@@ -105,6 +106,16 @@ services:
     restart: unless-stopped
     env_file:
       - ./mysql/.env
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - '6379:6379'
+    networks:
+      - hubescolar-network
+    restart: unless-stopped
+
 
 networks:
   hubescolar-network:

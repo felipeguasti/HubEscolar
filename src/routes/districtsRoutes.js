@@ -24,7 +24,7 @@
     
 
     // Rota para listar todos os distritos (chama o district-service)
-    router.get("/", async (req, res) => {
+    router.get("/list", async (req, res) => {
         const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
         try {
             const districts = await districtsService.getAllDistricts(req.query.page, req.query.limit, accessToken);

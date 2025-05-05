@@ -1,10 +1,15 @@
 const winston = require('winston');
 const path = require('path');
 
-// Custom format
+// Custom format with message filtering
 const customFormat = winston.format.combine(
     winston.format.timestamp(),
     winston.format.printf(({ timestamp, level, message }) => {
+        // Skip Chrome DevTools related messages
+        if (typeof message === 'string' && 
+            message.includes('/.well-known/appspecific/com.chrome.devtools.json')) {
+            return null;
+        }
         return `[${timestamp}] ${level.toUpperCase()}: ${message}`;
     })
 );
@@ -14,7 +19,19 @@ const logDir = path.join(__dirname, '../logs');
 
 const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
-    format: customFormat,
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.errors({ stack: true }),
+        // Add custom filter
+        winston.format(info => {
+            if (info.message && 
+                info.message.includes('/.well-known/appspecific/com.chrome.devtools.json')) {
+                return false;
+            }
+            return info;
+        })(),
+        customFormat
+    ),
     transports: [
         // Console transport (always enabled)
         new winston.transports.Console({

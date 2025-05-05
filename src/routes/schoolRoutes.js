@@ -52,11 +52,11 @@ router.get("/:id", async (req, res) => {
 });
 
 // Rota para atualizar uma escola pelo ID (chama o school-service)
-router.put("/:id", async (req, res) => {
+router.put("/edit/:id", async (req, res) => {
     const { id } = req.params;
     const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
     try {
-        const updatedSchool = await schoolsService.updateSchool(id, accessToken);
+        const updatedSchool = await schoolsService.updateSchool(id, req.body, accessToken);
         return res.json(updatedSchool);
     } catch (error) {
         console.error(`Erro ao atualizar escola com ID ${id}:`, error);

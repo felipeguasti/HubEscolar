@@ -12,6 +12,9 @@ if ($TerminalExecutable) {
         @{ "Path" = "D:\Documents\GitHub\hubescolar\services\district-service"; "Command" = "npm start" },
         @{ "Path" = "D:\Documents\GitHub\hubescolar\services\school-service"; "Command" = "npm start" },
         @{ "Path" = "D:\Documents\GitHub\hubescolar\services\users-service"; "Command" = "npm start" }
+        @{ "Path" = "D:\Documents\GitHub\hubescolar\services\report-service"; "Command" = "npm start" }
+        @{ "Path" = "D:\Documents\GitHub\hubescolar\services\whatsapp-service"; "Command" = "npm start" }
+
     )
 
     # Abre o Terminal do Windows (se não estiver aberto)
@@ -36,7 +39,9 @@ if ($TerminalExecutable) {
         "D:\Documents\GitHub\hubescolar\services\auth-service",
         "D:\Documents\GitHub\hubescolar\services\district-service",
         "D:\Documents\GitHub\hubescolar\services\school-service",
-        "D:\Documents\GitHub\hubescolar\services\users-service"
+        "D:\Documents\GitHub\hubescolar\services\users-service",
+        "D:\Documents\GitHub\hubescolar\services\report-service",
+        "D:\Documents\GitHub\hubescolar\services\whatsapp-service"
     )
     foreach ($Path in $ServicePaths) {
         Start-Process -FilePath $PowerShellPath -ArgumentList "-NoExit", "-Command", "cd '$Path'; npm start" -WorkingDirectory $Path

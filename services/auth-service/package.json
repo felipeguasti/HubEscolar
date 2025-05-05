@@ -4,14 +4,14 @@
   "main": "app-auth-service.js",
   "type": "module",
   "scripts": {
-    "start": "node app-auth-service.js",
-    "dev": "nodemon app-auth-service.js",
-    "migrate": "sequelize-cli db:migrate",
-    "migrate:undo": "sequelize-cli db:migrate:undo",
-    "migrate:undo:all": "sequelize-cli db:migrate:undo:all",
-    "test": "mocha --experimental-modules tests/**/*.test.js --exit",
-    "test:watch": "mocha tests/**/*.test.js --watch"
-  },
+  "start": "node app-auth-service.js",
+  "dev": "nodemon app-auth-service.js",
+  "migrate": "sequelize-cli db:migrate --migrations-path src/migrations --config src/config/config.js",
+  "migrate:undo": "sequelize-cli db:migrate:undo --config src/config/config.js",
+  "migrate:undo:all": "sequelize-cli db:migrate:undo:all --config src/config/config.js",
+  "test": "mocha --experimental-modules tests/**/*.test.js --exit",
+  "test:watch": "mocha tests/**/*.test.js --watch"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",

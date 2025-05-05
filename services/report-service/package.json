@@ -7,6 +7,7 @@
         "start": "node app-report-service.js",
         "dev": "nodemon app-report-service.js",
         "test": "echo \"Error: no test specified\" && exit 1",
+        "migrate": "sequelize-cli db:migrate --config src/config/config.json --migrations-path src/migrations",
         "cli": "node src/cli/index.js"
     },
     "author": "Felipe Guasti",

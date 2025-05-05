@@ -1,3 +1,4 @@
+require('dotenv').config();
 const School = require('../models/School');
 const Grade = require('../models/Grade');
 const axios = require('axios');
@@ -39,6 +40,7 @@ exports.createSchool = [
           timeout: AXIOS_TIMEOUT,
           headers: {
             Authorization: `Bearer ${districtToken}`,
+            'Content-Type': 'application/json'
           },
          });
         if (!districtResponse.data) {
@@ -101,6 +103,7 @@ exports.getSchools = [
               timeout: AXIOS_TIMEOUT,
               headers: {
                   Authorization: `Bearer ${districtToken}`, // Ou outro esquema de token
+                  'Content-Type': 'application/json'
               },
           });
           if (!districtResponse.data) {
@@ -147,7 +150,16 @@ exports.getSchoolById = [
       const districtServiceUrl = process.env.DISTRICT_SERVICE_URL;
       if (districtServiceUrl && school.districtId) {
         try {
-          const districtResponse = await axios.get(`${districtServiceUrl}/${school.districtId}`, { timeout: AXIOS_TIMEOUT });
+          const authorizationHeader = req.headers.authorization;
+          const districtToken = authorizationHeader ? authorizationHeader.split(' ')[1] : null;
+
+          const districtResponse = await axios.get(`${districtServiceUrl}/districts/${school.districtId}`, {
+            timeout: AXIOS_TIMEOUT,
+            headers: {
+              Authorization: `Bearer ${districtToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
           school.dataValues.district = districtResponse.data;
         } catch (error) {
           if (error.code === 'ECONNABORTED') {
@@ -190,10 +202,25 @@ exports.updateSchool = [
       }
 
       try {
-        const districtResponse = await axios.get(`${districtServiceUrl}/${districtId}`, { timeout: AXIOS_TIMEOUT });
+        // Add authorization header from the request
+        const authorizationHeader = req.headers.authorization;
+        const districtToken = authorizationHeader ? authorizationHeader.split(' ')[1] : null;
+
+        logger.info(`Verificando distrito ${districtId} para atualização da escola ${id}`);
+        
+        const districtResponse = await axios.get(`${districtServiceUrl}/districts/${districtId}`, {
+          timeout: AXIOS_TIMEOUT,
+          headers: {
+            Authorization: `Bearer ${districtToken}`,
+            'Content-Type': 'application/json'
+          },
+        });
+
         if (!districtResponse.data) {
           return res.status(400).json({ error: "Distrito não encontrado." });
         }
+
+        logger.info(`Distrito ${districtId} validado com sucesso`);
       } catch (error) {
         if (error.code === 'ECONNABORTED') {
           logger.error(`Timeout ao verificar o distrito ${districtId} ao atualizar a escola ${id}: ${error.message}`);
