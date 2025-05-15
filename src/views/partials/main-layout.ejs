@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %> | HubEscolar</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <% if (title === 'Central de Advertências') { %>
+        <link rel="stylesheet" href="/css/reportCenter.css">
+    <% } %>
+    <% if (title === 'Turmas') { %>
+        <link rel="stylesheet" href="/css/grades.css">
+    <% } %>
+    <% if (title === 'Usuários') { %>
+        <link rel="stylesheet" href="/css/users.css">
+    <% } %>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
@@ -87,6 +96,43 @@
             </div>
         </div>
     </footer>
-    <script src="/js/script.js"></script>
+    <script src="/js/auth.js?v=<%= Date.now() %>"></script>
+    <script src="/js/script.js?v=<%= Date.now() %>"></script>
+    <% if (title === 'Login') { %>
+    <script src="/js/login.js?v=<%= Date.now() %>"></script>
+    <% } %>
+    <% if (title === 'Cadastro') { %>
+        <script src="/js/cadastro.js"></script>
+    <% } %>
+    <% if (title === 'Dashboard') { %>
+        <script src="/js/dashboard.js"></script>
+    <% } %>
+    <% if (title === 'Distritos') { %>
+        <script src="/js/district.js"></script>
+    <% } %>
+    <% if (title === 'Turmas') { %>
+        <script src="/js/grades.js?v=<%= Date.now() %>"></script>
+    <% } %>
+    <% if (title === 'Usuários') { %>
+        <script src="/js/users.js?v=<%= Date.now() %>"></script>
+    <% } %>
+    <% if (title === 'Advertências') { %>
+        <script src="/js/behavior.js"></script>
+    <% } %>
+    <% if (title === 'Configurações das Ferramentas') { %>
+        <script src="/js/featureSettings.js"></script>
+    <% } %>
+    <% if (title === 'Minhas Ferramentas') { %>
+        <script src="/js/featureDashboard.js"></script>
+    <% } %>
+    <% if (title === 'Relatórios') { %>
+        <script src="/js/reportIndex.js"></script>
+    <% } %>
+    <% if (title === 'Central de Advertências') { %>
+        <script src="/js/reportCenter.js"></script>
+    <% } %>
+    <% if (title === 'Administração de Cabeçalhos') { %>
+        <script src="/js/reportAdmin.js"></script>
+    <% } %>
 </body>
 </html>

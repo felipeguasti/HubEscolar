@@ -14,7 +14,7 @@
 
         <!-- Gerenciar Usuários -->
         <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Coordenador' || user.role === 'Pedagogo' || user.role === 'Secretario'){ %>
-            <li><a href="/admin/users">Gerenciar Usuários</a></li>
+            <li><a href="/users">Gerenciar Usuários</a></li>
         <% } %>          
         
         <!-- Gerenciar Vendas (Apenas Master) -->
@@ -24,16 +24,16 @@
 
         <!-- Gerenciar Conteúdo -->
         <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Coordenador' || user.role === 'Pedagogo' || user.role === 'Secretario') { %>
-            <li><a href="/admin/content">Gerenciar Conteúdo</a></li>
+            <li><a href="/content">Gerenciar Conteúdo</a></li>
         <% } %>
 
         <!-- Gerenciar Ferramentas -->
-        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Secretario') { %>
-            <li><a href="/admin/tools/management">Gerenciar Ferramentas</a></li>
+        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Secretario') { %>
+            <li><a href="/features/settings">Gerenciar Ferramentas</a></li>
         <% } %>
         <% if (user.role !== 'Aluno') { %>
         <!-- Acessar as Ferramentas -->
-        <li><a href="/admin/tools">Acessar as Ferramentas</a></li>
+        <li><a href="/features">Acessar as Ferramentas</a></li>
         <% } %>
         <!-- Configurações Globais (Apenas Master) -->
         <% if (user.role === 'Master') { %>

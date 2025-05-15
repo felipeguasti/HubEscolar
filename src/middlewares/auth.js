@@ -1,56 +1,51 @@
-const jwt = require('jsonwebtoken');
+const authService = require('../services/authService');
+const usersService = require('../services/usersService'); // Importe o seu usersService
 
-// Função auxiliar para enviar resposta de erro
-const handleError = (res, statusCode, message) => {
-  return res.status(statusCode).json({ message });
-};
+const isAuthenticated = async (req, res, next) => {
+    const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+    const isAjaxRequest = req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'));
 
-// Middleware para verificar o token JWT e papéis de usuários
-const authMiddleware = (allowedRoles = []) => {
-  return (req, res, next) => {
-    let token = null;
-
-    // Verifica se o token está no cabeçalho Authorization
-    const authHeader = req.header('Authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.split(' ')[1];
-    } else if (req.cookies && req.cookies.token) {
-      // Se não estiver no cabeçalho, tenta pegar dos cookies
-      token = req.cookies.token;
-    }
-
-    if (!token) {
-      console.error('Token não fornecido.');
-      return res.redirect('/login');
+    if (!accessToken) {
+        return isAjaxRequest
+            ? res.status(401).json({ message: 'Não autenticado: Token ausente' })
+            : res.redirect('/login');
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
+        const validationResponse = await authService.verifyToken(accessToken);
 
-      if (allowedRoles.length === 0) {
-        return next();
-      }
+        if (validationResponse && validationResponse.valid && validationResponse.userId) {
+            const userId = validationResponse.userId;
+            try {
+                // Buscar os detalhes completos do usuário usando o usersService
+                const userDetails = await usersService.getUserById(userId, accessToken);
 
-      if (!allowedRoles.includes(req.user.role)) {
-        console.error(`Permissão insuficiente para o papel: ${req.user.role}`);
-        return res.redirect('/login'); 
-      }
-
-      next();
-
-    } catch (err) {
-      console.error('Erro na validação do token:', err.message);
-
-      if (err.name === 'TokenExpiredError') {
-        console.error('Token expirado:', err);
-        return res.redirect('/login');
-      }
-
-      console.error('Token inválido:', err);
-      return res.redirect('/login');
+                if (userDetails) {
+                    // Excluir a senha antes de popular req.user
+                    const { password, ...userWithoutPassword } = userDetails;
+                    req.user = userWithoutPassword;
+                    next();
+                } else {
+                    return isAjaxRequest
+                        ? res.status(401).json({ message: 'Não autenticado: Usuário não encontrado' })
+                        : res.redirect('/login');
+                }
+            } catch (error) {
+                return isAjaxRequest
+                    ? res.status(500).json({ message: 'Erro ao buscar detalhes do usuário' })
+                    : res.redirect('/login');
+            }
+        } else {
+            return isAjaxRequest
+                ? res.status(401).json({ message: 'Não autenticado: Token inválido' })
+                : res.redirect('/login');
+        }
+    } catch (error) {
+        console.error('[AUTH MIDDLEWARE] Erro ao verificar token:', error);
+        return isAjaxRequest
+            ? res.status(500).json({ message: 'Erro interno ao verificar autenticação' })
+            : res.redirect('/login');
     }
-  };
 };
 
-module.exports = authMiddleware;
+module.exports = isAuthenticated;

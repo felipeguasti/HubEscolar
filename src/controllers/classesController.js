@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const Turma = require('../models/Turma');
+const Turma = require('../models/Turma'); // Teste com um nível a mais
 
 exports.getClassesByTurno = async (req, res) => {
     try {

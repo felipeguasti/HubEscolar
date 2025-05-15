@@ -1,0 +1,24 @@
+whatsapp-service/
+├── src/
+│   ├── config/
+│   │   ├── database.js
+│   │   └── whatsapp.js
+│   ├── controllers/
+│   │   └── messageController.js
+│   ├── middlewares/
+│   │   ├── auth.js
+│   │   ├── error.js
+│   │   └── validation.js
+│   ├── models/
+│   │   └── Message.js
+│   ├── routes/
+│   │   └── messageRoutes.js
+│   ├── services/
+│   │   └── whatsappService.js
+│   └── utils/
+│       ├── logger.js
+│       └── validation.js
+├── .env
+├── .gitignore
+├── app-whatsapp-service.js
+└── package.json

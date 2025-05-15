@@ -1,0 +1,186 @@
+/* Container principal dos popups */
+.popup-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2002;
+    display: none;
+    background: rgba(0, 0, 0, 0.5); /* Fundo escuro semitransparente */
+    backdrop-filter: blur(2px); /* Efeito de blur suave no fundo */
+    justify-content: center;
+    align-items: center;
+}
+
+/* Reset do popup base */
+#message-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateY(100vh); /* Começa abaixo da tela */
+    min-width: 300px;
+    max-width: 500px;
+    width: 90%;
+    background: white;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2); /* Sombra mais pronunciada */
+    padding: 20px 25px;
+    border-radius: 12px;
+    display: none;
+    pointer-events: auto;
+    z-index: 2003; /* Aumentado para ficar acima do overlay */
+    text-align: center;
+}
+
+/* Quando o popup está visível - Ajustada a animação */
+#message-popup[style*="display: block"] {
+    transform: translate(-50%, -50%) translateY(0);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Estados do popup com cores mais intensas para contrastar com o overlay */
+#message-popup.success { 
+    background: #f0fff4;
+    border: 2px solid #48bb78;
+    color: #276749;
+}
+
+#message-popup.error { 
+    background: #fff5f5;
+    border: 2px solid #f56565;
+    color: #c53030;
+}
+
+#message-popup.info { 
+    background: #ebf8ff;
+    border: 2px solid #4299e1;
+    color: #2c5282;
+}
+
+/* Conteúdo do popup */
+#message-popup .popup-content {
+    position: relative;
+    padding: 10px 25px;
+    font-size: 1.1em;
+    font-weight: 500;
+}
+
+/* Botão fechar */
+#message-popup .close-popup {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+#message-popup .close-popup:hover {
+    opacity: 1;
+}
+
+/* Animação */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Estado ativo do popup */
+#message-popup.active {
+    display: block;
+    opacity: 1;
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Estilo específico para loading */
+.popup.loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2001;
+}
+
+/* Loading */
+#loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 2001;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none; /* Permite cliques por padrão */
+}
+
+#loading:not([hidden]) {
+    display: flex;
+    pointer-events: auto; /* Bloqueia cliques apenas quando visível */
+}
+
+/* Spinner do loading */
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Previne scroll durante loading */
+body.loading-active {
+    overflow: hidden;
+}
+
+/* Spinner para os selects */
+.select-spinner {
+    position: absolute;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spinSelect 1s linear infinite;
+    display: none;
+}
+
+@keyframes spinSelect {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+.select-wrapper {
+    position: relative;
+}
+
+.select-wrapper.loading .select-spinner {
+    display: block;
+}

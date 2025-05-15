@@ -1,0 +1,52 @@
+{
+    "artigos_disciplinares": [
+      {
+        "numero": "Art. 74",
+        "inciso": "I",
+        "texto": "acatar as normas regimentais e os regulamentos internos da unidade de ensino.",
+        "relevancia": "Base para qualquer ação disciplinar por descumprimento de regras."
+      },
+      {
+        "numero": "Art. 74",
+        "inciso": "II",
+        "texto": "respeitar e tratar com cortesia a todos os membros integrantes da comunidade escolar.",
+        "relevancia": "Fundamental para manter um ambiente escolar saudável e respeitoso."
+      },
+      {
+        "numero": "Art. 74",
+        "inciso": "V",
+        "texto": "permanecer em sala de aula durante o horário das aulas, mantendo atitudes de respeito e atenção.",
+        "relevancia": "Importante para garantir o aprendizado e evitar interrupções."
+      },
+      {
+        "numero": "Art. 74",
+        "inciso": "X",
+        "texto": "abster-se de atos que perturbem a ordem, ofenda aos bons costumes ou importem em desacato às leis, às autoridades escolares e aos colegas.",
+        "relevancia": "Abrange uma ampla gama de comportamentos inadequados."
+      },
+      {
+        "numero": "Art. 76",
+        "inciso": "II",
+        "texto": "acompanhar o desempenho escolar de seu filho, zelando pela frequência e assiduidade para evitar prejuízos no processo de ensino-aprendizagem.",
+        "relevancia": "Responsabilidade dos pais em relação à frequência e desempenho."
+      },
+      {
+        "numero": "Art. 76",
+        "inciso": "III",
+        "texto": "tratar com respeito e civilidade todo o pessoal da unidade de ensino.",
+        "relevancia": "Dever dos pais, espelhando o dever dos alunos."
+      },
+      {
+        "numero": "Art. 76",
+        "inciso": "IX",
+        "texto": "comparecer à unidade de ensino, quando convocado, em casos de desrespeito, indisciplina, violência, danos ao patrimônio público, porte de objetos e substâncias não permitidas ao ambiente escolar.",
+        "relevancia": "Obrigação dos pais em atender às convocações da escola em situações disciplinares."
+      },
+      {
+        "numero": "Art. 77",
+        "inciso": "VII",
+        "texto": "desrespeitar qualquer integrante da comunidade escolar, inclusive o educando pelo qual é responsável, discriminando-o, usando de violência simbólica, agredindo-o fi sicamente e/ou verbalmente, nas dependências da unidade de ensino;",
+        "relevancia": "Proibição de comportamentos desrespeitosos por parte dos pais."
+      }
+    ]
+}

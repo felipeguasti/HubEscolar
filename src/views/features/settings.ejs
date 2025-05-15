@@ -1,0 +1,136 @@
+<section class="admin-master-container">
+  <%- include('../partials/admin-sidebar') %>
+  <section class="features-body">
+    <!-- Header Section -->
+    <header class="admin-master-header">
+        <h1>Gerenciamento de Ferramentas</h1>
+        <p>Gerencie as ferramentas do sistema e suas permissões</p>
+    </header>
+    <main class="features-main">
+      <!-- Feature Creation/Edit Section -->
+      <section id="feature-management" class="features-section">
+        <h2 class="features-section-title">Cadastro de Ferramentas</h2>
+        <div class="features-form-group">
+          <button id="btn-new-feature" class="features-button">Nova Ferramenta</button>
+        </div>
+
+        <!-- Features Table -->
+        <table id="features-table" class="features-table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Descrição</th>
+              <th>Rota</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+            <tbody id="features-list">
+                <% features.forEach(feature => { %>
+                    <tr class="feature-row <%= feature.status === 'inactive' ? 'feature-inactive' : '' %>">
+                    <td><%= feature.name %></td>
+                    <td><%= feature.description %></td>
+                    <td><%= feature.route %></td>
+                    <td>
+                        <span class="status-badge <%= feature.status %>">
+                        <%= feature.status === 'active' ? 'Ativo' : 'Inativo' %>
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-edit" data-id="<%= feature.id %>">Editar</button>
+                        <button class="btn btn-delete" data-id="<%= feature.id %>">Excluir</button>
+                    </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+      </section>
+
+      <!-- User Assignment Section -->
+      <section id="user-assignment" class="features-section">
+        <h2 class="features-section-title">Atribuição de Ferramentas</h2>
+        <div class="features-form-group">
+            <label for="userRole" class="features-form-label">Cargo:</label>
+            <select id="userRole" class="features-form-input" name="role">
+                <option value="">Selecione um cargo</option>
+                <option value="Master">Master</option>
+                <option value="Inspetor">Inspetor</option>
+                <option value="Diretor">Diretor</option>
+                <option value="Secretario">Secretário</option>
+                <option value="Coordenador">Coordenador</option>
+                <option value="Pedagogo">Pedagogo</option>
+                <option value="Professor">Professor</option>
+                <option value="Aluno">Aluno</option>
+            </select>
+        </div>
+        <div class="features-form-group">
+            <label for="userDistrict" class="features-form-label">Secretaria:</label>
+            <select id="userDistrict" class="features-form-input" name="districtId">
+                <option value="">Selecione uma secretaria</option>
+                <% districts.forEach(function(district) { %>
+                    <option value="<%= district.id %>" <%= user.districtId === district.id ? 'selected' : '' %>><%= district.name %></option>
+                <% }); %>
+            </select>
+        </div>
+        <div class="features-form-group">
+          <label for="user-search" class="features-form-label">Buscar Usuário:</label>
+          <input type="text" id="user-search" class="features-form-input" placeholder="Digite o nome do usuário">
+          <ul id="user-search-results" class="feature-form-autocomplete-results"></ul>
+          <table id="feature-form-selected-users" class="feature-form-selected-users" style="display:none;">
+            <thead class="feature-form-table-head">
+              <tr>
+                <th class="feature-form-table-header">Nome</th>
+                <th class="feature-form-table-header">Cargo</th>
+                <th class="feature-form-table-header">Ferramentas</th>
+                <th class="feature-form-table-header">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="feature-form-selected-users-list" class="feature-form-table-body">
+              </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal for Feature Management -->
+    <div class="modalContainer" hidden>
+      <div id="featureModal" class="modal" hidden>
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h2>Nova Ferramenta</h2>
+          <form id="featureForm">
+            <input type="hidden" name="featureId" id="featureId">
+
+            <label for="featureName">Nome:</label>
+            <input type="text" id="featureName" name="name" required>
+
+            <label for="featureDescription">Descrição:</label>
+            <textarea id="featureDescription" name="description" rows="3"></textarea>
+
+            <label for="featureRoute">Rota:</label>
+            <input type="text" id="featureRoute" name="route" required>
+
+            <label for="featureStatus">Status:</label>
+            <select id="featureStatus" name="status">
+              <option value="active">Ativo</option>
+              <option value="inactive">Inativo</option>
+            </select>
+
+            <button type="submit" class="btn btn-save">Salvar</button>
+            <button type="button" class="btn btn-cancel">Cancelar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden inputs for user data -->
+    <input type="hidden" id="feature-form-user-id" value="<%= user.id %>" class="feature-form-hidden">
+    <input type="hidden" id="feature-form-user-role" value="<%= user.role %>" class="feature-form-hidden">
+    <div id="generic-popup" class="hidden popup-overlay">
+      <div class="popup-content">
+          <div class="popup-message"></div>
+          <button class="popup-ok-button">OK</button>
+      </div>
+    </div>
+  </section>
+</section>

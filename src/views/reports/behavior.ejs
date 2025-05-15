@@ -1,0 +1,135 @@
+<section class="admin-master-container">
+  <%- include('../partials/admin-sidebar') %>
+  <section class="admin-master-content">
+    <header class="admin-master-header">
+      <h1>Relatório de Ocorrências</h1>
+      <p>Preencha os campos abaixo para gerar um relatório de ocorrência.</p>
+    </header>
+    <main class="report-form-main">
+      <section id="report-form-student-selection" class="report-form-section">
+        <h2 class="report-form-section-title">Selecionar Aluno(s)</h2>
+        <div class="report-form-group">
+          <label for="report-form-search-student" class="report-form-label">Buscar Aluno:</label>
+          <input type="text" id="report-form-search-student" class="report-form-input" placeholder="Digite o nome do aluno">
+          <ul id="report-form-autocomplete-results" class="report-form-autocomplete-results">
+            </ul>
+        </div>
+        <table id="report-form-selected-students" class="report-form-selected-students" style="display:none;">
+          <thead class="report-form-table-head">
+            <tr>
+              <th class="report-form-table-header">Nome do Aluno</th>
+              <th class="report-form-table-header">Turma</th>
+              <th class="report-form-table-header">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="report-form-selected-students-list" class="report-form-table-body">
+            </tbody>
+        </table>
+      </section>
+
+      <section id="report-form-type-selection" class="report-form-section">
+        <h2 class="report-form-section-title">Tipo de Relatório</h2>
+        <div class="report-form-group">
+          <label class="report-form-switch-label">
+            <input type="checkbox" id="report-form-toggle-ia" class="report-form-switch-input">
+            <span class="report-form-slider round"></span>
+            <span class="report-form-switch-text">Ativar IA</span>
+          </label>
+          <p class="report-form-ia-description">Quando ativada, forneça um resumo do ocorrido para a IA gerar o relatório.</p>
+        </div>
+      </section>
+
+      <section id="report-form-manual-report-fields" class="report-form-section" style="display:none;">
+        <h2 class="report-form-section-title">Detalhes do Relatório (Manual)</h2>
+
+        <div class="report-form-group">
+            <label class="report-form-label">Ato Disciplinar:</label>
+            <% if (user.role !== 'Professor') { %>
+                <div class="report-form-radio-group">
+                    <label class="report-form-radio-label"><input type="radio" name="disciplinary-level" value="leves" class="report-form-radio-input" checked> Leve</label>
+                    <label class="report-form-radio-label"><input type="radio" name="disciplinary-level" value="graves" class="report-form-radio-input"> Grave</label>
+                    <label class="report-form-radio-label"><input type="radio" name="disciplinary-level" value="infracionais" class="report-form-radio-input"> Ato Infracional</label>
+                </div>
+            <% } else { %>
+                <input type="radio" name="disciplinary-level" value="leves" class="report-form-radio-input" checked style="display:none;">
+                <p class="report-form-professor-note">Ato Disciplinar: Leve</p>
+            <% } %>
+        </div>
+
+        <div class="report-form-group">
+            <label for="report-form-disciplinary-options" class="report-form-label">Opção do Ato:</label>
+            <select id="report-form-disciplinary-options" class="report-form-select">
+                <option value="">Selecione uma opção</option>
+            </select>
+        </div>
+
+        <div class="report-form-group">
+            <label class="report-form-checkbox-label">
+                <input type="checkbox" id="report-form-suspended" class="report-form-checkbox-input"> Suspender Aluno
+            </label>
+        </div>
+
+        <div class="report-form-group" id="report-form-suspension-duration-group" style="display:none;">
+            <label for="report-form-suspension-duration" class="report-form-label">Duração da Suspensão (dias):</label>
+            <input type="number" id="report-form-suspension-duration" class="report-form-input" min="1">
+        </div>
+
+        <div class="report-form-group">
+            <label class="report-form-checkbox-label">
+                <input type="checkbox" id="report-form-call-parents" class="report-form-checkbox-input"> Ligar para os Pais/Responsáveis
+            </label>
+        </div>
+
+        <div class="report-form-group" id="report-form-parents-meeting-group" style="display:none;">
+            <label for="report-form-parents-meeting-datetime" class="report-form-label">Agendar Reunião (Data e Hora):</label>
+            <input type="datetime-local" id="report-form-parents-meeting-datetime" class="report-form-input">
+        </div>
+
+        <div class="report-form-group">
+            <label for="report-form-observation" class="report-form-label">Observação:</label>
+            <textarea id="report-form-observation" rows="4" class="report-form-textarea"></textarea>
+        </div>
+
+        <div class="report-form-group">
+            <label for="report-form-forwarding" class="report-form-label">Encaminhamentos:</label>
+            <textarea id="report-form-forwarding" rows="4" class="report-form-textarea"></textarea>
+        </div>
+    </section>
+
+    <section id="report-form-ia-report-field" class="report-form-section" style="display:none;">
+        <h2 class="report-form-section-title">Detalhes do Relatório (IA)</h2>
+        <div class="report-form-group">
+            <label for="report-form-ia-summary" class="report-form-label">Resumo do Ocorrido:</label>
+            <textarea id="report-form-ia-summary" rows="6" class="report-form-textarea" placeholder="Descreva o ocorrido em tópicos ou um breve resumo"></textarea>
+        </div>
+    </section>
+
+    <div class="report-form-group">
+        <button id="report-form-submit-report" class="report-form-button">Gerar Relatório</button>
+    </div>
+    </main>
+    <section>
+      <h2 class="reports-table-title" style="display:none;">Relatórios de hoje</h2>
+      <table id="reports-table-selected" class="reports-table-selected" style="display:none;">
+        <thead class="reports-table-head">
+          <tr>
+            <th class="reports-table-header">Nome do Aluno</th>
+            <th class="reports-table-header">Turma</th>
+            <th class="reports-table-header">Ato Disciplinar</th>
+            <th class="reports-table-header">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="reports-table-selected-list" class="report-table-body">
+          </tbody>
+      </table>
+    </section>
+    <input type="hidden" id="report-form-user-id" value="<%= user.id %>" class="report-form-hidden">
+    <input type="hidden" id="report-form-user-role" value="<%= user.role %>" class="report-form-hidden">
+    <div id="generic-popup" class="hidden popup-overlay">
+      <div class="popup-content">
+          <div class="popup-message"></div>
+          <button class="popup-ok-button">OK</button>
+      </div>
+    </div>
+  </section>
+</section>

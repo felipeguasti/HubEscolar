@@ -8,73 +8,78 @@ const passport = require('./src/config/passport');
 const app = express();
 const expressLayouts = require('express-ejs-layouts');
 const flash = require('connect-flash');
-const authMiddleware = require('./src/middlewares/auth');
 require('dotenv').config();
 const moment = require('moment-timezone'); // Adicione esta linha
+
+console.log('[HubEscolar - app.js] Inicializando...');
 
 // Configuração do fuso horário
 process.env.TZ = 'America/Sao_Paulo'; // Define a variável de ambiente TZ
 moment.tz.setDefault('America/Sao_Paulo'); // Define o fuso horário padrão do moment-timezone
+console.log('[HubEscolar - app.js] Fuso horário configurado para America/Sao_Paulo.');
 
 // Importação de módulos
-const studentsRoutes = require('./src/modules/manager/routes/students');
-const teachersRoutes = require('./src/modules/manager/routes/teachers');
-const coordenatorsRoutes = require('./src/modules/manager/routes/coordenators');
-const adminsRoutes = require('./src/routes/admins'); 
-const reportsRoutes = require('./src/modules/manager/routes/reports');
-const warningsRoutes = require('./src/modules/manager/routes/warnings');
-const db = require('./src/config/db');
-const classesRoute = require('./src/modules/manager/routes/classes');
-const broadcastRoutes = require('./src/modules/broadcast/routes/broadcasts');
-const EduControlRoutes = require('./src/modules/EduControl/routes/reservations');
-const managerRoutes = require('./src/modules/manager/routes/manager');
-const authRoutes = require('./src/modules/auth/routes/authRoutes');
-const dashboardRoutes = require('./src/modules/manager/routes/dashboard')
-const usersRoutes = require('./src/routes/users')
-const usersDistricts = require('./src/routes/districts')
-const schoolsRoutes = require('./src/routes/schools')
-const gradesRoutes = require('./src/routes/grades')
+const adminsRoutes = require('./src/routes/admins');
+const classesRoute = require('./src/routes/classes');
+const authRoutes = require('./src/routes/authRoutes');
+const usersRoutes = require('./src/routes/usersRoutes');
+const districtsRoutes = require('./src/routes/districtsRoutes');
+const schoolsRoutes = require('./src/routes/schoolRoutes');
+const gradeRoutes = require('./src/routes/gradesRoutes');
+const subjectRoutes = require('./src/routes/subjectsRoutes');
+const dashboardRoutes = require('./src/routes/dashboard');
+const reportRoutes = require('./src/routes/reportRoutes');
+const featureRoutes = require('./src/routes/featureRoutes');
+const headerRoutes = require('./src/routes/headerRoutes');
+console.log('[HubEscolar - app.js] Módulos de rotas importados.');
 
 // Validação das variáveis de ambiente
 if (!process.env.SESSION_SECRET || !process.env.JWT_SECRET || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error('[HubEscolar - app.js] Erro: Configurações de ambiente ausentes. Verifique o arquivo .env.');
     throw new Error('Configurações de ambiente ausentes. Verifique o arquivo .env.');
 }
-
+console.log('[HubEscolar - app.js] Variáveis de ambiente validadas.');
 
 // Middleware para análise de corpo de requisição
 app.use(express.json());
+console.log('[HubEscolar - app.js] Middleware express.json() carregado.');
 app.use(express.urlencoded({ extended: true }));
+console.log('[HubEscolar - app.js] Middleware express.urlencoded() carregado.');
 app.use(express.static('./src/public'));
-app.use(expressLayouts); 
-app.set('layout', 'partials/main-layout'); 
+console.log('[HubEscolar - app.js] Middleware express.static() para arquivos públicos carregado.');
+app.use(expressLayouts);
+console.log('[HubEscolar - app.js] Middleware expressLayouts carregado.');
+app.set('layout', 'partials/main-layout');
+console.log('[HubEscolar - app.js] Layout padrão definido.');
 
 app.use(cookieParser());
+console.log('[HubEscolar - app.js] Middleware cookieParser carregado.');
 
 // Configuração do session middleware
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'default_secret', // Coloque uma chave secreta
-  resave: false,
-  saveUninitialized: true
+    secret: process.env.SESSION_SECRET || 'default_secret', // Coloque uma chave secreta
+    resave: false,
+    saveUninitialized: true
 }));
-
+console.log('[HubEscolar - app.js] Middleware de sessão configurado.');
 
 app.use(passport.initialize());
+console.log('[HubEscolar - app.js] Passport inicializado.');
 app.use(passport.session());
+console.log('[HubEscolar - app.js] Passport session configurado.');
 
 // Configuração do flash middleware
 app.use(flash());
-
-// Servir arquivos estáticos
-app.use(express.static(path.join(__dirname, 'src', 'public')));
+console.log('[HubEscolar - app.js] Middleware flash carregado.');
 
 // Configuração do motor de visualização e layouts
 app.set('view engine', 'ejs');
+console.log('[HubEscolar - app.js] View engine configurado para EJS.');
 app.set('views', path.join(__dirname, 'src', 'views'));
-app.use(expressLayouts); // Ativando o uso de layouts
-app.set('layout', 'partials/main-layout'); // Definindo o layout padrão
+console.log('[HubEscolar - app.js] Diretório de views definido.');
 
 // Configuração do Multer
-const upload = multer({ 
+const upload = multer({
     storage: multer.diskStorage({
         destination: (req, file, cb) => {
         cb(null, path.join(__dirname, 'src', 'public', 'medias', 'uploads'));
@@ -91,112 +96,119 @@ const upload = multer({
         cb(null, true);
     }
 });
+console.log('[HubEscolar - app.js] Configuração do Multer realizada.');
 
 // Configuração de rotas
-app.use('/api/broadcast', broadcastRoutes);
-app.use('/api/educontrol', EduControlRoutes);
-app.use('/api/manager', managerRoutes);
-app.use('/students', studentsRoutes);
-app.use('/teachers', teachersRoutes);
-app.use('/coordenators', coordenatorsRoutes);
 app.use('/admin', adminsRoutes);
-app.use('/reports', reportsRoutes);
-app.use('/warnings', warningsRoutes);
+console.log('[HubEscolar - app.js] Rotas de admin carregadas.');
 app.use('/auth', authRoutes);
-app.use('/classes', classesRoute);
-app.use('/dashboard', dashboardRoutes);
+console.log('[HubEscolar - app.js] Rotas de autenticação carregadas.');
 app.use('/users', usersRoutes);
-app.use('/districts', usersDistricts);
+console.log('[HubEscolar - app.js] Rotas de usuários carregadas.');
+app.use('/districts', districtsRoutes);
+console.log('[HubEscolar - app.js] Rotas de distritos carregadas.');
 app.use('/schools', schoolsRoutes);
-app.use('/grades', gradesRoutes);
+console.log('[HubEscolar - app.js] Rotas de escolas carregadas.');
+app.use('/grades', gradeRoutes);
+console.log('[HubEscolar - app.js] Rotas de turmas carregadas.');
+app.use('/subjects', subjectRoutes);
+console.log('[HubEscolar - app.js] Rotas de matérias carregadas.');
+app.use('/classes', classesRoute);
+console.log('[HubEscolar - app.js] Rotas de classes carregadas.');
+app.use('/dashboard', dashboardRoutes);
+console.log('[HubEscolar - app.js] Rotas de dashboard carregadas.');
+app.use('/reports', reportRoutes);
+console.log('[HubEscolar - app.js] Rotas de relatórios carregadas.');
+app.use('/features', featureRoutes);
+console.log('[HubEscolar - app.js] Rotas de ferramentas carregadas.');
+app.use('/reports/headers', headerRoutes);
+console.log('[HubEscolar - app.js] Rotas de cabeçalhos carregadas.');
 
 // Rota inicial
 app.get('/', (req, res) => {
     res.render('index', {
         title: 'Início'
     });
+    console.log('[HubEscolar - app.js] Rota GET / carregada.');
 });
 
-// Rota de login
+// Rota de login (renderiza a página de login localmente)
 app.get('/login', (req, res) => {
     res.render('login', {
         title: 'Login',
-        message: req.flash('message') // Adicionando a mensagem flash ao renderizar a página
+        message: req.flash('message')
     });
+    console.log('[HubEscolar - app.js] Rota GET /login carregada.');
 });
 
-// Outras rotas de página
+// Outras rotas de página (que são renderizadas localmente pelo sistema principal)
 app.get('/recursos', (req, res) => {
-    res.render('recursos', {
-        title: 'Recursos'
-    });
+    res.render('recursos', { title: 'Recursos' });
+    console.log('[HubEscolar - app.js] Rota GET /recursos carregada.');
 });
 
 app.get('/planos', (req, res) => {
-    res.render('planos', {
-        title: 'Planos'
-    });
+    res.render('planos', { title: 'Planos' });
+    console.log('[HubEscolar - app.js] Rota GET /planos carregada.');
 });
 
 app.get('/blog', (req, res) => {
-    res.render('blog', {
-        title: 'Blog'
-    });
+    res.render('blog', { title: 'Blog' });
+    console.log('[HubEscolar - app.js] Rota GET /blog carregada.');
 });
 
 app.get('/sobre', (req, res) => {
-    res.render('sobre', {
-        title: 'Sobre'
-    });
+    res.render('sobre', { title: 'Sobre' });
+    console.log('[HubEscolar - app.js] Rota GET /sobre carregada.');
 });
 
 app.get('/contato', (req, res) => {
-    res.render('contato', {
-        title: 'Contato'
-    });
+    res.render('contato', { title: 'Contato' });
+    console.log('[HubEscolar - app.js] Rota GET /contato carregada.');
 });
 
-// Rota de esqueci minha senha
+// Rota de esqueci minha senha (renderiza a página localmente)
 app.get('/forgot-password', (req, res) => {
-    res.render('forgot', {
-        title: 'Esqueceu a senha',
-        message: req.flash('message'), // Mensagens enviadas pelo controlador
-    });
+    res.render('forgot', { title: 'Esqueceu a senha', message: req.flash('message') });
+    console.log('[HubEscolar - app.js] Rota GET /forgot-password carregada.');
 });
 
 app.get('/reports', (req, res) => {
     const reports = req.query.reports || [];
     res.render('reports', { reports });
+    console.log('[HubEscolar - app.js] Rota GET /reports carregada.');
 });
 
 app.get('/warnings', (req, res) => {
     res.render('warnings');
+    console.log('[HubEscolar - app.js] Rota GET /warnings carregada.');
 });
 
-
-// Página de redefinição de senha (usada após o link enviado)
+// Página de redefinição de senha (renderiza a página localmente)
 app.get('/reset-password/:token', (req, res) => {
-    res.render('reset-password', {
-        title: 'Redefinir Senha',
-        token: req.params.token // Inclui o token no contexto da página
-    });
+    res.render('reset-password', { title: 'Redefinir Senha', token: req.params.token });
+    console.log('[HubEscolar - app.js] Rota GET /reset-password/:token carregada.');
 });
 
 // Configuração para servir arquivos estáticos na pasta 'js'
 app.use('/js', express.static(path.join(__dirname, 'src', 'public', 'js')));
+console.log('[HubEscolar - app.js] Middleware para servir arquivos estáticos em /js carregado.');
 
 // Middleware para registrar requisições
 app.use((req, res, next) => {
-    res.on('finish', () => {
-        console.log(`[${new Date().toLocaleString()}] ${req.method} ${req.url} - Status: ${res.statusCode}`);
-    });
+    // Skip logging for Chrome DevTools requests
+    if (!req.url.includes('/.well-known/appspecific/com.chrome.devtools.json')) {
+        res.on('finish', () => {
+            console.log(`[HubEscolar - app.js] ${req.method} ${req.url} - Status: ${res.statusCode}`);
+        });
+    }
     next();
 });
-
+console.log('[HubEscolar - app.js] Middleware de registro de requisições carregado.');
 
 // Middleware de erro
 app.use((error, req, res, next) => {
-    console.error('Erro:', error);
+    console.error('[HubEscolar - app.js] Erro:', error);
 
     if (error instanceof multer.MulterError) {
         return res.status(400).json({ error: 'Erro de upload de arquivo.' });
@@ -205,12 +217,12 @@ app.use((error, req, res, next) => {
     res.status(500).json({ error: 'Erro interno do servidor.' });
     next();
 });
-
+console.log('[HubEscolar - app.js] Middleware de tratamento de erros carregado.');
 
 // Inicializando o servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`[HubEscolar - app.js] Servidor rodando na porta ${PORT}`);
 });
 
 // Exportando o aplicativo

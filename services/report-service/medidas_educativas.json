@@ -1,0 +1,90 @@
+{
+    "medidas_educativas_disciplinares": [
+      {
+        "nivel": "leve",
+        "artigo_referencia": "Art. 84, I",
+        "medidas": [
+          {
+            "tipo": "advertência verbal"
+          },
+          {
+            "tipo": "retirada do aluno de sala de aula ou atividade em curso e encaminhamento à diretoria ou coordenação para orientação"
+          }
+        ]
+      },
+      {
+        "nivel": "grave",
+        "artigo_referencia": "Art. 84, II",
+        "medidas": [
+          {
+            "tipo": "suspensão temporária de participação em programas extracurriculares"
+          },
+          {
+            "tipo": "suspensão das aulas por, no máximo, 2 (dois) dias letivos"
+          }
+        ]
+      },
+      {
+        "nivel": "infracional",
+        "artigo_referencia": "Art. 84, III",
+        "medidas": [
+          {
+            "tipo": "suspensão das aulas pelo período de 3 (três) a 5 (cinco) dias letivos"
+          },
+          {
+            "tipo": "transferência compulsória para outra unidade de ensino, quando viável, de acordo com as decisões do conselho escolar"
+          }
+        ]
+      }
+    ],
+    "procedimentos_e_garantias": [
+      {
+        "artigo": "Art. 85",
+        "texto": "A aplicação de qualquer medida educativa disciplinar implica, além do registro em documento próprio (livro de ata ou livro de ocorrências), a comunicação oficial ao educando ou ao seu responsável, na presença de duas testemunhas, quando menor, com arquivamento na pasta individual do educando."
+      },
+      {
+        "artigo": "Art. 85, § 1.º",
+        "texto": "Em casos de medidas educativas disciplinares, que importem em suspensão, deverá o diretor da unidade de ensino, a equipe pedagógica e a docente providenciar atividades pedagógicas a serem cumpridas pelo educando na própria unidade de ensino, durante o período de suspensão."
+      },
+      {
+        "artigo": "Art. 85, § 2.º",
+        "texto": "A ausência do educando às aulas deve ser compensada mediante o cumprimento e entrega das atividades pedagógicas."
+      },
+      {
+        "artigo": "Art. 86",
+        "texto": "As medidas educativas disciplinares devem ser aplicadas ao educando, observando-se a sua idade, grau de maturidade, histórico disciplinar e gravidade da falta:"
+      },
+      {
+        "artigo": "Art. 86, I",
+        "texto": "as medidas previstas no parágrafo 1.º do artigo 84 são aplicadas pelo professor ou pelo coordenador."
+      },
+      {
+        "artigo": "Art. 86, II",
+        "texto": "as medidas previstas no parágrafo 2.º do artigo 84 são aplicadas pelo diretor."
+      },
+      {
+        "artigo": "Art. 86, III",
+        "texto": "as medidas previstas no parágrafo 3.º do artigo 84 são aplicadas pelo conselho escolar."
+      },
+      {
+        "artigo": "Art. 86, Parágrafo único",
+        "texto": "As medidas educativas disciplinares são agravadas caso o educando possua idade igual ou maior que 18 anos."
+      },
+      {
+        "artigo": "Art. 87",
+        "texto": "Em qualquer caso, é garantido amplo direito de defesa ao educando e aos seus responsáveis, sendo indispensável a oitiva individual do educando."
+      },
+      {
+        "artigo": "Art. 88",
+        "texto": "Cabe pedido de revisão da medida aplicada e, quando for o caso, recurso ao conselho escolar."
+      },
+      {
+        "artigo": "Art. 89",
+        "texto": "Nos casos de ato infracional, o diretor da unidade de ensino deve:\nI - encaminhar os fatos ao conselho tutelar, se o educando for criança (menor de 12 anos);\nII - encaminhar os fatos ao conselho tutelar e providenciar que seja lavrado o Boletim de Ocorrência na delegacia de polícia, se o educando for adolescente (maior de 12 e menor de 18 anos);\nIII - providenciar que seja lavrado o Boletim de Ocorrência na delegacia de polícia, se o educando for maior de 18 anos."
+      },
+      {
+        "artigo": "Art. 90",
+        "texto": "A aplicação das medidas disciplinares previstas não isenta os educandos ou seus responsáveis do ressarcimento dos danos materiais causados ao patrimônio escolar e da adoção de outras medidas judiciais cabíveis."
+      }
+    ]
+}

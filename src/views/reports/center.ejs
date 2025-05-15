@@ -1,0 +1,130 @@
+<section class="admin-master-container">
+    <%- include('../partials/admin-sidebar') %>  
+    <main class="admin-master-content">
+        <header class="admin-master-header">
+            <h1>Central de Advertências</h1>
+            <p>Gerencie as advertências registradas no sistema.</p>
+        </header>   
+        <section class="reports-center-container">
+            <!-- Stats Section -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>Total</h3>
+                    <p><%= stats.total %></p>
+                </div>
+                <div class="stat-card">
+                    <h3>Pendentes</h3>
+                    <p><%= stats.pending %></p>
+                </div>
+                <div class="stat-card">
+                    <h3>Assinadas</h3>
+                    <p><%= stats.signed %></p>
+                </div>
+                <div class="stat-card">
+                    <h3>Arquivadas</h3>
+                    <p><%= stats.archived %></p>
+                </div>
+            </div>
+    
+            <!-- Filters Section -->
+            <div class="filters-container">
+                <div class="filter-group">
+                    <label for="classFilter">Filtrar por Turma:</label>
+                    <select id="classFilter">
+                        <option value="">Todas as Turmas</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <input type="text"
+                           id="student-search"
+                           placeholder="Buscar por aluno..."
+                           autocomplete="off">
+                    <ul id="autocomplete-results" class="autocomplete-results"></ul>
+                </div>
+            </div>
+            
+            <input type="hidden" id="loggedInSchoolId" value="<%= user.schoolId %>">
+    
+            <!-- Reports Grid -->
+            <div class="reports-grid">
+                <% if (!reports || reports.length === 0) { %>
+                    <div class="no-reports">
+                        <h2>Nenhuma advertência encontrada</h2>
+                    </div>
+                <% } else { %>
+                    <% reports.forEach(report => { %>
+                        <div class="report-card <%= report.status %>">
+                            <div class="report-header">
+                                <h3><%= report.student?.name || 'Aluno não identificado' %></h3>
+                                <span class="report-date"><%= new Date(report.createdAt).toLocaleDateString('pt-BR') %></span>
+                            </div>
+                            <div class="report-body">
+                                <p><strong>Turma:</strong> <%= report.student?.userClass || 'N/A' %></p>
+                                <p><strong>Motivo:</strong> <%= report.reason %></p>
+                                <p><strong>Status:</strong> <%= report.status === 'pending' ? 'Pendente' : 
+                                                            report.status === 'delivered' ? 'Entregue' : 'Arquivado' %></p>
+                                <% if (report.deliveredAt) { %>
+                                    <p><strong>Entregue em:</strong> <%= new Date(report.deliveredAt).toLocaleDateString('pt-BR') %></p>
+                                    <p><strong>Método:</strong> <%= report.deliveryMethod || 'N/A' %></p>
+                                <% } %>
+                            </div>
+                            <div class="report-actions">
+                                <button class="btn-view" data-report-id="<%= report.id %>">Ver</button>
+                                <button class="btn-print" data-report-id="<%= report.id %>">Imprimir</button>
+                                <% if (report.status === 'pending') { %>
+                                    <button class="btn-delivery" data-report-id="<%= report.id %>">Registrar Entrega</button>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } %>
+            </div>
+    
+            <!-- Pagination -->
+            <% if (pagination && pagination.pages > 1) { %>
+                <div class="pagination">
+                    <!-- Previous Button -->
+                    <% if (pagination && pagination.pages > 1) { %>
+                        <button 
+                            class="page-btn prev" 
+                            data-page="<%= pagination.current - 1 %>"
+                            <%= pagination.current === 1 ? 'disabled' : '' %>>
+                            &laquo;
+                        </button>
+                
+                        <!-- Numbered Pages -->
+                        <% for(let i = 1; i <= pagination.pages; i++) { %>
+                            <% if (
+                                i === 1 || 
+                                i === pagination.pages || 
+                                (i >= pagination.current - 2 && i <= pagination.current + 2)
+                            ) { %>
+                                <button 
+                                    class="page-btn numbered <%= i === pagination.current ? 'active' : '' %>"
+                                    data-page="<%= i %>">
+                                    <%= i %>
+                                </button>
+                            <% } else if (i === pagination.current - 3 || i === pagination.current + 3) { %>
+                                <span class="page-ellipsis">...</span>
+                            <% } %>
+                        <% } %>
+                
+                        <!-- Next Button -->
+                        <button 
+                            class="page-btn next" 
+                            data-page="<%= pagination.current + 1 %>"
+                            <%= pagination.current === pagination.pages ? 'disabled' : '' %>>
+                            &raquo;
+                        </button>
+                    <% } %>
+                </div>
+            <% } %>
+            <div id="generic-popup" class="hidden popup-overlay">
+                <div class="popup-content">
+                    <div class="popup-message"></div>
+                    <button class="popup-ok-button">OK</button>
+                </div>
+              </div>
+        </section>
+    </main>
+</section>

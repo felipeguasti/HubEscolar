@@ -1,0 +1,47 @@
+<section class="admin-master-container">
+    <%- include('../partials/admin-sidebar') %>  
+    <main class="admin-master-content">
+        <header class="admin-master-header">
+            <h1>Ferramentas e Recursos</h1>
+            <p>Utilize os atalhos abaixo para gerenciar o sistema.</p>
+        </header>          
+        <section class="admin-master-cards">
+
+            <!-- Card 1: Gerar relatórios -->
+            <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Coordenador' || user.role === 'Secretario' || user.role === 'Pedagogo' || user.role === 'Diretor') { %>
+            <div class="admin-card">
+                <h3>Consulta e impressão de Relatórios</h3>
+                <p>Consulte relatórios dos alunos, imprima e envie para os responsáveis por vários meios.</p>
+                <a href="/reports/center" class="admin-card-btn">Acessar</a>
+            </div>
+            <% } %>
+
+            <!-- Card 2: Crie e gerencie Advertências -->
+            <% if (user.role === 'Coordenador' || user.role === 'Pedagogo' || user.role === 'Diretor' || user.role === 'Professor') { %>
+            <div class="admin-card">
+                <h3>Advertências e Relatórios</h3>
+                <p>Crie e gerencie advertências para todos os tipos de indisciplinas cometidas pelo aluno.</p>
+                <a href="/reports/behavior" class="admin-card-btn">Acessar</a>
+            </div>
+            <% } %>
+            
+            <!-- Card 3: Atas e registros de reuniões -->
+            <% if (user.role === 'Master' || user.role === 'Pedagogo' || user.role === 'Coordenador' || user.role === 'Diretor' || user.role === 'Secretario') { %>
+            <div class="admin-card">
+                <h3>Atas e Registros</h3>
+                <p>Crie Atas e Relatórios dos mais diversos de forma simples com a utilização de IA.</p>
+                <a href="/reports/meetings" class="admin-card-btn">Acessar</a>
+            </div>
+            <% } %>
+
+            <!-- Card 4: Atas e registros de reuniões -->
+            <% if (user.role === 'Master' || user.role === 'Diretor' || user.role === 'Secretario') { %>
+                <div class="admin-card">
+                    <h3>Gerenciar o cabeçalho</h3>
+                    <p>Crie e edite o Cabeçalho dos relatórios.</p>
+                    <a href="/reports/headers" class="admin-card-btn">Acessar</a>
+                </div>
+            <% } %>
+        </section>
+    </main>      
+</section>

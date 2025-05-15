@@ -1,0 +1,44 @@
+{
+  "name": "auth-service",
+  "version": "1.0.0",
+  "main": "app-auth-service.js",
+  "type": "module",
+  "scripts": {
+    "start": "node app-auth-service.js",
+    "dev": "nodemon app-auth-service.js",
+    "migrate": "sequelize-cli db:migrate --migrations-path src/migrations --config src/config/config.js",
+    "migrate:undo": "sequelize-cli db:migrate:undo --config src/config/config.js",
+    "migrate:undo:all": "sequelize-cli db:migrate:undo:all --config src/config/config.js",
+    "test": "mocha --experimental-modules tests/**/*.test.js --exit",
+    "test:watch": "mocha tests/**/*.test.js --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.8.4",
+    "bcrypt": "^5.1.1",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.18.3",
+    "express-rate-limit": "^6.7.0",
+    "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "moment-timezone": "^0.5.48",
+    "nodemailer": "^6.10.0",
+    "nodemon": "^3.1.9",
+    "pg": "^8.15.6",
+    "sequelize": "^6.37.7",
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "chai": "^5.2.0",
+    "mocha": "^11.1.0",
+    "sequelize-cli": "^6.6.2",
+    "sinon": "^20.0.0",
+    "supertest": "^7.1.0"
+  }
+}
