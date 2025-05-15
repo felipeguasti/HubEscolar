@@ -1,6 +1,5 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import bodyParser from 'body-parser';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import moment from 'moment-timezone';
@@ -29,10 +28,22 @@ const PORT = process.env.AUTH_SERVICE_URL ? new URL(process.env.AUTH_SERVICE_URL
 const targetTimezone = 'America/Sao_Paulo';
 moment.tz.setDefault(targetTimezone);
 
-// Middlewares básicos
-app.use(bodyParser.json());
-app.use(cors());
-app.use(express.json());
+// Configuração do CORS primeiro
+app.use(cors({
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Middleware para processamento do corpo das requisições
+app.use(express.json({
+    limit: '50mb',
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Configuração do Rate Limiting
 const limiter = rateLimit({

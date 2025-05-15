@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const isDistrict = window.location.pathname.includes("district");
     if(isDistrict){
-        handleAuthCheck();
         const showPopupButton = document.getElementById("inactiveDistrictMessage");
         const popupShown = sessionStorage.getItem('popupShown');
         const userLoggedIn = sessionStorage.getItem('userLoggedIn');

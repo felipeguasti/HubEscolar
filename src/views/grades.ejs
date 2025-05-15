@@ -1,254 +1,213 @@
 <section class="admin-master-container">
-    <!-- Incluir o Menu Lateral (Partial) -->
     <%- include('partials/admin-sidebar') %>  
 
-    <!-- Conteúdo Principal -->
+    <!-- Hidden fields for user data -->
+    <input type="hidden" id="userRole" value="<%= user.role %>">
+    <input type="hidden" id="userDistrictId" value="<%= user.districtId %>">
+    <input type="hidden" id="userSchoolId" value="<%= user.schoolId %>">
+
     <main class="admin-master-content">
         <header class="admin-master-header">
             <h1>Administração de Turmas</h1>
             <p>Gerenciamento das turmas do sistema.</p>
         </header>
 
-        <% if (grades.some(grade => grade.status === 'inactive')) { %> 
-            <div id="inactiveGradesMessage" data-message="Existem turmas com status inativo aguardando aprovação." class="hidden"></div>
-        <% } %>
+        <section class="admin-users-section">
+            
+            <!-- Seção de Filtros baseada em Role -->
+            <section class="grades-filters">
+                <% if (user.role === 'Master') { %>
+                    <div class="grades-filter-group">
+                        <div class="grades-filter-item">
+                            <label for="districtSelect">Distrito:</label>
+                            <select id="districtSelect" class="form-control">
+                                <option value="">Todos os distritos</option>
+                                <% districts.forEach(district => { %>
+                                    <option value="<%= district.id %>" <%= districtId === district.id ? 'selected' : '' %>>
+                                        <%= district.name %>
+                                    </option>
+                                <% }) %>
+                            </select>
+                        </div>
+                        <div class="grades-filter-item">
+                            <label for="schoolSelect">Escola:</label>
+                            <select id="schoolSelect" class="form-control" disabled>
+                                <option value="">Selecione um distrito primeiro</option>
+                            </select>
+                        </div>
+                    </div>
+                <% } else if (user.role === 'Inspetor') { %>
+                    <div class="filter-group">
+                        <input type="hidden" id="districtId" value="<%= user.districtId %>">
+                        <div class="filter-item">
+                            <label for="schoolSelect">Escola:</label>
+                            <select id="schoolSelect" class="form-control">
+                                <option value="">Todas as escolas</option>
+                                <% schools.forEach(school => { %>
+                                    <option value="<%= school.id %>"><%= school.name %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <input type="hidden" id="districtId" value="<%= user.districtId %>">
+                    <input type="hidden" id="schoolId" value="<%= user.schoolId %>">
+                <% } %>
+            </section>
 
-        <% if (user && (user.role === 'Diretor' || user.role === 'Secretario')) { %>
-            <!-- Botão para adicionar turmas, visível apenas para Diretor e Secretário -->
-            <div class="topPageElements">
-                <button id="addGrade" class="btn btn-addGrade">➕ Adicionar Turma</button>
-            </div>
-        <% } %>
+            <!-- Botões de Ação -->
+            <section class="actions-section">
+                <% if (['Master', 'Inspetor', 'Diretor', 'Secretario'].includes(user.role)) { %>
+                    <button id="addGrade" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nova Turma
+                    </button>
+                <% } %>
+            </section>
 
-        <% if (user && user.role === 'Master') { %>
-            <!-- O Master vê as escolas de todos os distritos, escolhe um distrito -->
-            <div class="district-dropdown">
-                <label for="districtSelect">Escolher Distrito:</label>
-                <select id="districtSelect" class="form-control">
-                    <option value="">Selecione um distrito</option>
-                    <% districts.forEach(district => { %>
-                        <option value="<%= district.id %>"><%= district.name %></option>
-                    <% }) %>
-                </select>
-            </div>
-        <% } %>
-
-        <% if (user.role === 'Inspetor') { %>
-            <!-- O Inspetor tem um campo oculto com o id e nome do seu distrito -->
-            <input type="hidden" id="districtId" value="<%= user.districtId %>">
-            <input type="hidden" id="districtName" value="<%= districtMap[user.districtId] %>">
-        <% } %>
-        <% if (user.role === 'Inspetor' || user.role === 'Inspetor') { %>
-        <!-- Tabela de Escolas (para Master e Inspetor) -->
-        <section class="admin-grade-section">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Escola</th>
-                        <th>Distrito</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="gradeTableBody">
-                    <% 
-                    // Filtro para Inspetor: Mostra apenas as escolas do seu distrito
-                    let filteredGrades = grades;
-        
-                    if (user.role === 'Master') {
-                        const selectedDistrictId = districtId || ''; // Agora usando a variável passada
-                        if (selectedDistrictId) {
-                            filteredGrades = filteredGrades.filter(grade => grade.districtId === selectedDistrictId);
-                        }
-                    }
-        
-                    if (user.role === 'Inspetor') {
-                        const inspectorDistrictId = user.districtId;
-                        filteredGrades = filteredGrades.filter(grade => grade.districtId === inspectorDistrictId);
-                    }
-        
-                    filteredGrades.sort((a, b) => (a.status === 'inactive' && b.status !== 'inactive') ? -1 : 1).forEach(grade => { %>
-                        <tr class="<%= grade.status === 'inactive' ? 'inactive-grade' : '' %>">
-                            <td><%= grade.schoolName %></td>
-                            <td><%= grade.districtName %></td>
-                            <td class="<%= grade.status === 'inactive' ? 'inactive-text' : '' %>">
-                                <%= grade.status === 'inactive' ? 'Inativo' : 'Ativo' %>
-                            </td>
-                            <td>
-                                <button class="btn btn-edit" data-grade-id="<%= grade.id %>">Editar</button>
-                                <% if (user.role === 'Master') { %>
-                                    <button class="btn btn-delete" data-grade-id="<%= grade.id %>">Excluir</button>
-                                <% } %>
-                            </td>
+            <!-- Tabela de Turmas -->
+            <section class="grades-table-section">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Escola</th>
+                            <th>Distrito</th>
+                            <th>Ano</th>
+                            <th>Turno</th>
+                            <th>Status</th>
+                            <th>Ações</th>
                         </tr>
-                    <% }) %>
-                </tbody>
-            </table>
-        </section>  
-        <% } %>      
+                    </thead>
+                    <tbody id="gradeTableBody">
+                        <!-- As grades serão carregadas via JavaScript -->
+                    </tbody>
+                </table>
+            </section>
 
-        <!-- Tabela de Turmas (para Diretor e Secretário) -->
-        <% if (user.role === 'Diretor' || user.role === 'Secretario') { %>
-        <section class="admin-grade-section">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Distrito</th>
-                        <th>Escola</th>
-                        <th>Ano</th>
-                        <th>Turno</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="gradeTableBody">
-                    <% 
-                    // Filtrando turmas pela escola do usuário
-                    let filteredGrades = grades.filter(grade => grade.schoolId === user.schoolId);
-        
-                    filteredGrades.sort((a, b) => (a.status === 'inactive' && b.status !== 'inactive') ? -1 : 1).forEach(grade => { %>
-                        <tr class="<%= grade.status === 'inactive' ? 'inactive-grade' : '' %>">
-                            <td><%= grade.name %></td>
-                            <td><%= grade.districtName %></td>
-                            <td><%= grade.schoolName %></td>
-                            <td><%= grade.year %></td>
-                            <td><%= grade.shift %></td>
-                            <td class="<%= grade.status === 'inactive' ? 'inactive-text' : '' %>">
-                                <%= grade.status === 'inactive' ? 'Inativo' : 'Ativo' %>
-                            </td>
-                            <td>
-                                <button class="btn btn-edit" data-grade-id="<%= grade.id %>">Editar</button>
-                                <button class="btn btn-delete" data-grade-id="<%= grade.id %>">Excluir</button>
-                            </td>
-                        </tr>
-                    <% }) %>
-                </tbody>
-            </table>
-            <button class="btn btn-addGrade">➕ Adicionar Turma</button>
-        </section> 
-        <% } %> 
+            <!-- Modais -->
+            <div class="modal-container">
+                <!-- Modal de Cadastro/Edição -->
+                <div id="gradeModal" class="modal">
+                    <div class="modal-content">
+                        <header class="modal-header">
+                            <h2 id="modalTitle">Nova Turma</h2>
+                            <button class="close-modal">&times;</button>
+                        </header>
+                        <form id="gradeForm">
+                            <input type="hidden" id="gradeId">
+                            <div class="form-group">
+                                <label for="gradeName">Nome da Turma</label>
+                                <input type="text" id="gradeName" name="name" required>
+                            </div>
 
-        <!-- Modais -->
-        <div class="modalContainer" hidden>
-            <!-- Modal de Cadastro -->
-            <div id="registerModal" class="modal">
-                <div class="modal-content">
-                    <span class="close">&times;</span>
-                    <h2>Cadastrar Turma</h2>
-                    <form id="registerForm">
-                        <label for="registerName">Nome da Turma:</label>
-                        <input type="text" id="registerName" name="name" required>
-                        
-                        <label for="registerDistrict">Distrito:</label>
-                        <input type="text" id="registerDistrict" name="district" required>
-                        
-                        <label for="registerYear">Ano:</label>
-                        <input type="number" id="registerYear" name="year" required min="2024" step="1">
-                        
-                        <label for="registerShift">Turno:</label>
-                        <select id="registerShift" name="shift">
-                            <option value="Manhã">Manhã</option>
-                            <option value="Tarde">Tarde</option>
-                            <option value="Noite">Noite</option>
-                            <option value="Integral">Integral</option>
-                        </select>
-                    
-                        <label for="registerStartDate">Data de Início:</label>
-                        <input type="date" class="defaultDate" id="registerStartDate" name="startDate" required>
-                    
-                        <label for="registerEndDate">Data de Término:</label>
-                        <input type="date" class="defaultDate" id="registerEndDate" name="endDate">
-                    
-                        <label for="registerStatus">Status:</label>
-                        <select id="registerStatus" name="status">
-                            <option value="active">Ativo</option>
-                            <option value="inactive">Inativo</option>
-                        </select>
-                    
-                        <label for="registerDescription">Descrição:</label>
-                        <textarea id="registerDescription" name="description"></textarea>
-                    
-                        <button type="submit" class="btn btn-save">Salvar</button>
-                        <button type="button" class="btn btn-cancel">Cancelar</button>
-                    </form>                    
+                            <!-- Add district and school fields based on role -->
+                            <% if (user.role === 'Master') { %>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="modalDistrictSelect">Distrito</label>
+                                        <select id="modalDistrictSelect" name="districtId" required>
+                                            <option value="">Selecione um distrito</option>
+                                            <% districts.forEach(district => { %>
+                                                <option value="<%= district.id %>"><%= district.name %></option>
+                                            <% }) %>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="modalSchoolSelect">Escola</label>
+                                        <select id="modalSchoolSelect" name="schoolId" required disabled>
+                                            <option value="">Selecione um distrito primeiro</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            <% } else if (user.role === 'Inspetor') { %>
+                                <input type="hidden" name="districtId" value="<%= user.districtId %>">
+                                <div class="form-group">
+                                    <label for="modalSchoolSelect">Escola</label>
+                                    <select id="modalSchoolSelect" name="schoolId" required>
+                                        <option value="">Selecione uma escola</option>
+                                        <% schools.forEach(school => { %>
+                                            <option value="<%= school.id %>"><%= school.name %></option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+                            <% } else { %>
+                                <input type="hidden" name="districtId" value="<%= user.districtId %>">
+                                <input type="hidden" name="schoolId" value="<%= user.schoolId %>">
+                            <% } %>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="gradeYear">Ano</label>
+                                    <input type="number" id="gradeYear" name="year" required min="2024">
+                                </div>
+                                <div class="form-group">
+                                    <label for="gradeShift">Turno</label>
+                                    <select id="gradeShift" name="shift" required>
+                                        <option value="Manhã">Manhã</option>
+                                        <option value="Tarde">Tarde</option>
+                                        <option value="Noite">Noite</option>
+                                        <option value="Integral">Integral</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="gradeStartDate">Data de Início</label>
+                                    <input type="date" id="gradeStartDate" name="startDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="gradeEndDate">Data de Término</label>
+                                    <input type="date" id="gradeEndDate" name="endDate">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="gradeDescription">Descrição</label>
+                                <textarea id="gradeDescription" name="description" rows="3"></textarea>
+                            </div>
+
+                            <!-- Novo campo para Status -->
+                            <div class="form-group">
+                                <label for="gradeStatus">Status</label>
+                                <select id="gradeStatus" name="status" required>
+                                    <option value="active">Ativo</option>
+                                    <option value="inactive">Inativo</option>
+                                </select>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-save">Salvar</button>
+                                <button type="button" class="btn btn-cancel">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Modal de Confirmação de Exclusão -->
+                <div id="deleteModal" class="modal">
+                    <div class="modal-content">
+                        <header class="modal-header">
+                            <h2>Confirmar Exclusão</h2>
+                            <button class="close-modal">&times;</button>
+                        </header>
+                        <div class="modal-body">
+                            <p>Tem certeza que deseja excluir a turma <strong id="deleteGradeName"></strong>?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-danger" id="confirmDelete">Excluir</button>
+                            <button class="btn btn-cancel">Cancelar</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Modal de Edição -->
-            <div id="editModal" class="modal">
-                <div class="modal-content">
-                    <span class="close">&times;</span>
-                    <h2>Editar Turma</h2>
-                    <form id="editForm">
-                        <input type="hidden" id="editGradeId" name="id">
-
-                        <label for="editName">Nome da Turma:</label>
-                        <input type="text" id="editName" name="name" required>
-
-                        <label for="editDistrict">Distrito:</label>
-                        <input type="text" id="editDistrict" name="district" required>
-
-                        <label for="editYear">Ano:</label>
-                        <input type="number" class="modalDate" id="editYear" name="year" required min="2024" step="1">
-
-                        <label for="editShift">Turno:</label>
-                        <select id="editShift" name="shift">
-                            <option value="Manhã">Manhã</option>
-                            <option value="Tarde">Tarde</option>
-                            <option value="Noite">Noite</option>
-                            <option value="Integral">Integral</option>
-                        </select>
-
-                        <label for="editStartDate">Data de Início:</label>
-                        <input type="date" class="modalDate" id="editStartDate" name="startDate" required>
-
-                        <label for="editEndDate">Data de Término:</label>
-                        <input type="date" class="modalDate" id="editEndDate" name="endDate">
-
-                        <label for="editStatus">Status:</label>
-                        <select id="editStatus" name="status">
-                            <option value="active">Ativo</option>
-                            <option value="inactive">Inativo</option>
-                        </select>
-
-                        <label for="editDescription">Descrição:</label>
-                        <textarea class="modalDate" id="editDescription" name="description"></textarea>
-
-                        <button type="submit" class="btn btn-save-edit">Salvar</button>
-                        <button type="button" class="btn btn-cancel">Cancelar</button>
-                    </form>
+            <!-- Feedback Toast -->
+            <div id="toast" class="toast" role="alert" aria-live="polite" aria-atomic="true">
+                <div class="toast-content">
+                    <span class="toast-message"></span>
                 </div>
             </div>
-
-
-            <!-- Modal de Exclusão -->
-            <div id="deleteModal" class="modal">
-                <div class="modal-content">
-                    <span class="close">&times;</span>
-                    <h2>Excluir Turma</h2>
-                    <p>Deseja excluir a turma <strong id="deleteName"></strong>?</p>
-                    <form id="deleteForm">
-                        <input type="hidden" name="gradeId" id="deleteGradeId">
-                        <button type="submit" class="btn btn-confirm">Excluir</button>
-                        <button type="button" class="btn btn-cancel">Cancelar</button>
-                    </form>
-                </div>
-            </div>
-        </div>
+        </section>
     </main>
-    <div id="generic-popup" class="hidden popup-overlay">
-        <div class="popup-content">
-            <div class="popup-message"></div>
-            <button class="popup-ok-button">OK</button>
-        </div>
-    </div>        
 </section>
-<script>
-    window.onload = function () {
-        const yearInput = document.getElementById("registerYear");
-        if (yearInput) {
-            yearInput.value = new Date().getFullYear(); // Define o ano atual
-        }
-    };
-</script>

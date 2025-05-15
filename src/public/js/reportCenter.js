@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const isReportCenter = window.location.pathname.includes("reports/center");
     if (isReportCenter) {
-        handleAuthCheck();
 
         // Cache DOM elements
         const searchStudentInput = document.getElementById('student-search');

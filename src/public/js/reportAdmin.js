@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const isReportAdmin = window.location.pathname.includes("/reports/headers");
     if (isReportAdmin) {
-      handleAuthCheck();
       function previewImage(input, previewId) {
         if (input.files && input.files[0]) {
           const reader = new FileReader();

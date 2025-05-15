@@ -29,10 +29,11 @@ const logger = winston.createLogger({
         environment: process.env.NODE_ENV || 'development'
     },
     transports: [
+        // Console transport com formato apropriado para cada ambiente
         new winston.transports.Console({
             format: winston.format.combine(
                 winston.format.colorize(),
-                customFormat
+                process.env.NODE_ENV !== 'production' ? winston.format.simple() : customFormat
             )
         }),
         new winston.transports.File({ 
@@ -47,7 +48,6 @@ const logger = winston.createLogger({
             maxFiles: 5
         })
     ],
-    // Handle exceptions and rejections
     exceptionHandlers: [
         new winston.transports.File({ 
             filename: path.join(logsDir, 'exceptions.log')
@@ -60,14 +60,6 @@ const logger = winston.createLogger({
     ]
 });
 
-// Development environment enhancements
-if (process.env.NODE_ENV !== 'production') {
-    logger.add(new winston.transports.Console({
-        format: winston.format.combine(
-            winston.format.colorize(),
-            winston.format.simple()
-        )
-    }));
-}
+// Removido o bloco de desenvolvimento que adicionava um segundo Console transport
 
 module.exports = logger;

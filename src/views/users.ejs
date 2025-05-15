@@ -75,20 +75,16 @@
                     </div>
             
                     <div>
-                        <label for="contentFilter">Conteúdo:</label>
+                        <label for="contentFilter">Disciplina:</label>
                         <select id="contentFilter">
-                            <option value="">Selecione um conteúdo</option>
-                            <option value="Matemática">Matemática</option>
-                            <option value="Português">Português</option>
+                            <option value="">Selecione uma disciplina</option>
                         </select>
                     </div>
             
                     <div>
-                        <label for="classFilter">Turma:</label>
-                        <select id="classFilter">
+                        <label for="filterGrade">Turma:</label>
+                        <select id="filterGrade" name="gradeId">
                             <option value="">Selecione uma turma</option>
-                            <option value="6º Ano">6º Ano</option>
-                            <option value="7º Ano">7º Ano</option>
                         </select>
                     </div>
             
@@ -209,30 +205,25 @@
                         </select>
             
                         <label for="registerSchool">Escola:</label>
-                        <select id="registerSchool" name="schoolId" <% if (user.role !== 'Master' && user.role !== 'Inspetor') { %> disabled <% } %>>
-                            <option value="">Selecione uma escola</option>
-                            <% schools.forEach(function(school) { %>
-                                <option value="<%= school.id %>" <% if (user.role !== 'Master' && user.role !== 'Inspetor' && user.schoolId === school.id) { %> selected <% } %>><%= school.name %></option>
-                            <% }); %>
+                        <select id="registerSchool" name="schoolId" <%= (user.role !== 'Master' && user.role !== 'Inspetor') ? 'disabled' : '' %>>
+                            <% if (user.role === 'Master' || user.role === 'Inspetor') { %>
+                                <option value="">Selecione uma escola</option>
+                                <% schools.forEach(function(school) { %>
+                                    <option value="<%= school.id %>"><%= school.name %></option>
+                                <% }); %>
+                            <% } else { %>
+                                <% const userSchool = schools.find(school => school.id === user.schoolId); %>
+                                <option value="<%= user.schoolId %>" selected><%= userSchool ? userSchool.name : 'Escola não encontrada' %></option>
+                            <% } %>
                         </select>
             
                         <div>
-                            <label for="registerContent">Conteúdo:</label>
-                            <input type="text" id="registerContent" name="content" value="">
-                        </div>
-            
-                        <div>
-                            <label for="registerClass">Turma:</label>
-                            <select id="registerClass" name="gradeId">
-                                <option value="">Selecione uma turma</option>
-                                <% if (grades && grades.length > 0) { %>
-                                    <% grades.forEach(grade => { %>
-                                        <option value="<%= grade.id %>"><%= grade.name %></option>
-                                    <% }); %>
-                                <% } %>
+                            <label for="registerContent">Disciplina:</label>
+                            <select id="registerContent" name="content">
+                                <option value="">Selecione uma disciplina</option>
                             </select>
                         </div>
-            
+
                         <label for="registerHorario">Turno:</label>
                         <select id="registerHorario" name="horario">
                             <option value="">Selecione um turno</option>
@@ -241,6 +232,18 @@
                             <option value="Noite">Noite</option>
                             <option value="Integral">Integral</option>
                         </select>
+            
+                        <div>
+                            <label for="registerGrade">Turma:</label>
+                            <select id="registerGrade" name="gradeId">
+                                <option value="">Selecione uma turma</option>
+                                <% if (grades && grades.length > 0) { %>
+                                    <% grades.forEach(grade => { %>
+                                        <option value="<%= grade.id %>"><%= grade.name %></option>
+                                    <% }); %>
+                                <% } %>
+                            </select>
+                        </div>
             
                         <label for="registerAddress">Endereço:</label>
                         <input type="text" id="registerAddress" name="address" value="">
@@ -322,40 +325,31 @@
                             <option value="Prefiro não dizer" <%= user.gender === 'Prefiro não dizer' ? 'selected' : '' %>>Prefiro não dizer</option>
                         </select>
 
-                        <!-- Seleção de Distrito -->
                         <label for="editDistrict">Secretaria:</label>
-                        <select id="editDistrict" name="districtId">
+                        <select id="editDistrict" name="districtId" <% if (userRole !== 'Master') { %> disabled <% } %>>
                             <option value="">Selecione uma secretaria</option>
                             <% districts.forEach(function(district) { %>
-                                <option value="<%= district.id %>" <%= user.districtId === district.id ? 'selected' : '' %>><%= district.name %></option>
+                                <option value="<%= district.id %>" <% if (user.role !== 'Master' && user.districtId === district.id) { %> selected <% } %>><%= district.name %></option>
                             <% }); %>
                         </select>
-
-                        <!-- Escola -->
+            
                         <label for="editSchool">Escola:</label>
-                        <select id="editSchool" name="schoolId">
-                            <option value="">Selecione uma escola</option>
-                            <% schools.forEach(function(school) { %>
-                                <option value="<%= school.id %>" <%= editingUser && editingUser.schoolId === school.id ? 'selected' : '' %>><%= school.name %></option>
-                            <% }); %>
+                        <select id="editSchool" name="schoolId" <%= (user.role !== 'Master' && user.role !== 'Inspetor') ? 'disabled' : '' %>>
+                            <% if (user.role === 'Master' || user.role === 'Inspetor') { %>
+                                <option value="">Selecione uma escola</option>
+                                <% schools.forEach(function(school) { %>
+                                    <option value="<%= school.id %>"><%= school.name %></option>
+                                <% }); %>
+                            <% } else { %>
+                                <% const userSchool = schools.find(school => school.id === user.schoolId); %>
+                                <option value="<%= user.schoolId %>" selected><%= userSchool ? userSchool.name : 'Escola não encontrada' %></option>
+                            <% } %>
                         </select>
 
                         <div>
-                            <label for="editContent">Conteúdo:</label>
-                            <input type="text" id="editContent" name="content" value="<%= user.content %>">
-                        </div>
-
-                        <div>
-                            <label for="editClass">Turma:</label>
-                            <select id="editClass" name="gradeId">
-                                <option value="">Selecione uma turma</option>
-                                <% if (grades && grades.length > 0) { %>
-                                    <% grades.forEach(grade => { %>
-                                        <option value="<%= grade.id %>" <%= user.gradeId === grade.id ? 'selected' : '' %>>
-                                            <%= grade.name %>
-                                        </option>
-                                    <% }); %>
-                                <% } %>
+                            <label for="editContent">Disciplina:</label>
+                            <select id="editContent" name="content">
+                                <option value="">Selecione uma disciplina</option>
                             </select>
                         </div>
 
@@ -366,6 +360,20 @@
                             <option value="Noite" <%= user.horario === 'Noite' ? 'selected' : '' %>>Noite</option>
                             <option value="Integral" <%= user.horario === 'Integral' ? 'selected' : '' %>>Integral</option>
                         </select>
+
+                        <div>
+                            <label for="editGrade">Turma:</label>
+                            <select id="editGrade" name="gradeId">
+                                <option value="">Selecione uma turma</option>
+                                <% if (grades && grades.length > 0) { %>
+                                    <% grades.forEach(grade => { %>
+                                        <option value="<%= grade.id %>" <%= user.gradeId === grade.id ? 'selected' : '' %>>
+                                            <%= grade.name %>
+                                        </option>
+                                    <% }); %>
+                                <% } %>
+                            </select>
+                        </div>
                     
                         <!-- Endereço -->
                         <label for="editAddress">Endereço:</label>
@@ -419,11 +427,21 @@
                 </div>
             </div>
         </div>
-        <div id="generic-popup" class="hidden popup-overlay">
-            <div class="popup-content">
-                <div class="popup-message"></div>
-                <button class="popup-ok-button">OK</button>
+    
+        <!-- Popups e Loading -->
+        <div class="popup-container">
+            <!-- Loading -->
+            <div id="loading" class="popup loading">
+                <div class="spinner"></div>
             </div>
-        </div>        
+
+            <!-- Message Popup -->
+            <div id="message-popup" class="popup message">
+                <div class="popup-content">
+                    <span id="message-text"></span>
+                    <button class="close-popup">&times;</button>
+                </div>
+            </div>
+        </div>      
     </main>
 </section>

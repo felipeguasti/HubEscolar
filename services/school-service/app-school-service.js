@@ -12,6 +12,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const schoolRoutes = require('./src/routes/schools');
 const gradesRoutes = require('./src/routes/grades');
+const subjectsRoutes = require('./src/routes/subjects');
 const sequelize = require('./src/config/db'); // Importe a instância do Sequelize de db.js
 
 // Middleware para analisar o corpo das requisições com limite de tamanho
@@ -60,6 +61,8 @@ const limiter = rateLimit({
 // Monta as rotas sob o prefixo /schools
 app.use('/schools', limiter, schoolRoutes);
 app.use('/grades', limiter, gradesRoutes);
+app.use('/subjects', limiter, subjectsRoutes);
+
 
 // Middleware de tratamento de erros global
 app.use((err, req, res, next) => {

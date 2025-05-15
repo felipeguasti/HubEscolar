@@ -1,19 +1,19 @@
 const axios = require('axios');
-require('dotenv').config(); // Garante que as variáveis de ambiente sejam carregadas
+require('dotenv').config();
 const SCHOOL_SERVICE_URL = process.env.SCHOOL_SERVICE_URL || 'http://localhost:3002';
 
 const gradeService = {
-    async getGradeById(gradeId, accessToken) {
+    async getGradeById(accessToken, gradeId) { // invertido para manter padrão
         try {
             const response = await axios.get(`${SCHOOL_SERVICE_URL}/grades/${gradeId}`, {
                 headers: {
-                Authorization: `Bearer ${accessToken}`,
+                    Authorization: `Bearer ${accessToken}`,
                 },
             });
             return response.data;
         } catch (error) {
             console.error("Erro ao buscar turma por ID no school-service:", error.response ? error.response.data : error.message);
-            res.status(500).json({ error: "Erro ao buscar turma" });
+            throw error;
         }
     },
 
@@ -37,7 +37,7 @@ const gradeService = {
         }
     },
 
-    async createGrade(gradeData, accessToken) {
+    async createGrade(accessToken, gradeData) {
         try {
             const response = await axios.post(`${SCHOOL_SERVICE_URL}/grades/create`, gradeData, {
                 headers: {
@@ -51,7 +51,7 @@ const gradeService = {
         }
     },
 
-    async updateGrade(gradeId, gradeData, accessToken) {
+    async updateGrade(accessToken, gradeId, gradeData) {
         try {
             const response = await axios.put(`${SCHOOL_SERVICE_URL}/grades/edit/${gradeId}`, gradeData, {
                 headers: {
@@ -79,6 +79,34 @@ const gradeService = {
             throw error;
         }
     },
+
+    async getGradesBySchool(accessToken, schoolId) {
+        try {
+            const response = await axios.get(`${SCHOOL_SERVICE_URL}/grades/school/${schoolId}`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Erro ao buscar turmas por escola:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    async getGradesByDistrict(accessToken, districtId) {
+        try {
+            const response = await axios.get(`${SCHOOL_SERVICE_URL}/grades/district/${districtId}`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Erro ao buscar turmas por distrito:", error.response?.data || error.message);
+            throw error;
+        }
+    }
 };
 
 module.exports = gradeService;

@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
         let selectedUsers = [];
         let highlightedIndex = -1;
 
-        handleAuthCheck();
         initializeFeatureHandlers();
     
         function initializeFeatureHandlers() {

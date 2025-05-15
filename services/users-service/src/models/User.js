@@ -68,13 +68,14 @@ User.init({
   },
 
   // Dados Acadêmicos/Profissionais
-  userClass: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
   content: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  gradeId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: 'Id da turma do aluno - referência ao microserviço school-service'
   },
 
   // Novas entradas: Escola e Secretaria

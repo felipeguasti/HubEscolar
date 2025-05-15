@@ -1454,6 +1454,10 @@ display: none;
 
 /* Conteúdo do Modal */
 .modal-content {
+    position: fixed; /* Modal posicionado em relação à viewport */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 80%; /* Largura ajustada para 80% da tela */
     max-width: 1200px; /* Definindo um limite máximo de largura */
     max-height: 90%; /* Altura máxima do conteúdo do modal */

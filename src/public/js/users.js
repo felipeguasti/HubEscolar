@@ -1,35 +1,1457 @@
-document.addEventListener('DOMContentLoaded', function() {
+// SERVICES
+const userServices = {
+    // Funções auxiliares para loading do select
+    setSelectLoading(selectElement) {
+        if (selectElement) {
+            selectElement.disabled = true;
+            selectElement.innerHTML = '<option value="">Carregando...</option>';
+        }
+    },
+
+    resetSelect(selectElement, defaultText = "Selecione uma opção") {
+        if (selectElement) {
+            selectElement.disabled = false;
+            selectElement.innerHTML = `<option value="">${defaultText}</option>`;
+        }
+    },
+
+    async handleResponse(response) {
+        // Se for 204, retorna sucesso sem conteúdo
+        if (response.status === 204) {
+            return { success: true };
+        }
+    
+        const data = await response.json();
+        
+        // Se a resposta não for ok (200-299), trata como erro
+        if (!response.ok) {
+            throw {
+                response: {
+                    data: data,
+                    status: response.status
+                }
+            };
+        }
+        
+        return data;
+    },
+
+    async fetchWithLoading(url, options = {}) {
+        try {
+            userUtils.showLoading();
+            const response = await fetch(url, options);
+            return await this.handleResponse(response);
+        } catch (error) {
+            console.error("Error:", error);
+            throw error;
+        } finally {
+            userUtils.hideLoading();
+        }
+    },
+    async createUser(userData) {
+        try {
+            const response = await this.fetchWithLoading("/users/create", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(userData)
+            });
+    
+            // Se tem mensagem e não tem erro, é sucesso
+            if (response.message && !response.error) {
+                return {
+                    success: true,
+                    message: response.message
+                };
+            }
+    
+            // Se chegou aqui, trata como erro
+            return {
+                error: response.message || "Erro ao criar usuário"
+            };
+    
+        } catch (error) {
+            return {
+                error: error.response?.data?.message || "Erro ao criar usuário"
+            };
+        }
+    },
+
+    async editUser(userId, userData) {
+        return this.fetchWithLoading(`/users/edit/${userId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(userData)
+        });
+    },
+
+    async deleteUser(userId) {
+        try {
+            await this.fetchWithLoading(`/users/delete/${userId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" }
+            });
+            return { success: true };
+        } catch (error) {
+            throw new Error(error.response?.data?.message || "Erro ao excluir usuário");
+        }
+    },
+
+    async resetPassword(userId) {
+        try {
+            const response = await this.fetchWithLoading('/users/reset-password', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId })
+            });
+    
+            // Se tem mensagem e não tem erro, é sucesso
+            if (response.message && !response.error) {
+                return response;
+            }
+    
+            // Se chegou aqui, trata como erro
+            throw { // Remover o new Error e manter a estrutura original
+                response: {
+                    data: {
+                        message: response.message
+                    }
+                }
+            };
+    
+        } catch (error) {
+            // Repassa o erro mantendo a estrutura
+            throw error; // Não criar novo Error aqui
+        }
+    },
+
+    async loadContentOptions() {
+        const contentSelect = document.getElementById('contentFilter');
+        this.setSelectLoading(contentSelect);
+        try {
+            const response = await fetch('/subjects/list');
+            const data = await this.handleResponse(response);
+            return data;
+        } finally {
+            this.resetSelect(contentSelect, "Selecione uma disciplina");
+        }
+    },
+
+    async loadAllGrades() {
+        const gradeSelect = document.getElementById('filterGrade');
+        this.setSelectLoading(gradeSelect);
+        try {
+            const response = await fetch('/grades/list');
+            const data = await this.handleResponse(response);
+            return data;
+        } finally {
+            this.resetSelect(gradeSelect, "Selecione uma turma");
+        }
+    },
+
+    async fetchSchoolsByDistrict(districtId) {
+        const schoolSelect = document.getElementById('schoolFilter');
+        this.setSelectLoading(schoolSelect);
+        try {
+            const response = await fetch(`/schools/list?districtId=${districtId}`);
+            const data = await this.handleResponse(response);
+            return data;
+        } finally {
+            this.resetSelect(schoolSelect, "Selecione uma escola");
+        }
+    },
+
+    async fetchSchoolsBySchool(districtId, schoolId) {
+        const response = await fetch(`/schools/list?districtId=${districtId}`);
+        return await response.json();
+    },
+
+    async fetchGradesBySchool(schoolId) {
+        return this.fetchWithLoading(`/grades/list?schoolId=${schoolId}`);
+    },
+
+    async loadSchools(district) {
+        try {
+            const response = await fetch(`/users/filter?districtId=${encodeURIComponent(district)}`);
+            const data = await response.json();
+            
+            // Garantir que estamos pegando escolas do jeito certo
+            return [...new Map(data.schools.map(school => [school.id, school])).values()];
+        } catch (error) {
+            console.error("Erro ao buscar escolas:", error);
+            return [];
+        }
+    },
+
+    async loadClasses(district, school) {
+        const response = await fetch(`/grades/list?schoolId=${school}`);
+        return await response.json();
+    },
+
+    // Novo método para controle de loading do dropdown
+    setDropdownLoading(selectElement, isLoading) {
+        const parent = selectElement.parentElement;
+        if (isLoading) {
+            parent.classList.add('select-loading');
+            // Adiciona spinner
+            const spinner = document.createElement('div');
+            spinner.className = 'select-spinner';
+            parent.appendChild(spinner);
+        } else {
+            parent.classList.remove('select-loading');
+            // Remove spinner se existir
+            const spinner = parent.querySelector('.select-spinner');
+            if (spinner) spinner.remove();
+        }
+    },
+
+    // Modificar os métodos de carregamento de dropdowns
+    async loadSchools(districtId) {
+        const schoolSelect = document.getElementById('schoolFilter');
+        if (!schoolSelect) return;
+
+        this.setDropdownLoading(schoolSelect, true);
+        try {
+            const response = await fetch(`/schools/list${districtId ? `?districtId=${districtId}` : ''}`);
+            const schools = await response.json();
+            
+            // Atualiza as opções
+            schoolSelect.innerHTML = '<option value="">Selecione uma escola</option>';
+            schools.forEach(school => {
+                const option = document.createElement('option');
+                option.value = school.id;
+                option.textContent = school.name;
+                schoolSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Erro ao carregar escolas:', error);
+        } finally {
+            this.setDropdownLoading(schoolSelect, false);
+        }
+    }
+};
+
+// HANDLERS
+const userHandlers = {
+  
+    async openRegisterModal() {        
+        try {
+            // Reset de todos os campos do formulário
+            document.getElementById('registerForm').reset();
+            
+            // Carregar conteúdos disponíveis
+            const subjects = await userServices.loadContentOptions();
+            userUtils.updateContentSelect(subjects, 'registerContent');
+    
+            const schoolSelect = document.getElementById('registerSchool');
+            const districtId = document.getElementById('registerDistrict').value;
+    
+            // Setup inicial
+            await userServices.fetchSchoolsByDistrict(districtId);
+            
+            if (schoolSelect.value) {
+                const grades = await userServices.fetchGradesBySchool(schoolSelect.value);
+                userUtils.updateGradeSelect(grades);
+            }
+    
+            userUtils.openModal('registerModal');
+        } catch (error) {
+            console.error('Erro:', error);
+            userUtils.showError('Erro ao carregar dados iniciais');
+        } 
+    },
+    
+    async openEditModal(userId) {        
+        try {
+            const [userData, subjects] = await Promise.all([
+                fetch(`/users/list/${userId}`).then(r => r.json()),
+                userServices.loadContentOptions()
+            ]);
+            
+            // Garantir que o ID está sendo definido
+            document.getElementById("editUserId").value = userId;
+            
+            // Atualizar select de conteúdos
+            userUtils.updateContentSelect(subjects, 'editContent');
+    
+            // Preencher todos os campos
+            const fields = [
+                'id', 'name', 'email', 'cpf', 'phone', 'dateOfBirth', 
+                'gender', 'role', 'horario', 'status', 'address', 'city', 
+                'state', 'zip', 'districtId', 'schoolId', 'content'
+            ];
+            
+            fields.forEach(field => {
+                const element = document.getElementById(`edit${field.charAt(0).toUpperCase() + field.slice(1)}`);
+                if (element) {
+                    if (field === 'dateOfBirth') {
+                        element.value = new Date(userData[field]).toISOString().split('T')[0];
+                    } else {
+                        element.value = userData[field] || '';
+                    }
+                }
+            });
+    
+            // Atualizar a visibilidade dos campos baseado na role
+            userUtils.updateFieldsVisibility(userData.role, 'edit');
+    
+            // Carregar as escolas do distrito selecionado
+            if (userData.districtId) {
+                await userServices.fetchSchoolsBySchool(userData.districtId, userData.schoolId);
+                
+                // Selecionar a escola correta
+                const schoolSelect = document.getElementById('editSchool');
+                if (schoolSelect && userData.schoolId) {
+                    schoolSelect.value = userData.schoolId;
+                }
+            }
+    
+            // Carregar as turmas da escola selecionada e definir a turma correta
+            if (userData.schoolId) {
+                const grades = await userServices.fetchGradesBySchool(userData.schoolId);
+                userUtils.updateGradeSelect(grades, 'edit');
+                
+                // Importante: definir o valor após atualizar as opções
+                const gradeSelect = document.getElementById('editGrade');
+                if (gradeSelect && userData.gradeId) {
+                    // Aguardar um momento para garantir que as opções foram carregadas
+                    setTimeout(() => {
+                        gradeSelect.value = userData.gradeId;
+                    }, 100);
+                }
+            }
+    
+            userUtils.openModal('editModal');
+        } catch (error) {
+            console.error('Erro:', error);
+            userUtils.showError('Erro ao carregar dados do usuário');
+        } 
+    },
+
+    async openDeleteModal(userId) {
+        try {
+            const data = await fetch(`/users/list/${userId}`).then(r => r.json());
+            
+            // Preencher informações no modal
+            const fields = ['name', 'email', 'role', 'status', 'createdAt'];
+            fields.forEach(field => {
+                const element = document.getElementById(`delete${field.charAt(0).toUpperCase() + field.slice(1)}`);
+                if (element) {
+                    if (field === 'createdAt') {
+                        element.textContent = new Date(data[field]).toLocaleDateString('pt-BR');
+                    } else {
+                        element.textContent = data[field];
+                    }
+                }
+            });
+
+            document.getElementById('deleteUserId').value = data.id;
+            userUtils.openModal('deleteModal');
+        } catch (error) {
+            console.error('Erro:', error);
+            userUtils.showError('Erro ao carregar dados do usuário');
+        }
+    },
+       async handleCreateUser(event) {
+        console.log('Início do handleCreateUser');
+    
+        try {
+            // Coletar dados do formulário
+            const fields = {
+                name: document.getElementById("registerName"),
+                email: document.getElementById("registerEmail"),
+                role: document.getElementById("registerRole"),
+                district: document.getElementById("registerDistrict"),
+                school: document.getElementById("registerSchool"),
+                cpf: document.getElementById("registerCpf"),
+                phone: document.getElementById("registerPhone"),
+                dateOfBirth: document.getElementById("registerDateOfBirth"),
+                gender: document.getElementById("registerGender"),
+                content: document.getElementById("registerContent"),
+                grade: document.getElementById("registerGrade"),
+                horario: document.getElementById("registerHorario"),
+                address: document.getElementById("registerAddress"),
+                city: document.getElementById("registerCity"),
+                state: document.getElementById("registerState"),
+                zip: document.getElementById("registerZip")
+            };
+
+            console.log('Fields coletados:', fields);
+
+            // Verificar campos obrigatórios
+            const missingFields = [];
+            for (const [key, element] of Object.entries(fields)) {
+                console.log(`Verificando campo ${key}:`, element);
+                if (!element) {
+                    missingFields.push(key);
+                }
+            }
+
+            console.log('Campos ausentes:', missingFields);
+
+            if (missingFields.length > 0) {
+                console.log('Campos obrigatórios faltando');
+                userUtils.showError(`Campos não encontrados: ${missingFields.join(', ')}`);
+                return;
+            }
+
+            console.log('Passou da verificação de campos obrigatórios');
+            // Criar objeto com os valores
+            // Se passou da verificação, criar objeto com os valores
+            const userData = {
+                name: fields.name.value.trim(),
+                email: fields.email.value.trim(),
+                role: fields.role.value,
+                districtId: fields.district.value,
+                schoolId: fields.school.value,
+                cpf: fields.cpf.value.trim(),
+                phone: fields.phone.value.trim(),
+                dateOfBirth: fields.dateOfBirth.value,
+                gender: fields.gender.value,
+                content: fields.content.value,
+                gradeId: fields.grade.value,
+                horario: fields.horario.value,
+                address: fields.address.value.trim(),
+                city: fields.city.value.trim(),
+                state: fields.state.value.trim(),
+                zip: fields.zip.value.trim()
+            };
+    
+            // Validações específicas por tipo de usuário
+            switch (userData.role) {
+                case 'Master':
+                    userData.schoolId = null;
+                    userData.districtId = null;
+                    userData.content = null;
+                    userData.gradeId = null;
+                    break;
+                case 'Inspetor':
+                    if (!userData.districtId) {
+                        throw new Error('Inspetor precisa ter uma regional definida');
+                    }
+                    userData.schoolId = null;
+                    userData.content = null;
+                    userData.gradeId = null;
+                    break;
+                case 'Professor':
+                    if (!userData.content) {
+                        throw new Error('Professor precisa ter uma disciplina definida');
+                    }
+                    if (!userData.schoolId) {
+                        throw new Error('Professor precisa ter uma escola definida');
+                    }
+                    userData.gradeId = null;
+                    break;
+                case 'Aluno':
+                    if (!userData.gradeId) {
+                        throw new Error('Aluno precisa ter uma turma definida');
+                    }
+                    if (!userData.schoolId) {
+                        throw new Error('Aluno precisa ter uma escola definida');
+                    }
+                    userData.content = null;
+                    break;
+                default:
+                    if (!userData.schoolId) {
+                        throw new Error('Usuário precisa ter uma escola definida');
+                    }
+                    userData.content = null;
+                    userData.gradeId = null;
+            }
+    
+            // Validar dados antes de enviar
+            try {
+                userUtils.validateUserData(userData);
+            } catch (error) {
+                userUtils.showError(error.message); // Mostrar erro ao usuário
+                return;
+            }
+    
+            // Enviar dados
+            const result = await userServices.createUser(userData);
+        
+            if (result.error) {
+                userUtils.showError(result.error);
+                return;
+            }
+
+            // Verifica se o status é 201 (Created)
+            if (result.message) {
+                await new Promise(resolve => {
+                    userUtils.showSuccess(result.message);
+                    setTimeout(() => {
+                        userUtils.closeModal();
+                        resolve();
+                    }, 1500);
+                });
+                location.reload();
+                return;
+            }
+
+        } catch (error) {
+            userUtils.showError(error.message || "Erro ao criar usuário");
+            console.error("Error:", error);
+        }
+    },
+
+    async handleEditUser(userId) {
+        try {            
+            // Primeiro, verificar se o userId existe
+            if (!userId) {
+                throw new Error('ID do usuário não encontrado');
+            }
+    
+            // Criar um objeto para armazenar os campos
+             const fields = {
+                name: document.getElementById("editName"),
+                email: document.getElementById("editEmail"),
+                role: document.getElementById("editRole"),
+                district: document.getElementById("editDistrict"),
+                school: document.getElementById("editSchool"),
+                cpf: document.getElementById("editCpf"),
+                phone: document.getElementById("editPhone"),
+                dateOfBirth: document.getElementById("editDateOfBirth"),
+                gender: document.getElementById("editGender"),
+                content: document.getElementById("editContent"),
+                grade: document.getElementById("editGrade"),
+                horario: document.getElementById("editHorario"),
+                address: document.getElementById("editAddress"),
+                city: document.getElementById("editCity"),
+                state: document.getElementById("editState"),
+                zip: document.getElementById("editZip"),
+                status: document.getElementById("editStatus")
+            };
+    
+            // Verificar se todos os campos existem
+            const missingFields = Object.entries(fields)
+                .filter(([key, element]) => !element)
+                .map(([key]) => key);
+    
+            if (missingFields.length > 0) {
+                throw new Error(`Campos não encontrados: ${missingFields.join(', ')}`);
+            }
+    
+            // Criar objeto userData apenas com campos que existem
+            const userData = {
+                name: fields.name.value,
+                email: fields.email.value,
+                role: fields.role.value,
+                districtId: fields.district.value,
+                schoolId: fields.school.value,
+                cpf: fields.cpf.value,
+                phone: fields.phone.value,
+                dateOfBirth: fields.dateOfBirth.value,
+                gender: fields.gender.value,
+                content: fields.content.value,
+                gradeId: fields.grade.value,
+                horario: fields.horario.value,
+                address: fields.address.value,
+                city: fields.city.value,
+                state: fields.state.value,
+                zip: fields.zip.value,
+                status: fields.status.value
+            };
+    
+            // Validar dados
+            try {
+                userUtils.validateUserData(userData);
+            } catch (error) {
+                userUtils.showError(error.message);
+                return;
+            }
+    
+            const result = await userServices.editUser(userId, userData);
+    
+            if (result.error) {
+                userUtils.showError(result.error);
+                return;
+            }
+    
+            userUtils.showSuccess('Usuário atualizado com sucesso!'); // Adicionar mensagem de sucesso
+            setTimeout(() => {
+                userUtils.closeModal();
+                location.reload();
+            }, 1500);
+        } catch (error) {
+            const errorMessage = error.message || "Erro ao atualizar usuário";
+            console.error("Error:", error);
+            userUtils.showError(errorMessage);
+        }
+    },
+
+    async handleDeleteUser(userId) {
+        try {
+            const result = await userServices.deleteUser(userId);
+
+            if (result.error) {
+                userUtils.showError(result.error);
+                return;
+            }
+
+            userUtils.showSuccess('Usuário excluído com sucesso!'); // Adicionar mensagem de sucesso
+            setTimeout(() => {
+                userUtils.closeModal();
+                location.reload();
+            }, 1500);
+        } catch (error) {
+            userUtils.showError("Erro ao excluir usuário");
+            console.error("Error:", error);
+        }
+    },
+
+    async handleResetPassword(userId) {
+        try {
+            const result = await userServices.resetPassword(userId);
+            
+            if (result.message === 'Senha resetada com sucesso!') {
+                userUtils.hideLoadingWithMessage(`Senha redefinida com sucesso! Nova senha: ${result.novaSenha}`);
+                setTimeout(() => location.reload(), 1500);
+            }
+        } catch (error) {
+            // Agora o error.response.data.message estará disponível
+            const errorMessage = error.response?.data?.message || "Erro ao resetar senha";
+            userUtils.showError(errorMessage);
+            console.error("Error:", error);
+        }
+    },
+
+    async handleSchoolChange(districtId) {
+        try {
+            const schools = await userServices.fetchSchoolsByDistrict(districtId);
+            const schoolSelect = document.getElementById("registerSchool");
+            schoolSelect.innerHTML = '<option value="">Selecione uma escola</option>';
+            schools.forEach(school => {
+                const option = document.createElement("option");
+                option.value = school.id;
+                option.textContent = school.name;
+                schoolSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error("Error:", error);
+            userUtils.showError("Erro ao carregar escolas");
+        }
+    },
+
+    async handleGradeChange(schoolId) {
+        try {
+            const grades = await userServices.fetchGradesBySchool(schoolId);
+            const gradeSelect = document.getElementById("registerGrade");
+            gradeSelect.innerHTML = '<option value="">Selecione uma turma</option>';
+            grades.forEach(grade => {
+                const option = document.createElement("option");
+                option.value = grade.id;
+                option.textContent = grade.name;
+                gradeSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error("Error:", error);
+            userUtils.showError("Erro ao carregar turmas");
+        }
+    },
+
+    setupListeners() {
+        this.ListenerBtnEdit = this.ListenerBtnEdit.bind(this);
+        this.ListenerBtnDelete = this.ListenerBtnDelete.bind(this);
+        this.listenerBtnReset = this.listenerBtnReset.bind(this);
+        this.setupGradeEditSelectListener = this.setupGradeEditSelectListener.bind(this);
+        this.setupGradeRegisterSelectListener = this.setupGradeRegisterSelectListener.bind(this);
+
+        this.ListenerBtnEdit();
+        this.ListenerBtnDelete();
+        this.listenerBtnReset();
+        this.setupGradeEditSelectListener();
+        this.setupGradeRegisterSelectListener();
+    },
+
+    ListenerBtnEdit() {
+        const btnEdit = document.querySelectorAll('.btn-edit');
+        if(btnEdit) {
+            btnEdit.forEach(button => {
+            button.addEventListener('click', async () => {
+                    const userId = button.getAttribute('data-user-id');
+                    this.openEditModal(userId);
+                });
+            });
+        }
+    },
+
+    ListenerBtnDelete() {
+        const btnDelete = document.querySelectorAll('.btn-delete');
+        if(btnDelete) {
+            btnDelete.forEach(button => {
+                button.addEventListener('click', () => {
+                    const userId = button.getAttribute('data-user-id');
+                    this.openDeleteModal(userId); // Chama o modal primeiro
+                });
+            });
+        }
+    },
+
+    listenerBtnReset() {
+        const btnReset = document.querySelectorAll('.btn-reset-password');
+        if (btnReset) {
+            btnReset.forEach(button => {
+                button.addEventListener('click', () => {
+                    const userId = button.getAttribute('data-user-id');
+                    this.handleResetPassword(userId);
+                });
+            });
+        }
+    },
+
+    setupGradeEditSelectListener() {
+        const schoolSelect = document.getElementById('editSchool');
+        const gradeSelect = document.getElementById('editGrade');
+    
+        if (schoolSelect && gradeSelect) {
+            schoolSelect.addEventListener('change', async () => {
+                const schoolId = schoolSelect.value;
+                if (schoolId) {
+                    // Não está passando o tipo para updateGradeSelect
+                    const grades = await userServices.fetchGradesBySchool(schoolId);
+                    userUtils.updateGradeSelect(grades, 'edit'); // Correção aqui
+                } else {
+                    gradeSelect.innerHTML = '<option value="">Selecione uma turma</option>';
+                }
+            });
+        }
+    },
+
+    setupGradeRegisterSelectListener() {
+        const schoolSelect = document.getElementById('registerSchool');
+        const gradeSelect = document.getElementById('registerGrade');
+                
+        if (schoolSelect && gradeSelect) {
+            schoolSelect.addEventListener('change', async () => {
+                const schoolId = schoolSelect.value;
+                if (schoolId) {
+                    // Não está passando o tipo para updateGradeSelect
+                    const grades = await userServices.fetchGradesBySchool(schoolId);
+                    userUtils.updateGradeSelect(grades, 'register'); // Correção aqui
+                } else {
+                    gradeSelect.innerHTML = '<option value="">Selecione uma escola</option>';
+                }
+            });
+        }
+    }
+};
+// UTILS
+const userUtils = {
+
+    showInfo(message) {
+        this.showPopup(message, 'info');
+    },
+
+    updateGradeSelect(grades, type = 'register') {
+        const gradeSelect = document.getElementById(`${type}Grade`);
+        if (!gradeSelect) return;
+
+        const gradesArray = Array.isArray(grades) ? grades : 
+                        Array.isArray(grades?.data) ? grades.data :
+                        [];
+
+        gradeSelect.innerHTML = '<option value="">Selecione uma turma</option>';
+        gradesArray.forEach(grade => {
+            const option = document.createElement('option');
+            option.value = grade.id;
+            option.textContent = type === 'edit' ? 
+                `${grade.name} - ${grade.shift}` :
+                `${grade.name} - ${grade.shift}`;
+            gradeSelect.appendChild(option);
+        });
+    },
+
+    async updateContentSelect(subjects, type) {
+        const contentSelect = document.getElementById(`${type}`);
+        if (!contentSelect) return;
+    
+        contentSelect.innerHTML = '<option value="">Selecione uma disciplina</option>';
+        subjects.forEach(subject => {
+            const option = document.createElement('option');
+            option.value = subject.id;
+            option.textContent = subject.name;
+            contentSelect.appendChild(option);
+        });
+    },
+
+    async handleFilterUsers(event) {
+        event.preventDefault();
+        try {
+            // Coletar valores dos filtros
+            const districtId = document.getElementById("districtFilter")?.value || "";
+            const schoolId = document.getElementById("schoolFilter")?.value || "";
+            const role = document.getElementById("roleFilter")?.value || "";
+            const content = document.getElementById("contentFilter")?.value || "";
+            const grade = document.getElementById("filterGrade")?.value || ""; // Corrigido: era "classFilter"
+            const status = document.getElementById("statusFilter")?.value || "";
+    
+            // Construir parâmetros de consulta
+            const queryParams = new URLSearchParams();
+            if (districtId) queryParams.append("districtId", districtId);
+            if (schoolId) queryParams.append("schoolId", schoolId);
+            if (role) queryParams.append("role", role);
+            if (content) queryParams.append("content", content);
+            if (grade) queryParams.append("gradeId", grade); // Corrigido: era "class" agora é "gradeId"
+            if (status) queryParams.append("status", status); // Adicionado filtro por status
+            
+            console.log("Filtros aplicados:", Object.fromEntries(queryParams));
+    
+            // Mostrar loading enquanto carrega
+            userUtils.showLoading();
+            
+            const url = queryParams.toString() ? 
+                `/users/filter?${queryParams.toString()}` : '/users/filter';
+    
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Erro ao buscar usuários filtrados`);
+    
+            const data = await response.json();
+            userUtils.updateTable(data);
+            userUtils.hideLoading();
+        } catch (error) {
+            console.error("Error:", error);
+            userUtils.showError("Erro ao filtrar usuários");
+            userUtils.hideLoading();
+        }
+    },
+
+    validateUserData(userData) {
+        const fieldNames = {
+            name: 'Nome',
+            email: 'E-mail',
+            role: 'Função',
+            cpf: 'CPF',
+            phone: 'Telefone',
+            dateOfBirth: 'Data de Nascimento',
+            gender: 'Gênero',
+            address: 'Endereço',
+            city: 'Cidade',
+            state: 'Estado',
+            zip: 'CEP'
+        };
+
+        const requiredFields = ['name', 'email', 'role', 'cpf', 'phone', 'dateOfBirth', 
+            'gender', 'address', 'city', 'state', 'zip'];
+        
+        const emptyFields = requiredFields.filter(field => !userData[field]);
+        
+        if (emptyFields.length > 0) {
+            const missingFieldNames = emptyFields.map(field => fieldNames[field] || field);
+            throw new Error(`Por favor, preencha os campos obrigatórios: ${missingFieldNames.join(', ')}`);
+        }
+
+        // Validações específicas por tipo
+        if (userData.role === 'Professor' && (!userData.content || !userData.schoolId)) {
+            throw new Error('Professores precisam ter disciplina e escola definidos');
+        }
+
+        if (userData.role === 'Aluno' && (!userData.gradeId || !userData.schoolId)) {
+            throw new Error('Alunos precisam ter turma e escola definidos');
+        }
+
+        return true;
+    },
+
+    openModal(modalId) {
+        const modalContainer = document.querySelector('.modalContainer');
+        const targetModal = document.getElementById(modalId);
+        
+        // Esconde todos os modais primeiro
+        const allModals = document.querySelectorAll('.modal');
+        allModals.forEach(modal => {
+            modal.hidden = true;
+            modal.style.display = 'none';
+        });
+        
+        if (modalContainer && targetModal) {
+            modalContainer.hidden = false;
+            targetModal.hidden = false;
+            targetModal.style.display = 'block';
+            modalContainer.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+
+            // Remover listener antigo
+            if (this.handleOutsideClick) {
+                modalContainer.removeEventListener('click', this.handleOutsideClick);
+            }
+            
+            // Adicionar novo listener
+            this.handleOutsideClick = (e) => {
+                if (e.target === modalContainer) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.closeModal();
+                }
+            };
+            
+            modalContainer.addEventListener('click', this.handleOutsideClick);
+        }
+    },
+
+    closeModal() {
+        const modalContainer = document.querySelector('.modalContainer');
+        const allModals = document.querySelectorAll('.modal');
+        
+        if (modalContainer) {
+            modalContainer.hidden = true;
+            modalContainer.style.display = 'none';
+            
+            // Remove o evento ao fechar
+            modalContainer.removeEventListener('click', this.handleOutsideClick);
+            
+            allModals.forEach(modal => {
+                modal.hidden = true;
+                modal.style.display = 'none';
+            });
+            
+            document.body.style.overflow = 'auto';
+        }
+    },
+
+    formatDateToBR(date) {
+        if (!date) return '';
+        return date.split('-').reverse().join('/');
+    },
+
+    formatDateToISO(date) {
+        if (!date) return '';
+        return date.split('/').reverse().join('-');
+    },
+
+    updateTable(data) {
+        const tbody = document.querySelector('table tbody');
+        if (!tbody) {
+            console.error("Tabela não encontrada");
+            return;
+        }
+    
+        tbody.innerHTML = '';
+    
+        if (data && Array.isArray(data.users)) {
+            // Se não houver usuários, mostrar mensagem na tabela
+            if (data.users.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td colspan="6" class="no-results">
+                        <div class="no-results-message">
+                            <i class="fas fa-search"></i>
+                            <p>Nenhum usuário encontrado com os critérios de busca selecionados.</p>
+                            <p>Tente outros filtros ou <button id="resetFilters" class="btn-link">limpar filtros</button>.</p>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+                
+                // Adicionar event listener para o botão de limpar filtros
+                setTimeout(() => {
+                    document.getElementById('resetFilters')?.addEventListener('click', () => {
+                        document.getElementById('cleanFilter')?.click();
+                    });
+                }, 100);
+                
+                return;
+            }
+    
+            // Código existente para quando há usuários
+            const sortedUsers = data.users.sort((a, b) => {
+                if (a.status === 'inactive' && b.status !== 'inactive') return -1;
+                if (a.status !== 'inactive' && b.status === 'inactive') return 1;
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
+    
+            sortedUsers.forEach(user => {
+                const tr = document.createElement('tr');
+                if (user.status === 'inactive') {
+                    tr.classList.add('inactive-user');
+                }
+    
+                tr.innerHTML = `
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td>${user.role}</td>
+                    <td class="${user.status === 'inactive' ? 'inactive-text' : ''}">
+                        ${user.status === 'inactive' ? 'Inativo' : 'Ativo'}
+                    </td>
+                    <td>${new Date(user.createdAt).toLocaleDateString('pt-BR')}</td>
+                    <td>
+                        <button class="btn btn-edit" data-user-id="${user.id}">Editar</button>
+                        <button class="btn btn-delete" data-user-id="${user.id}" 
+                            data-user-name="${user.name}" 
+                            data-user-email="${user.email}" 
+                            data-user-role="${user.role}" 
+                            data-user-status="${user.status}" 
+                            data-user-createdAt="${user.createdAt}">Excluir</button>
+                        <button class="btn btn-reset-password" data-user-id="${user.id}">
+                            Reiniciar Senha</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        userHandlers.setupListeners();
+    },
+
+    addClearTableListeners() {
+        const filters = document.querySelectorAll('#districtFilter, #schoolFilter, #roleFilter, #contentFilter, #filterGrade, #statusFilter');
+        const filterButton = document.getElementById("filterUsers");
+        
+        // Flag para determinar se estamos no carregamento inicial
+        let initialLoading = true;
+        
+        // Após 1.5 segundos, consideramos que o carregamento inicial terminou
+        setTimeout(() => {
+            initialLoading = false;
+        }, 1500);
+        
+        // Adicionar indicador visual de filtros não aplicados
+        let filtersChanged = false;
+        
+        filters.forEach(filter => {
+            if (filter) {
+                filter.addEventListener("change", () => {
+                    // Ignorar eventos durante carregamento inicial
+                    if (initialLoading) return;
+                    
+                    // Ignorar quando o valor é vazio e o texto é "Carregando..."
+                    if (filter.value === "" && filter.options[0].text === "Carregando...") return;
+                    
+                    // Marcar que os filtros foram alterados
+                    filtersChanged = true;
+                    
+                    // Adicionar indicador visual ao botão de filtrar
+                    if (filterButton) {
+                        filterButton.classList.add('filter-pending');
+                        filterButton.textContent = 'Aplicar Filtros';
+                    }
+                    
+                    // Adicionar indicação acima da tabela
+                    const filterAlert = document.getElementById('filter-alert') || document.createElement('div');
+                    filterAlert.id = 'filter-alert';
+                    filterAlert.className = 'filter-alert';
+                    filterAlert.innerHTML = '<i class="fas fa-info-circle"></i> Você tem filtros não aplicados. Clique em "Aplicar Filtros" para ver os resultados.';
+                    
+                    const tableContainer = document.querySelector('table').parentElement;
+                    if (!document.getElementById('filter-alert')) {
+                        tableContainer.insertBefore(filterAlert, tableContainer.firstChild);
+                    }
+                });
+            }
+        });
+        
+        // Limpar indicador quando filtrar
+        if (filterButton) {
+            filterButton.addEventListener('click', () => {
+                filtersChanged = false;
+                filterButton.classList.remove('filter-pending');
+                filterButton.textContent = 'Filtrar';
+                const filterAlert = document.getElementById('filter-alert');
+                if (filterAlert) filterAlert.remove();
+            });
+        }
+    },
+
+    addRoleChangeListener() {
+        const roleField = document.getElementById("roleFilter");
+        if (roleField) {
+            roleField.addEventListener("change", function() {
+                const role = roleField.value;
+                const fields = {
+                    contentField: document.getElementById("contentFilter"),
+                    classField: document.getElementById("filterGrade"),
+                    districtField: document.getElementById("districtFilter"),
+                    schoolField: document.getElementById("schoolFilter")
+                };
+    
+                // Esconde todos os campos primeiro
+                Object.values(fields).forEach(field => {
+                    if (field) field.style.display = "none";
+                });
+    
+                // Mostra campos específicos baseado na role
+                switch(role) {
+                    case "Master":
+                        if (fields.districtField) fields.districtField.style.display = "block";
+                        if (fields.schoolField) fields.schoolField.style.display = "block";
+                        break;
+                    case "Inspetor":
+                        // Mostra apenas distrito
+                        if (fields.districtField) fields.districtField.style.display = "block";
+                        if (fields.schoolField) fields.schoolField.style.display = "block";
+                        break;
+                    case "Diretor":
+                        // Mostra distrito e escola
+                        if (fields.districtField) fields.districtField.style.display = "block";
+                        if (fields.schoolField) fields.schoolField.style.display = "block";
+                        break;
+                    case "Secretario":
+                        // Mostra distrito e escola, mas não disciplina nem turma
+                        if (fields.districtField) fields.districtField.style.display = "block";
+                        if (fields.schoolField) fields.schoolField.style.display = "block";
+                        break;
+                    case "Coordenador":
+                        // Mostra distrito e escola, mas não disciplina nem turma
+                        if (fields.districtField) fields.districtField.style.display = "block";
+                        if (fields.schoolField) fields.schoolField.style.display = "block";
+                        break;
+                    case "Pedagogo":
+                        // Mostra distrito e escola, mas não disciplina nem turma
+                        if (fields.districtField) fields.districtField.style.display = "block";
+                        if (fields.schoolField) fields.schoolField.style.display = "block";
+                        break;
+                    case "Professor":
+                        // Mostra todos exceto turma
+                        Object.values(fields).forEach(field => {
+                            if (field) field.style.display = "block";
+                        });
+                        if (fields.classField) fields.classField.style.display = "none";
+                        break;
+                    case "Aluno":
+                        // Mostra todos exceto conteúdo
+                        Object.values(fields).forEach(field => {
+                            if (field) field.style.display = "block";
+                        });
+                        if (fields.contentField) fields.contentField.style.display = "none";
+                        break;
+                    default:
+                        // Mostra todos os campos
+                        Object.values(fields).forEach(field => {
+                            if (field) field.style.display = "block";
+                        });
+                }
+            });
+    
+            // Acionar o evento change inicialmente para configurar a visibilidade
+            roleField.dispatchEvent(new Event('change'));
+        }
+    },
+
+    addClearFilterListener() {
+        const clearButton = document.getElementById("cleanFilter");
+        if (clearButton) {
+            clearButton.addEventListener("click", async () => {
+                const filters = ["roleFilter", "contentFilter", "classFilter", "statusFilter"]
+                    .map(id => document.getElementById(id));
+                
+                filters.forEach(filter => {
+                    if (filter) filter.value = "";
+                });
+
+                const fields = ["districtFilter", "schoolFilter", "roleFilter", 
+                            "contentFilter", "classFilter", "statusFilter"]
+                    .map(id => document.getElementById(id));
+                
+                fields.forEach(field => {
+                    if (field) field.style.display = "block";
+                });
+
+                try {
+                    const response = await fetch("/users/filter");
+                    if (!response.ok) throw new Error(`Erro ao buscar usuários`);
+                    const data = await response.json();
+                    this.updateTable(data);
+                } catch (error) {
+                    console.error("Error:", error);
+                    this.showError("Erro ao limpar filtros");
+                }
+            });
+        }
+    },
+    
+    showPopup(message, type = 'info') {
+        console.log('ShowPopup chamado com:', {message, type}); // Debug
+        const popup = document.getElementById('message-popup');
+        const messageText = document.getElementById('message-text');
+        const popupContainer = document.querySelector('.popup-container');
+        const saveButton = document.querySelector('.btn-save');
+        const closeButton = document.querySelector('.close-popup'); // Adicionar esta linha
+        
+        if (!popup || !messageText || !popupContainer) {
+            console.error('Elementos de popup não encontrados');
+            return;
+        }
+    
+        // Reset classes
+        popup.classList.remove('success', 'error', 'info');
+        
+        // Adicionar classe de tipo
+        popup.classList.add(type);
+        
+        messageText.textContent = message;
+        
+        // Mostrar popup e container
+        popupContainer.style.display = 'flex';
+        popup.style.display = 'block';
+
+        // Adicionar evento de clique no botão fechar
+        if (closeButton) {
+            closeButton.onclick = () => {
+                popup.style.display = 'none';
+                popup.classList.remove(type);
+                popupContainer.style.display = 'none';
+                if (saveButton) {
+                    saveButton.disabled = false;
+                    saveButton.classList.remove('disabled');
+                }
+            };
+        }
+
+        // Desabilitar botão salvar
+        if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.classList.add('disabled');
+        }
+    
+        // Auto hide após 3 segundos
+        if (type !== 'info') {
+            setTimeout(() => {
+                popup.style.display = 'none';
+                popup.classList.remove(type);
+                // Verificar se o loading está visível antes de esconder o container
+                const loading = document.getElementById('loading');
+                if (loading?.hidden !== false) {
+                    popupContainer.style.display = 'none';
+                }
+                // Reabilitar botão salvar
+                if (saveButton) {
+                    saveButton.disabled = false;
+                    saveButton.classList.remove('disabled');
+                }
+            }, 3000);
+        }
+    },
+
+    showError(message) {
+        console.log('Tentando mostrar erro:', message); // Debug
+        this.showPopup(message, 'error');
+    },
+
+    showSuccess(message) {
+        console.log('ShowSuccess chamado com:', message); // Debug
+        this.showPopup(message, 'success');
+    },
+
+
+    showLoading() {
+        const loading = document.getElementById('loading');
+        const popupContainer = document.querySelector('.popup-container');
+        if (loading && popupContainer) {
+            loading.hidden = false;
+            popupContainer.style.display = 'flex'; 
+            document.body.classList.add('loading-active');
+        }
+    },
+
+    hideLoading(message = '', callback = null) {
+        const loading = document.getElementById('loading');
+        const popupContainer = document.querySelector('.popup-container');
+        
+        if (loading && popupContainer) {
+            loading.hidden = true;
+            popupContainer.style.display = 'none'; // Mudança aqui
+            document.body.classList.remove('loading-active');
+            
+            if (message) {
+                this.showPopup(message, 'success');
+                if (callback) {
+                    setTimeout(callback, 1500);
+                }
+            }
+        }
+    },
+
+    hideLoadingWithMessage(message, callback) {
+        const loadingElement = document.getElementById('loading');
+        if (loadingElement) {
+            loadingElement.remove();
+        }
+        this.showSuccess(message);
+        if (callback) {
+            setTimeout(callback, 1500);
+        }
+    },
+    
+    updateFieldsVisibility(role, type = 'register') {
+        const prefix = type === 'register' ? 'register' : 'edit';
+    
+        // Buscar elementos com verificação de null
+        const contentField = document.getElementById(`${prefix}Content`)?.parentElement;
+        const classField = document.getElementById(`${prefix}Grade`)?.parentElement; // Changed from Class to Grade
+        const schoolField = document.getElementById(`${prefix}School`);
+        const schoolLabel = schoolField ? document.querySelector(`label[for="${schoolField.id}"]`) : null;
+        const districtField = document.getElementById(`${prefix}District`);
+        const districtLabel = districtField ? document.querySelector(`label[for="${districtField.id}"]`) : null;
+        const horarioField = document.getElementById(`${prefix}Horario`);
+        const horarioLabel = horarioField ? document.querySelector(`label[for="${horarioField.id}"]`) : null;
+
+        // Verificar se todos os elementos necessários existem
+        if (!contentField || !classField || !schoolField || !schoolLabel || 
+            !districtField || !districtLabel || !horarioField || !horarioLabel) {
+            console.warn(`Alguns elementos não foram encontrados para o tipo ${type}`);
+            return;
+        }
+
+        // Lógica completa de visibilidade baseada em roles
+        if (role === 'Professor') {
+            contentField.style.display = 'block';
+            classField.style.display = 'none';
+            schoolField.style.display = 'block';
+            schoolLabel.style.display = 'block';
+            districtField.style.display = 'block';
+            districtLabel.style.display = 'block';
+            horarioField.style.display = 'block';
+            horarioLabel.style.display = 'block';
+        } else if (role === 'Aluno') {
+            contentField.style.display = 'none';
+            classField.style.display = 'block';
+            schoolField.style.display = 'block';
+            schoolLabel.style.display = 'block';
+            districtField.style.display = 'block';
+            districtLabel.style.display = 'block';
+            horarioField.style.display = 'block';
+            horarioLabel.style.display = 'block';
+        } else if (role === 'Master') {
+            contentField.style.display = 'none';
+            classField.style.display = 'none';
+            schoolField.style.display = 'none';
+            schoolLabel.style.display = 'none';
+            districtField.style.display = 'none';
+            districtLabel.style.display = 'none';
+            horarioField.style.display = 'none';
+            horarioLabel.style.display = 'none';
+        } else if (role === 'Inspetor') {
+            contentField.style.display = 'none';
+            classField.style.display = 'none';
+            schoolField.style.display = 'none';
+            schoolLabel.style.display = 'none';
+            horarioField.style.display = 'none';
+            horarioLabel.style.display = 'none';
+            districtField.style.display = 'block';
+            districtLabel.style.display = 'block';
+        } else {
+            contentField.style.display = 'none';
+            classField.style.display = 'none';
+            schoolField.style.display = 'block';
+            schoolLabel.style.display = 'block';
+            districtField.style.display = 'block';
+            districtLabel.style.display = 'block';
+            horarioField.style.display = 'block';
+            horarioLabel.style.display = 'block';
+        }
+    }
+};
+
+// INITIALIZATION
+document.addEventListener('DOMContentLoaded', async function() {
     const isUsers = window.location.pathname.includes("users");
-    if (isUsers) {
-        handleAuthCheck();
+    if (!isUsers) return;
+    
+    try {
+
+        // Verificar mensagem de usuários inativos
         const showPopupButton = document.getElementById("inactiveUsersMessage");
-        const popupShown = sessionStorage.getItem('popupShown');
-        const userLoggedIn = sessionStorage.getItem('userLoggedIn');
+        if (showPopupButton) {
+            try {
+                const response = await fetch('/users/me');
+                const userData = await response.json();
+                
+                if (userData.role === "Master") {
+                    const message = showPopupButton.getAttribute("data-message");
+                    userUtils.showPopup(message, 'info');
+                }
+            } catch (error) {
+                console.error('Erro ao buscar dados do usuário:', error);
+            }
+        }
+
+        // Setup Event Listeners
+        document.getElementById("addUsers").addEventListener("click", () => userUtils.openModal("registerModal"));
+        document.getElementById("registerForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            userHandlers.handleCreateUser(e);
+        });
+        document.getElementById("editForm")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const userId = document.getElementById("editUserId")?.value;
+            if (!userId) {
+                userUtils.showError("ID do usuário não encontrado");
+                return;
+            }
+            await userHandlers.handleEditUser(userId);
+        });
+        document.getElementById("registerDistrict").addEventListener("change", (e) => {
+            userHandlers.handleSchoolChange(e.target.value);
+        });
+
+        document.getElementById("registerSchool").addEventListener("change", (e) => {
+            userHandlers.handleGradeChange(e.target.value);
+        });
+
+        // Close modal listeners
+        document.querySelectorAll(".close, .btn-cancel").forEach(button => {
+            button.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Prevenir propagação do evento
+                userUtils.closeModal();
+            });
+        });
+
+        // Filtros de distrito e escola
         const userRole = document.getElementById("userRole").value;
-
-        if (userLoggedIn && !popupShown && showPopupButton) {
-            const message = showPopupButton.getAttribute("data-message");
-            showPopup(message);
-
-            sessionStorage.setItem('popupShown', 'true');
-        }
-
-        const addUsers = document.getElementById("addUsers");
-        if (addUsers) {
-            addUsers.addEventListener('click', function (event) {
-                event.preventDefault(); 
-                openRegisterModal();
+        if (userRole === "Master" || userRole === "Inspetor") {
+            document.getElementById("districtFilter")?.addEventListener("change", async (event) => {
+                const district = event.target.value;
+                await userServices.loadSchools(district);
             });
         }
 
-        const resetPasswordButton = document.querySelector('.btn-confirm-reset');
-        if (resetPasswordButton) {
-            resetPasswordButton.addEventListener('click', function (event) {
-                event.preventDefault(); 
-                resetPassword();
+        document.getElementById("schoolFilter")?.addEventListener("change", async (event) => {
+            const district = document.getElementById("districtFilter")?.value;
+            const school = event.target.value;
+            await userServices.loadClasses(district, school);
+        });
+
+        // Adicionar listener para resetar senha
+        document.querySelector('.btn-confirm-reset')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const userId = document.getElementById('resetPasswordUserId').value;
+            userHandlers.handleResetPassword(userId);
+        });
+
+        // Botão de filtrar
+        const filterButton = document.getElementById("filterUsers");
+        if (filterButton) {
+            filterButton.addEventListener("click", function(event) {
+                userUtils.handleFilterUsers(event); // Mudado de userHandlers para userUtils
             });
         }
+        // Carregar dados iniciais uma única vez
+        try {
+            // Carregar conteúdos e turmas em paralelo
+            const [subjects, grades] = await Promise.all([
+                userServices.loadContentOptions(),
+                userServices.loadAllGrades()
+            ]);
 
+            // Preencher todos os selects de conteúdo
+            userUtils.updateContentSelect(subjects, 'contentFilter');  // Filtro
+            userUtils.updateContentSelect(subjects, 'registerContent'); // Modal de registro
+            userUtils.updateContentSelect(subjects, 'editContent');    // Modal de edição
+
+            // Preencher todos os selects de turma
+            userUtils.updateGradeSelect(grades, 'filter');     // Filtro
+            userUtils.updateGradeSelect(grades, 'register');   // Modal de registro
+            userUtils.updateGradeSelect(grades, 'edit');       // Modal de edição
+        } catch (error) {
+            console.error('Erro ao carregar dados iniciais:', error);
+        }
+
+        // Adicionar listeners e setup inicial
+        userHandlers.setupListeners();
+        userUtils.addClearTableListeners();
+        userUtils.addRoleChangeListener();
+        userUtils.addClearFilterListener();
+
+        // Close pop-up listener
         const closePopup = document.getElementById("close-popup");
         if (closePopup) {
             closePopup.addEventListener("click", () => {
@@ -38,1110 +1460,37 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        function ListenerBtnEdit(){
-            const btnEdit = document.querySelectorAll('.btn-edit');
-            if(btnEdit){
-                btnEdit.forEach(button => {
-                    button.addEventListener('click', function() {
-                        const userId = button.getAttribute('data-user-id');
-                        openEditModal(userId);
-                    });
-                });
-            }
-        }
-        
-        function ListenerBtnDelete(){
-            const btnDelete = document.querySelectorAll('.btn-delete');
-            if(btnDelete) {
-                document.querySelectorAll('.btn-delete').forEach(button => {
-                    button.addEventListener('click', function() {
-                        const userId = button.getAttribute('data-user-id');
-                        const name = button.getAttribute('data-name');
-                        const email = button.getAttribute('data-email');
-                        const role = button.getAttribute('data-role');
-                        const status = button.getAttribute('data-status');
-                        const createdAt = button.getAttribute('data-created-at');
-                        openDeleteModal(userId, name, email, role, status, createdAt);
-                    });
-                });
-            }
-        }
-        
-        function listenerBtnReset(){
-            const btnReset = document.querySelectorAll('.btn-reset-password');
-            if (btnReset) {
-                btnReset.forEach(button => {
-                    button.addEventListener('click', function () {
-                        const userId = button.getAttribute('data-user-id');
-                        openResetPasswordModal(userId);
-                    });
-                });
-            }
-        }
-
-        const btnClose = document.querySelectorAll('.close');
-        if (btnClose) {
-            btnClose.forEach(button => {
-                button.addEventListener('click', closeModal);
-            });
-        }
-        // Evento para buscar escolas ao selecionar um distrito
-        if (userRole === "Master" || userRole === "Inspetor") {
-            document.getElementById("districtFilter")?.addEventListener("change", async (event) => {
-                const district = event.target.value;
-                await loadSchools(district);
-            });
-        }
-
-        // Evento para buscar turmas ao selecionar uma escola
-        document.getElementById("schoolFilter")?.addEventListener("change", async (event) => {
-            const district = document.getElementById("districtFilter")?.value;
-            const school = event.target.value;
-            await loadClasses(district, school);
+        document.getElementById("deleteForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const userId = document.getElementById("deleteUserId").value;
+            await userHandlers.handleDeleteUser(userId);
         });
+         } catch (error) {
+        console.error('Erro ao carregar dados iniciais:', error);
+        userUtils.showError('Erro ao carregar dados iniciais');
+    } 
 
-        const filterButton = document.getElementById("filterUsers");
-        if (filterButton) {
-            filterButton.addEventListener("click", async function (event) {
-                event.preventDefault();
-                try {
-                    // Pegando os valores de todos os campos de filtro
-                    const districtId = document.getElementById("districtFilter")?.value || "";
-                    const schoolId = document.getElementById("schoolFilter")?.value || "";
-                    const role = document.getElementById("roleFilter")?.value || "";
-                    const content = document.getElementById("contentFilter")?.value || "";
-                    const classValue = document.getElementById("classFilter")?.value || "";
-                    const queryParams = new URLSearchParams();
+    // Adicionar listeners para mudanças de role nos formulários
+    const registerRole = document.getElementById('registerRole');
+    const editRole = document.getElementById('editRole');
 
-                    // Adicionando apenas os campos com valores
-                    if (districtId) queryParams.append("districtId", districtId);
-                    if (schoolId) queryParams.append("schoolId", schoolId);
-                    if (role) queryParams.append("role", role);
-                    if (content) queryParams.append("content", content);
-                    if (classValue) queryParams.append("class", classValue);
-
-                    // Verifica se há algum filtro, se não, a URL é sem parâmetros
-                    const url = queryParams.toString() ? `/users/filter?${queryParams.toString()}` : '/users/filter';
-
-                    const response = await fetch(url);
-
-                    if (!response.ok) throw new Error(`Erro ao buscar usuários filtrados - Status: ${response.status}`);
-
-                    const data = await response.json();
-                    atualizarTabelaUsuarios(data);
-                } catch (error) {
-                    console.error("❌ Erro ao filtrar usuários:", error);
-                }
-            });
-        }
-        
-        function atualizarTabelaUsuarios(data) {
-            const tbody = document.querySelector('table tbody');
-            
-            // Verifica se o tbody existe
-            if (!tbody) {
-                console.error("❌ Erro: Tabela não encontrada.");
-                return; // Se o tbody não existir, não faz nada.
-            }
-        
-            tbody.innerHTML = ''; // Limpa a tabela antes de preencher
-        
-            // Verifica se 'data.users' existe e é um array válido
-            if (data && Array.isArray(data.users)) {
-                const sortedUsers = data.users.sort((a, b) => {
-                    if (a.status === 'inactive' && b.status !== 'inactive') return -1;
-                    if (a.status !== 'inactive' && b.status === 'inactive') return 1;
-                    return new Date(b.createdAt) - new Date(a.createdAt);
-                });
-        
-                sortedUsers.forEach(user => {
-                    const tr = document.createElement('tr');
-                    if (user.status === 'inactive') {
-                        tr.classList.add('inactive-user');
-                    }
-        
-                    tr.innerHTML = `
-                        <td>${user.name}</td>
-                        <td>${user.email}</td>
-                        <td>${user.role}</td>
-                        <td class="${user.status === 'inactive' ? 'inactive-text' : ''}">
-                            ${user.status === 'inactive' ? 'Inativo' : 'Ativo'}
-                        </td>
-                        <td>${new Date(user.createdAt).toLocaleDateString('pt-BR')}</td>
-                        <td>
-                            <button class="btn btn-edit" data-user-id="${user.id}">Editar</button>
-                            <button class="btn btn-delete" data-user-id="${user.id}" data-user-name="${user.name}" data-user-email="${user.email}" data-user-role="${user.role}" data-user-status="${user.status}" data-user-createdAt="${user.createdAt}">Excluir</button>
-                            <button class="btn btn-reset-password" data-user-id="${user.id}">Reiniciar Senha</button>
-                        </td>
-                    `;
-                    
-                    tbody.appendChild(tr);
-                });
-            }
-            ListenerBtnEdit();
-            ListenerBtnDelete();
-            listenerBtnReset();
-        }
-        //Busca escolas pelo distrito e preenche o select de escolas.
-        async function loadSchools(district) {
-                const schoolSelect = document.getElementById("schoolFilter");
-            
-                if (!district) {
-                    schoolSelect.innerHTML = `<option value="">Selecione um distrito primeiro</option>`;
-                    return;
-                }
-            
-                try {
-                    const response = await fetch(`/users/filter?districtId=${encodeURIComponent(district)}`);
-                    const data = await response.json();
-            
-                    // Garantir que estamos pegando escolas do jeito certo
-                    const uniqueSchools = [...new Map(data.schools.map(school => [school.id, school])).values()];
-            
-                    if (uniqueSchools.length > 0) {
-                        schoolSelect.innerHTML = `<option value="">Selecione uma escola</option>` +
-                            uniqueSchools.map(school => `<option value="${school.id}">${school.name}</option>`).join("");
-                        
-                        // Adicionar event listener para carregar as turmas quando a escola mudar
-                        schoolSelect.addEventListener('change', async () => {
-                            const schoolId = schoolSelect.value;
-                            const gradeSelect = document.getElementById("classFilter");
-            
-                            if (!schoolId) {
-                                gradeSelect.innerHTML = `<option value="">Selecione uma escola primeiro</option>`;
-                                return;
-                            }
-            
-                            try {
-                                const grades = await fetchGradesBySchool(schoolId);
-                                updateGradeSelect(grades); // Assumindo que você tem essa função para atualizar o select de turmas
-                            } catch (error) {
-                                console.error("Erro ao buscar turmas por escola:", error);
-                            }
-                        });
-                    } else {
-                        schoolSelect.innerHTML = `<option value="">Nenhuma escola encontrada</option>`;
-                    }
-                } catch (error) {
-                    console.error("Erro ao buscar escolas:", error);
-                }
-            }
-        
-
-        //Busca turmas baseadas no distrito e escola selecionados e preenche o select de turmas.
-
-        async function loadClasses(district, school) {
-            const classSelect = document.getElementById("classFilter");
-
-            if (!district || !school) {
-                classSelect.innerHTML = `<option value="">Selecione um distrito e uma escola primeiro</option>`;
-                return;
-            }
-
-            try {
-                const response = await fetch(`/users/filter?districtId=${encodeURIComponent(district)}&schoolId=${encodeURIComponent(school)}`);
-                const data = await response.json();
-
-                const uniqueClasses = [...new Set(data.users.map(user => user.userClass))].filter(c => c);
-
-                if (uniqueClasses.length > 0) {
-                    classSelect.innerHTML = `<option value="">Selecione uma turma</option>` +
-                        uniqueClasses.map(cls => `<option value="${cls}">${cls}</option>`).join("");
-                } else {
-                    classSelect.innerHTML = `<option value="">Nenhuma turma encontrada</option>`;
-                }
-            } catch (error) {
-                console.error("Erro ao buscar turmas:", error);
-            }
-        }
-        
-        async function loadContentOptions() {
-            const contentSelect = document.getElementById("contentFilter");
-
-            try {
-                const response = await fetch(`/users/filter`);
-                const data = await response.json();
-
-                const uniqueContents = [...new Set(data.users.map(user => user.subject))].filter(c => c);
-
-                if (uniqueContents.length > 0) {
-                    contentSelect.innerHTML = `<option value="">Selecione um conteúdo</option>` +
-                        uniqueContents.map(content => `<option value="${content}">${content}</option>`).join("");
-                } else {
-                    contentSelect.innerHTML = `<option value="">Nenhum conteúdo encontrado no sistema</option>`;
-                }
-            } catch (error) {
-                console.error("Erro ao buscar conteúdos:", error);
-            }
-        }
-        // Função para adicionar listeners para limpar a tabela
-        function addClearTableListeners() {
-            const filters = [
-                document.getElementById("districtFilter"),
-                document.getElementById("schoolFilter"),
-                document.getElementById("roleFilter"),
-                document.getElementById("contentFilter"),
-                document.getElementById("classFilter"),
-                document.getElementById("statusFilter")
-            ];
-            
-            filters.forEach(filter => {
-                if (filter) {
-                    filter.addEventListener("change", function () {
-                        const userRole = document.getElementById("userRole").value; // Obtém o tipo de usuári
-                        if (userRole === "Master") {
-                            // Master: não preserva nada
-                            atualizarTabelaUsuarios([]);
-                        } else if (userRole === "Inspetor") {
-                            // Inspetor: preserva district
-                            if (filter.id !== "schoolFilter") {
-                                atualizarTabelaUsuarios([]);
-                            }
-                        } else {
-                            // Outros: preserva district e school
-                            if (filter.id !== "districtFilter" && filter.id !== "schoolFilter") {
-                                atualizarTabelaUsuarios([]);
-                            }
-                        }
-                    });
-                }
-            });
-        }
-        
-        // Função para adicionar o listener no campo "Cargo"
-        function addRoleChangeListener() {
-            const roleField = document.getElementById("roleFilter");
-            const district = document.getElementById("districtFilter")?.value;
-            if (roleField) {
-                roleField.addEventListener("change", function () {
-                    const role = roleField.value;
-                    const contentField = document.getElementById("contentFilter");
-                    const classField = document.getElementById("classFilter");
-                    const districtField = document.getElementById("districtFilter");
-                    const schoolField = document.getElementById("schoolFilter");
-
-                    // Limpar e esconder campos quando o cargo for "Master"
-                    if (role === "Master") {
-                        // Esconder todos os campos e limpar seus valores
-                        if (districtField) {
-                            districtField.style.display = "none"; // Esconde
-                        }
-                        if (schoolField) {
-                            schoolField.style.display = "none"; // Esconde
-                        }
-                        if (contentField) {
-                            contentField.style.display = "none"; // Esconde
-                        }
-                        if (classField) {
-                            classField.style.display = "none"; // Esconde
-                        }
-                    } else if (role === "Inspetor") {
-                        // Esconder e limpar o campo "school" para o cargo "Inspetor"
-                        if (schoolField) {
-                            schoolField.style.display = "none"; // Esconde
-                        }
-                        // Apenas mostrar Distrito e Cargo para o Inspetor
-                        if (districtField) {
-                            districtField.style.display = "block";
-                        }
-                        if (roleField) roleField.style.display = "block";
-
-                        // Esconder os campos de Conteúdo e Turma
-                        if (contentField) contentField.style.display = "none";
-                        if (classField) classField.style.display = "none";
-                    } else if (role === "Diretor") {
-                        // Apenas mostrar Distrito e Cargo para o Inspetor
-                        if (districtField) {
-                            districtField.style.display = "block";
-                        }
-                        if (roleField) roleField.style.display = "block";
-                        if (schoolField) schoolField.style.display = "block";
-                        if (contentField) contentField.style.display = "none";
-                        if (classField) classField.style.display = "none";
-                    } else {
-                        if (role === "Professor") {
-                            // Mostrar Conteúdo e esconder Turma
-                            if (contentField) contentField.style.display = "block";
-                            if (classField) classField.style.display = "none";
-                        } else if (role === "Aluno") {
-                            // Mostrar Turma e esconder Conteúdo
-                            if (contentField) contentField.style.display = "none";
-                            if (classField) classField.style.display = "block";
-                        } else {
-                            // Esconder ambos
-                            if (contentField) contentField.style.display = "none";
-                            if (classField) classField.style.display = "none";
-                        }
-
-                        // Mostrar os campos de distrito e escola (se necessário)
-                        if (districtField) districtField.style.display = "block";
-                        if (schoolField) schoolField.style.display = "block";
-                    }
-                });
-            }
-        }
-
-        // Função para adicionar o listener no botão "Limpar"
-        function addClearFilterListener() {
-            const clearButton = document.getElementById("cleanFilter");
-        
-            if (clearButton) {
-                clearButton.addEventListener("click", async function () {
-                    // Limpa os valores dos campos de filtro
-                    const districtFilter = document.getElementById("districtFilter");
-                    const schoolFilter = document.getElementById("schoolFilter");
-                    const roleFilter = document.getElementById("roleFilter");
-                    const contentFilter = document.getElementById("contentFilter");
-                    const classFilter = document.getElementById("classFilter");
-                    const statusFilter = document.getElementById("statusFilter");
-                    
-                    // Verifica se os campos existem antes de alterar
-                    //if (districtFilter) districtFilter.value = "";
-                    //if (schoolFilter) schoolFilter.value = "";
-                    if (roleFilter) roleFilter.value = "";
-                    if (contentFilter) contentFilter.value = "";
-                    if (classFilter) classFilter.value = "";
-                    if (statusFilter) statusFilter.value = "";
-        
-                    // Desoculta todos os campos de filtro
-                    const fields = [
-                        "districtFilter",
-                        "schoolFilter",
-                        "roleFilter",
-                        "contentFilter",
-                        "classFilter",
-                        "statusFilter"
-                    ];
-        
-                    fields.forEach(fieldId => {
-                        const field = document.getElementById(fieldId);
-                        if (field) {
-                            field.style.display = "block"; // Desoculta o campo
-                        }
-                    });
-        
-                    // Força a exibição dos campos 'Conteúdo' e 'Turma' se estiverem ocultos
-                    const contentField = document.getElementById("contentFilter");
-                    const classField = document.getElementById("classFilter");
-        
-                    if (contentField && contentField.style.display === "none") {
-                        contentField.style.display = "block"; // Desoculta conteúdo
-                    }
-        
-                    if (classField && classField.style.display === "none") {
-                        classField.style.display = "block"; // Desoculta turma
-                    }
-        
-                    // Faz uma requisição para obter todos os usuários sem filtros aplicados
-                    try {
-                        const url = "/users/filter"; // URL sem parâmetros de filtro
-        
-                        const response = await fetch(url);
-                        
-                        if (!response.ok) throw new Error(`Erro ao buscar todos os usuários - Status: ${response.status}`);
-        
-                        const data = await response.json();        
-                        atualizarTabelaUsuarios(data); // Atualiza a tabela com todos os usuários
-                    } catch (error) {
-                        console.error("❌ Erro ao buscar todos os usuários:", error);
-                    }
-        
-                    // Também pode ser interessante adicionar o foco no primeiro campo
-                    if (districtFilter) districtFilter.focus();
-                });
-            }
-        }
-                        
-        // Função para abrir o modal (modificada para esconder a tabela e garantir que apenas um modal esteja visível)
-        function openModal(modalId, data) {
-            const modals = document.querySelectorAll('.modal'); // Seleciona todos os modais
-        
-            // Fecha todos os modais antes de abrir um novo
-            modals.forEach(modal => {
-                modal.style.display = 'none'; // Esconde qualquer modal ativo
-            });
-        
-            const modal = document.getElementById(modalId);
-        
-            // Verifica se o modal existe
-            if (modal) {
-                // Preencher os dados no modal, se fornecidos
-                if (data) {
-                    for (let key in data) {
-                        const element = document.getElementById(key);
-                        if (element) {
-                            element.innerText = data[key];
-                        }
-                    }
-                }
-        
-                // Exibe o modal
-                const container = document.querySelector('.modalContainer');
-                container.hidden = false; // Torna o container visível
-                modal.style.display = 'flex';
-        
-                // Ocultar a tabela
-                document.querySelector('.admin-master-container').classList.add('modal-active');
-                document.body.style.overflow = "hidden";
-        
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.addEventListener('click', function (e) {
-                        const modalContent = modal.querySelector('.modal-content');
-                        const isClickInside = modalContent.contains(e.target);
-                        
-                        // Verifica se o clique não foi em um dos elementos interativos dentro do modal
-                        // e se o clique não foi no botão cancelar
-                        if (!isClickInside && !e.target.classList.contains('btn-cancel')) {
-                            closeModal();
-                        }
-                    });
-                });
-            }
-        }
-        
-        // Função para fechar qualquer modal (modificada para exibir a tabela novamente)
-        function closeModal() {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => modal.style.display = 'none');
-        
-            // Ocultar o modalContainer
-            const container = document.querySelector('.modalContainer');
-            container.hidden = true; // Torna o container invisível
-        
-            // Mostrar a tabela quando o modal for fechado
-            document.querySelector('.admin-master-container').classList.remove('modal-active');
-            document.body.style.overflow = "auto";
-        }
-                
-        // Função para abrir o modal de exclusão
-        function openDeleteModal(userId) {
-            // Exibir popup de loading enquanto busca os dados
-            showLoading();
-        
-            // Requisição para buscar os dados do usuário
-            fetch(`/users/list/${userId}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Preencher as informações no modal com os dados do usuário
-                    document.getElementById('deleteName').textContent = data.name;
-                    document.getElementById('deleteEmail').textContent = data.email;
-                    document.getElementById('deleteRole').textContent = data.role;
-                    document.getElementById('deleteStatus').textContent = data.status;
-                    document.getElementById('deleteCreatedAt').textContent = new Date(data.createdAt).toLocaleDateString('pt-BR');
-                    document.getElementById('deleteUserId').value = data.id;
-                
-                    // Abrir o modal
-                    openModal('deleteModal');
-                    hideLoading(); // Esconde o loading após a resposta
-                })
-                .catch(error => {
-                    console.error('Erro ao buscar os dados do usuário:', error);
-                    hideLoadingWithMessage('Erro ao carregar os dados do usuário');
-                });
-            // Adiciona o listener no botão "Salvar"
-            const deleteButton = document.querySelector('.btn.btn-confirm');
-            deleteButton.addEventListener('click', function (event) {
-                event.preventDefault(); 
-                confirmDelete(userId);
-            });
-            document.addEventListener('click', function (event) {
-                if (event.target.matches('.btn.btn-cancel')) {
-                    event.preventDefault();
-                    closeModal();
-                }
-            });
-        }
-
-        // Função de confirmação para excluir um usuário
-        function confirmDelete(userId) {
-            // Exibir popup de loading
-            showLoading();
-
-            fetch(`/users/delete/${userId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    hideLoadingWithMessage('Usuário excluído com sucesso!', () => {
-                        location.reload();
-                    });
-                } else {
-                    hideLoadingWithMessage('Erro ao excluir o usuário');
-                }
-            })
-            .catch(error => {
-                console.error('Erro na exclusão do usuário:', error);
-                hideLoadingWithMessage('Erro ao excluir o usuário');
-            });
-
-        }
-
-        async function openRegisterModal() {
-            showLoading();
-        
-            // Preencher os campos do modal com valores vazios para cadastro
-            document.getElementById('registerUserId').value = ''; // Id vazio pois é um novo cadastro
-            document.getElementById('registerName').value = ''; // Nome
-            document.getElementById('registerEmail').value = ''; // Email
-            document.getElementById('registerCpf').value = ''; // CPF
-            document.getElementById('registerPhone').value = ''; // Telefone
-            document.getElementById('registerDateOfBirth').value = ''; // Data de Nascimento
-            document.getElementById('registerGender').value = ''; // Gênero
-            document.getElementById('registerRole').value = ''; // Função
-            document.getElementById('registerHorario').value = ''; // Turno de Trabalho
-            document.getElementById('registerStatus').value = ''; // Status
-            document.getElementById('registerAddress').value = ''; // Endereço
-            document.getElementById('registerCity').value = ''; // Cidade
-            document.getElementById('registerState').value = ''; // Estado
-            document.getElementById('registerZip').value = ''; // CEP
-        
-            // Selecionar os campos de Conteúdo e Classe
-            const contentField = document.getElementById('registerContent')?.parentElement;
-            const classField = document.getElementById('registerClass')?.parentElement;
-            const schoolField = document.getElementById('registerSchool');
-
-            const schoolSelect = document.getElementById('registerSchool');
-            const gradeSelect = document.getElementById('registerClass');
-            const schoolLabel = document.querySelector(`label[for="${schoolSelect.id}"]`);
-            const districtField = document.getElementById('registerDistrict');
-            const districtLabel = document.querySelector(`label[for="${districtField.id}"]`);
-            const horarioField = document.getElementById('registerHorario');
-            const horarioLabel = document.querySelector(`label[for="${horarioField.id}"]`);
-
-            
-            // Função para atualizar a visibilidade dos campos conforme o papel
-            function updateFieldsVisibility(role) {
-                if (role === 'Professor') {
-                    contentField.style.display = 'block';
-                    classField.style.display = 'none';
-                    schoolField.style.display = 'block';
-                    schoolLabel.style.display = 'block';
-                    districtField.style.display = 'block';
-                    districtLabel.style.display = 'block';
-                    horarioField.style.display = 'block';
-                    horarioLabel.style.display = 'clock';
-                    document.getElementById('registerContent').value = '';
-                } else if (role === 'Aluno') {
-                    contentField.style.display = 'none';
-                    classField.style.display = 'block';
-                    schoolField.style.display = 'block';
-                    schoolLabel.style.display = 'block';
-                    districtField.style.display = 'block';
-                    districtLabel.style.display = 'block';
-                    horarioField.style.display = 'block';
-                    horarioLabel.style.display = 'block';
-                    classField.value = '';
-                } else if (role === 'Master') {
-                    contentField.style.display = 'none';
-                    classField.style.display = 'none';
-                    schoolField.style.display = 'none';
-                    schoolLabel.style.display = 'none';
-                    districtField.style.display = 'none';
-                    districtLabel.style.display = 'none';
-                    horarioField.style.display = 'none';
-                    horarioLabel.style.display = 'none';
-                    districtField.value = '';
-                    schoolField.value = '';
-                    contentField.value = '';
-                } else if (role === 'Inspetor') {
-                    contentField.style.display = 'none';
-                    classField.style.display = 'none';
-                    schoolField.style.display = 'none';
-                    schoolLabel.style.display = 'none';
-                    horarioField.style.display = 'none';
-                    horarioLabel.style.display = 'none';
-                    districtField.style.display = 'block';
-                    districtLabel.style.display = 'block';
-                    schoolField.value = '';
-                    contentField.value = '';
-                } else {
-                    contentField.style.display = 'none';
-                    classField.style.display = 'none';
-                    schoolField.style.display = 'block';
-                    schoolLabel.style.display = 'block';
-                    districtField.style.display = 'block';
-                    districtLabel.style.display = 'block';
-                    horarioField.style.display = 'block';
-                    horarioLabel.style.display = 'block';
-                }
-            }
-
-            if (schoolSelect && gradeSelect) {
-                if (schoolSelect.value) {
-                    const grades = await fetchGradesBySchool(schoolSelect.value);
-                    updateGradeSelect(grades);
-                }
-            }
-
-            // Atualizar os campos conforme o papel do usuário
-            updateFieldsVisibility(''); // Inicialmente vazio, sem papel
-        
-            // Adicionar listener para atualizar ao mudar o papel
-            const roleSelect = document.getElementById('registerRole');
-            if (roleSelect) {
-                roleSelect.addEventListener('change', function () {
-                    updateFieldsVisibility(this.value);
-                });
-            }
-            const districtId = document.getElementById('registerDistrict').value;
-            // Abrir o modal de cadastro
-            openModal('registerModal');
-            fetchSchoolsByDistrict(districtId);
-            hideLoading();
-        
-            document.addEventListener('click', function (event) {
-                if (event.target.matches('.btn.btn-cancel')) {
-                    event.preventDefault();
-                    closeModal();
-                }
-            });
-        
-            // Adiciona o listener no botão "Salvar"
-            const saveButton = document.querySelector('.btn.btn-save');
-            saveButton.addEventListener('click', function (event) {
-                event.preventDefault(); 
-                createUser();
-            });
-        }        
-
-        function createUser() {
-            // Obtendo os dados do formulário de cadastro
-            const form = document.getElementById('registerForm');
-            const formData = new FormData(form);
-        
-            // Criando um objeto com os dados do formulário
-            const userData = {};
-            formData.forEach((value, key) => {
-                userData[key] = value;
-            });
-        
-            // Tratamento da data de nascimento
-            if (userData.dateOfBirth) {
-                userData.dateOfBirth = new Date(userData.dateOfBirth).toISOString().split('T')[0];
-            }
-            
-            console.log(formData);
-            showLoading();
-            // Requisição para criar um novo usuário
-            fetch('/users/create', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(userData),
-            })
-            .then(response => {
-                if (!response.ok) {
-                    // Se a resposta não for OK (status 2xx), lança um erro
-                    throw new Error('Erro ao criar o usuário. Status: ' + response.status);
-                }
-                return response.json(); // Converte a resposta para JSON
-            })
-            .then(data => {
-                // Verifica a resposta vinda do servidor
-                if (data.message === 'Usuário criado com sucesso.') {
-                    hideLoadingWithMessage(data.message, () => {
-                        location.reload();
-                    });
-                } else {
-                    hideLoadingWithMessage('Erro ao criar usuário: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Erro ao enviar os dados:', error);
-                alert('Erro ao tentar criar o usuário. Tente novamente.');
-            });
-        }
-                
-        const districtSelect = document.getElementById('registerDistrict');
-        const schoolSelect = document.getElementById('registerSchool');
-    
-        async function fetchSchoolsByDistrict(districtId) {
-            try {
-                schoolSelect.innerHTML = '<option>Carregando escolas...</option>'; // Exibe mensagem temporária
-                const response = await fetch(`/schools/list?districtId=${districtId}`);
-                if (!response.ok) throw new Error('Erro ao buscar escolas');
-    
-                const schools = await response.json();
-                schoolSelect.innerHTML = ''; // Limpa as opções anteriores
-    
-                if (schools.length === 0) {
-                    schoolSelect.innerHTML = '<option value="">Nenhuma escola encontrada</option>';
-                    return;
-                }
-    
-                schools.forEach(school => {
-                    const option = document.createElement('option');
-                    option.value = school.id;
-                    option.textContent = school.name;
-                    schoolSelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error(error);
-                schoolSelect.innerHTML = '<option value="">Erro ao carregar escolas</option>';
-            }
-        }
-    
-        districtSelect.addEventListener('blur', function() {
-            const selectedDistrictId = districtSelect.value;
-            if (selectedDistrictId) {
-                fetchSchoolsByDistrict(selectedDistrictId);
-            } else {
-                schoolSelect.innerHTML = '<option value="">Selecione um distrito primeiro</option>';
-            }
+    if (registerRole) {
+        registerRole.addEventListener('change', function() {
+            userUtils.updateFieldsVisibility(this.value, 'register');
         });
-
-        async function setupGradeRegisterSelectListener() {
-            const schoolSelect = document.getElementById('registerSchool');
-            const gradeSelect = document.getElementById('registerClass');
-                    
-            if (schoolSelect && gradeSelect) {
-        
-                // Configurar listener para mudanças na escola
-                schoolSelect.addEventListener('change', async () => {
-                    const schoolId = schoolSelect.value;
-                    if (schoolId) {
-                        const grades = await fetchGradesBySchool(schoolId);
-                        updateGradeSelect(grades);
-                    } else {
-                        gradeSelect.innerHTML = '<option value="">Selecione uma escola</option>';
-                    }
-                });
-            }
-        }
-
-        function openEditModal(userId) {
-            showLoading();
-            fetch(`/users/list/${userId}`)
-                .then(response => response.json())
-                .then(async (data) => {
-                    document.getElementById('editUserId').value = data.id;
-                    document.getElementById('editName').value = data.name;
-                    document.getElementById('editEmail').value = data.email;
-                    document.getElementById('editCpf').value = data.cpf || '';
-                    document.getElementById('editPhone').value = data.phone || '';
-                    document.getElementById('editDateOfBirth').value = new Date(data.dateOfBirth).toISOString().split('T')[0] || '';
-                    document.getElementById('editGender').value = data.gender || '';
-                    document.getElementById('editRole').value = data.role || '';
-                    document.getElementById('editHorario').value = data.horario || '';
-                    document.getElementById('editStatus').value = data.status || '';
-                    document.getElementById('editAddress').value = data.address || '';
-                    document.getElementById('editCity').value = data.city || '';
-                    document.getElementById('editState').value = data.state || '';
-                    document.getElementById('editZip').value = data.zip || '';
-                    document.getElementById('editDistrict').value = data.districtId || '';
-
-                    // Selecionar as opções corretas
-                    document.getElementById('editSchool').value = data.schoolId || '';
-
-                    const contentField = document.getElementById('editContent')?.parentElement;
-                    const classField = document.getElementById('editClass')?.parentElement;
-                    const schoolField = document.getElementById('editSchool');
-
-                    const schoolSelect = document.getElementById('editSchool');
-                    const schoolLabel = document.querySelector(`label[for="${schoolSelect.id}"]`);
-                    const gradeSelect = document.getElementById('editClass');
-                    const districtField = document.getElementById('editDistrict');
-                    const districtLabel = document.querySelector(`label[for="${districtField.id}"]`);
-                    const horarioField = document.getElementById('editHorario');
-                    const horarioLabel = document.querySelector(`label[for="${horarioField.id}"]`);
-
-                    console.log('data.schoolId:', data.schoolId);
-                    console.log('editSchool.value:', document.getElementById('editSchool').value);
-
-                    if (schoolSelect && gradeSelect) {
-                        if (data.schoolId) {
-                            const grades = await fetchGradesBySchool(data.schoolId);
-                            updateGradeSelect(grades);
-                        }
-                    }
-
-                    //Função para atualizar a visibilidade dos campos
-                    function updateFieldsVisibility(role) {
-                        if (role === 'Professor') {
-                            contentField.style.display = 'block';
-                            classField.style.display = 'none';
-                            document.getElementById('editContent').value = data.content || '';
-                        } else if (role === 'Aluno') {
-                            contentField.style.display = 'none';
-                            classField.style.display = 'block';
-                            document.getElementById('editClass').value = data.userClass || '';
-                        } else if (role === 'Master') {
-                            contentField.style.display = 'none';
-                            classField.style.display = 'none';
-                            schoolField.style.display = 'none';
-                            schoolLabel.style.display = 'none';
-                            districtField.style.display = 'none';
-                            districtLabel.style.display = 'none';
-                            horarioField.style.display = 'none';
-                            horarioLabel.style.display = 'none';
-                        } else if (role === 'Inspetor') {
-                            contentField.style.display = 'none';
-                            classField.style.display = 'none';
-                            schoolField.style.display = 'none';
-                            schoolLabel.style.display = 'none';
-                            horarioField.style.display = 'none';
-                            horarioLabel.style.display = 'none';
-                            districtField.style.display = 'block';
-                            districtLabel.style.display = 'block'; 
-                        } else {
-                            contentField.style.display = 'none';
-                            classField.style.display = 'none';
-                            schoolField.style.display = 'block';
-                            schoolLabel.style.display = 'block';
-                            districtField.style.display = 'block';
-                            districtLabel.style.display = 'block';
-                            horarioField.style.display = 'block';
-                            horarioLabel.style.display = 'block';
-                        }
-                    }
-        
-                    updateFieldsVisibility(data.role);
-        
-                    const roleSelect = document.getElementById('editRole');
-                    if (roleSelect) {
-                        roleSelect.addEventListener('change', function () {
-                            updateFieldsVisibility(this.value);
-                        });
-                    }
-        
-                    // Passar schoolId na primeira chamada
-                    const districtId = document.getElementById('editDistrict').value;
-                    fetchSchoolsBySchool(districtId, data.schoolId);
-       
-                    openModal('editModal');
-                    hideLoading();
-                })
-                .catch(error => {
-                    console.error('Erro ao buscar os dados do usuário:', error);
-                    hideLoadingWithMessage('Erro ao carregar os dados do usuário');
-                });
-       
-            document.querySelectorAll('.btn-cancel').forEach(button => {
-                button.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    closeModal();
-                });
-            });
-        
-            const saveButton = document.querySelector('.btn.btn-save-edit');
-            saveButton.addEventListener('click', function (event) {
-                event.preventDefault();
-                console.log("Botão save apertado");
-                editUser(userId);
-            });
-        }
-        
-        const editDistrictSelect = document.getElementById('editDistrict');
-        const editSchoolSelect = document.getElementById('editSchool');
-
-        async function fetchSchoolsBySchool(districtId, schoolId) {
-            try {
-                editSchoolSelect.innerHTML = '<option>Carregando escolas...</option>';
-                const response = await fetch(`/schools/list?districtId=${districtId}`);
-                if (!response.ok) throw new Error('Erro ao buscar escolas');
-
-                const schools = await response.json();
-                editSchoolSelect.innerHTML = '';
-
-                if (schools.length === 0) {
-                    editSchoolSelect.innerHTML = '<option value="">Nenhuma escola encontrada</option>';
-                    return;
-                }
-
-                schools.forEach(school => {
-                    const option = document.createElement('option');
-                    option.value = school.id;
-                    option.textContent = school.name;
-
-                    if (schoolId && school.id == schoolId) { // Adicionamos a verificação schoolId &&
-
-                        option.selected = true;
-                    }
-                    editSchoolSelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error(error);
-                editSchoolSelect.innerHTML = '<option value="">Erro ao carregar escolas</option>';
-            }
-        }
-
-        editDistrictSelect.addEventListener('blur', function() {
-            const selectedDistrictId = editDistrictSelect.value;
-            if (selectedDistrictId) {
-                fetchSchoolsBySchool(selectedDistrictId);
-            } else {
-                editSchoolSelect.innerHTML = '<option value="">Selecione um distrito primeiro</option>';
-            }
-        });
-
-        async function setupGradeEditSelectListener() {
-            const schoolSelect = document.getElementById('editSchool');
-            const gradeSelect = document.getElementById('editClass');
-        
-            if (schoolSelect && gradeSelect) {
-        
-                // Configurar listener para mudanças na escola
-                schoolSelect.addEventListener('change', async () => {
-                    const schoolId = schoolSelect.value;
-                    if (schoolId) {
-                        const grades = await fetchGradesBySchool(schoolId);
-                        updateGradeSelect(grades);
-                    } else {
-                        gradeSelect.innerHTML = '<option value="">Selecione uma turma</option>';
-                    }
-                });
-            }
-        }
-        
-        function updateGradeSelect(grades) {
-            const editClass = document.getElementById('editClass');
-            const registerClass = document.getElementById('registerClass');
-            if(editClass){
-                const gradeSelect = document.getElementById('editClass');
-                gradeSelect.innerHTML = '<option value="">Selecione uma turma</option>';
-                grades.forEach(grade => {
-                    const option = document.createElement('option');
-                    option.value = grade.id;
-                    option.textContent = grade.name;
-                    gradeSelect.appendChild(option);
-                });
-            }
-            if(registerClass){
-                const gradeSelect = document.getElementById('registerClass');
-                gradeSelect.innerHTML = '<option value="">Selecione uma turma</option>';
-                grades.forEach(grade => {
-                    const option = document.createElement('option');
-                    option.value = grade.id;
-                    option.textContent = grade.name;
-                    gradeSelect.appendChild(option);
-                });
-            }
-        }
-
-        async function fetchGradesBySchool(schoolId) {
-            try {
-                const response = await fetch(`/grades/list?schoolId=${schoolId}`);
-                if (!response.ok) {
-                    throw new Error(`Erro na requisição: ${response.status}`);
-                }
-                const grades = await response.json();
-                return grades;
-            } catch (error) {
-                console.error('Erro ao buscar turmas:', error);
-                return []; // Retorna um array vazio em caso de erro
-            }
-        }
-
-        // Função para editar um usuário
-        function editUser(userId) {
-            const name = document.getElementById('editName').value;
-            const email = document.getElementById('editEmail').value;
-            const cpf = document.getElementById('editCpf').value;  // CPF
-            const phone = document.getElementById('editPhone').value;  // Telefone
-            const dateOfBirth = document.getElementById('editDateOfBirth').value;  // Data de nascimento
-            const gender = document.getElementById('editGender').value;  // Gênero
-            const role = document.getElementById('editRole').value;  // Função
-            const horario = document.getElementById('editHorario').value;  // Turno de trabalho
-            const status = document.getElementById('editStatus').value;  // Status
-            const address = document.getElementById('editAddress').value;  // Endereço
-            const city = document.getElementById('editCity').value;  // Cidade
-            const state = document.getElementById('editState').value;  // Estado
-            const zip = document.getElementById('editZip').value;  // CEP
-            const schoolId = document.getElementById('editSchool').value;  // CEP
-            const districtId = document.getElementById('editDistrict').value;  // CEP
-            const content = document.getElementById('editContent') ? document.getElementById('editContent').value : '';  // Conteúdo (se for professor)
-            const userClass = document.getElementById('editClass') ? document.getElementById('editClass').value : '';  // Turma (se for aluno)
-            // Exibir popup de loading
-            showLoading();
-        
-            // Requisição AJAX para editar o usuário
-            fetch(`/users/edit/${userId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name,
-                    email,
-                    cpf,
-                    phone,
-                    dateOfBirth,
-                    gender,
-                    role,
-                    horario,
-                    status,
-                    address,
-                    city,
-                    state,
-                    zip,
-                    schoolId,
-                    districtId,
-                    content,  // Incluindo conteúdo se for professor
-                    userClass: userClass  // Incluindo turma se for aluno
-                })
-            })
-            .then(response => {
-                if (response.ok) {
-                    hideLoadingWithMessage('Usuário atualizado com sucesso!', () => {
-                        location.reload();  // Recarregar a página após a atualização
-                    });
-                } else {
-                    hideLoadingWithMessage('Erro ao atualizar o usuário');
-                }
-            })
-            .catch(error => {
-                console.error('Erro na atualização do usuário:', error);
-                hideLoadingWithMessage('Erro ao atualizar o usuário');
-            });
-        }
-
-        // Função para abrir o modal de reiniciar senha
-        function openResetPasswordModal(userId) {
-            document.getElementById('resetPasswordUserId').value = userId;
-            openModal('resetPasswordModal');
-        }
-
-        function resetPassword() {
-            const userId = document.getElementById('resetPasswordUserId').value;
-        
-            // Exibir popup de loading
-            showLoading();
-        
-            // Enviar a requisição para resetar a senha
-            fetch(`/users/reset-password`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ userId, resetByAdmin: true }) // Mantendo o corpo original
-            })
-            .then(response => response.json()) // Tratando a resposta como JSON
-            .then(data => {
-                if (data.message === 'Senha resetada com sucesso!') { // Condição atualizada para a mensagem correta
-                    hideLoadingWithMessage(`Senha redefinida com sucesso! Nova senha: ${data.novaSenha}`, () => {
-                        location.reload(); // Recarregar a página após a redefinição
-                    });
-                } else {
-                    hideLoadingWithMessage(data.message || 'Erro ao reiniciar a senha'); // Exibe a mensagem de erro do backend
-                }
-            })
-            .catch(error => {
-                console.error('Erro ao reiniciar a senha:', error);
-                hideLoadingWithMessage('Erro ao reiniciar a senha');
-            });
-        }
-        loadContentOptions();
-        addClearTableListeners();
-        addRoleChangeListener();
-        addClearFilterListener();
-        ListenerBtnEdit();
-        ListenerBtnDelete();
-        listenerBtnReset();
-        setupGradeEditSelectListener();
-        setupGradeRegisterSelectListener();
+        // Inicializar a visibilidade com o valor atual
+        userUtils.updateFieldsVisibility(registerRole.value, 'register');
     }
+
+    if (editRole) {
+        editRole.addEventListener('change', function() {
+            userUtils.updateFieldsVisibility(this.value, 'edit');
+        });
+    }
+
+    // Quando o modal de registro é aberto, atualizar a visibilidade
+    document.getElementById("addUsers").addEventListener("click", () => {
+        userUtils.openModal("registerModal");
+        userUtils.updateFieldsVisibility(registerRole.value, 'register');
+    });
 });

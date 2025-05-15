@@ -3,7 +3,9 @@ const { Op, Sequelize } = require('sequelize');
 const applyUserFilters = (user, query) => {
     let whereClause = {};
 
+    // Lógica de permissões baseada no papel do usuário (mantida igual)
     if (user.role === 'Master') {
+        // Master pode ver tudo, não adiciona restrição
     } else if (user.role === 'Inspetor') {
         whereClause.districtId = user.districtId;
     } else if (['Diretor', 'Coordenador', 'Pedagogo'].includes(user.role)) {
@@ -18,12 +20,18 @@ const applyUserFilters = (user, query) => {
         }
     }
 
+    // Filtros padrão (incluindo gradeId)
     if (query.districtId) whereClause.districtId = query.districtId;
     if (query.schoolId) whereClause.schoolId = query.schoolId;
     if (query.role) whereClause.role = query.role;
     if (query.subject) whereClause.subject = query.subject;
-    if (query.userClass) whereClause.userClass = query.userClass;
     if (query.status) whereClause.status = query.status;
+    
+    // Novo: Usar gradeId para filtrar turmas
+    if (query.gradeId) whereClause.gradeId = query.gradeId;
+    
+    // Manter compatibilidade com userClass por enquanto
+    if (query.userClass) whereClause.userClass = query.userClass;
 
     return whereClause;
 };
@@ -41,26 +49,30 @@ const applyUserListFilters = (query) => {
         orConditions.push({ [Op.and]: [Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('name')), Op.like, Sequelize.fn('LOWER', searchTerm))] });
         orConditions.push({ [Op.and]: [Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('email')), Op.like, Sequelize.fn('LOWER', searchTerm))] });
         orConditions.push({ [Op.and]: [Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('cpf')), Op.like, Sequelize.fn('LOWER', searchTerm))] });
+        
+        // Manter busca em userClass por compatibilidade
         orConditions.push({ [Op.and]: [Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('userClass')), Op.like, Sequelize.fn('LOWER', searchTerm))] });
+        
+        // Adicionar busca por ID da turma (caso digitem um número)
+        if (!isNaN(parseInt(query.query.trim()))) {
+            orConditions.push({ gradeId: parseInt(query.query.trim()) });
+        }
 
         if (orConditions.length > 0) {
             whereClause[Op.or] = orConditions;
         }
     }
 
-    if (query.status) {
-        whereClause.status = query.status;
-    }
-    if (query.schoolId) {
-        whereClause.schoolId = query.schoolId;
-    }
-    if (query.districtId) {
-        whereClause.districtId = query.districtId;
-    }
+    // Filtros adicionais
+    if (query.status) whereClause.status = query.status;
+    if (query.schoolId) whereClause.schoolId = query.schoolId;
+    if (query.districtId) whereClause.districtId = query.districtId;
+    
+    // Novo: filtro por ID da turma
+    if (query.gradeId) whereClause.gradeId = query.gradeId;
 
     return whereClause;
 };
-
 
 // Função para validar CPF
 const validarCPF = (cpf) => {

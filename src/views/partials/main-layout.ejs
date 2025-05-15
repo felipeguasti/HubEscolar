@@ -8,6 +8,12 @@
     <% if (title === 'Central de Advertências') { %>
         <link rel="stylesheet" href="/css/reportCenter.css">
     <% } %>
+    <% if (title === 'Turmas') { %>
+        <link rel="stylesheet" href="/css/grades.css">
+    <% } %>
+    <% if (title === 'Usuários') { %>
+        <link rel="stylesheet" href="/css/users.css">
+    <% } %>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
@@ -90,8 +96,11 @@
             </div>
         </div>
     </footer>
-    <script src="/js/script.js"></script>
-    <script src="/js/login.js"></script>
+    <script src="/js/auth.js?v=<%= Date.now() %>"></script>
+    <script src="/js/script.js?v=<%= Date.now() %>"></script>
+    <% if (title === 'Login') { %>
+    <script src="/js/login.js?v=<%= Date.now() %>"></script>
+    <% } %>
     <% if (title === 'Cadastro') { %>
         <script src="/js/cadastro.js"></script>
     <% } %>
@@ -102,10 +111,10 @@
         <script src="/js/district.js"></script>
     <% } %>
     <% if (title === 'Turmas') { %>
-        <script src="/js/grade.js"></script>
+        <script src="/js/grades.js?v=<%= Date.now() %>"></script>
     <% } %>
     <% if (title === 'Usuários') { %>
-        <script src="/js/users.js"></script>
+        <script src="/js/users.js?v=<%= Date.now() %>"></script>
     <% } %>
     <% if (title === 'Advertências') { %>
         <script src="/js/behavior.js"></script>

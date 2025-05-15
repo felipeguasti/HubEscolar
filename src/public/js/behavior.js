@@ -1,8 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const isBehavior = window.location.pathname.includes("behavior");
     if (isBehavior) {
-        handleAuthCheck();
-
         const searchStudentInput = document.getElementById('report-form-search-student');
         const autocompleteResultsList = document.getElementById('report-form-autocomplete-results');
         const selectedStudentsTable = document.getElementById('report-form-selected-students');

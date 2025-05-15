@@ -123,7 +123,7 @@ exports.adicionarUsuario = [
     body('state').optional(),
     body('zip').optional().custom(validarCEP).customSanitizer(value => value ? value.replace(/[^\d]/g, '').padStart(8, '0') : value),
     body('horario').optional().default('Integral').isIn(['Manhã', 'Tarde', 'Noite', 'Integral']).withMessage('Horário inválido'),
-    body('userClass').optional(),
+    body('gradeId').optional().isInt().withMessage('ID da turma deve ser um número inteiro'),
     body('content').optional(),
     body('status').optional().isIn(['active', 'inactive']).withMessage('Status inválido'),
 
@@ -171,7 +171,7 @@ exports.adicionarUsuario = [
                 gender,
                 role,
                 horario,
-                userClass,
+                gradeId,
                 content,
                 address,
                 city,
@@ -209,25 +209,47 @@ exports.adicionarUsuario = [
                 }
             }
 
+            // Verificar gradeId para alunos
+            if (role === 'Aluno' && req.body.gradeId) {
+                // Validar se a turma existe
+                try {
+                    const gradeServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/grades/${req.body.gradeId}`;
+                    const gradeResponse = await fetchDataWithAuth(gradeServiceUrl, 'GET', null, accessToken);
+                    
+                    if (!gradeResponse.ok) {
+                        return res.status(400).json({ message: 'Turma não encontrada ou inválida' });
+                    }
+                } catch (error) {
+                    console.error('Erro ao verificar turma:', error);
+                    // Decidir se continua ou retorna erro
+                }
+            }
+
+            // Para não-alunos, gradeId deve ser null
+            if (role !== 'Aluno') {
+                req.body.gradeId = null;
+            }
+
             const newUser = await User.create({
                 name,
                 email: novoEmail,
-                password, // Usamos diretamente a senha do req.body
-                cpf,
-                phone,
-                dateOfBirth,
-                gender,
+                password,
+                cpf: cpf || null,
+                phone: phone || null,
+                dateOfBirth: dateOfBirth || null,
+                gender: gender || null,
                 role,
-                horario,
-                userClass,
-                content,
-                address,
-                city,
-                state,
-                zip,
-                status,
-                schoolId,
-                districtId: finalDistrictId
+                horario: horario || null,
+                gradeId: role === 'Aluno' ? req.body.gradeId : null,
+                content: content || null,
+                address: address || null,
+                city: city || null,
+                state: state || null,
+                zip: zip || null,
+                status: status || 'active',
+                schoolId: schoolId || null,
+                districtId: finalDistrictId || null,
+                userClass: req.body.userClass || null
             });
 
             invalidarCache();
@@ -350,7 +372,7 @@ exports.atualizarUsuario = [
     body('state').optional(),
     body('zip').optional().custom(validarCEP).optional().customSanitizer(value => value ? value.replace(/[^\d]/g, '').padStart(8, '0') : value),
     body('horario').optional().isIn(['Manhã', 'Tarde', 'Noite', 'Integral']).withMessage('Horário inválido'),
-    body('userClass').optional(),
+    body('gradeId').optional().isInt().withMessage('ID da turma deve ser um número inteiro'),
     body('content').optional(),
     body('status').optional().isIn(['active', 'inactive']).withMessage('Status inválido'),
 
@@ -413,6 +435,27 @@ exports.atualizarUsuario = [
                 }
             }
 
+            // Antes de fazer o update:
+            if (updatedData.gradeId && dadosRecebidos.role === 'Aluno') {
+                // Validar se a turma existe
+                try {
+                    const gradeServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/grades/${updatedData.gradeId}`;
+                    const gradeResponse = await fetchDataWithAuth(gradeServiceUrl, 'GET', null, accessToken);
+                    
+                    if (!gradeResponse.ok) {
+                        return res.status(400).json({ message: 'Turma não encontrada ou inválida' });
+                    }
+                } catch (error) {
+                    console.error('Erro ao verificar turma:', error);
+                    // Decidir se continua ou retorna erro
+                }
+            }
+
+            // Se não é aluno, gradeId deve ser nulo
+            if (updatedData.role && updatedData.role !== 'Aluno') {
+                updatedData.gradeId = null;
+            }
+
             await User.update(updatedData, { where: { id } });
             const usuarioAtualizado = await User.findByPk(id);
             const usuarioResponse = {
@@ -433,6 +476,7 @@ exports.atualizarUsuario = [
                 profilePic: usuarioAtualizado.profilePic,
                 content: usuarioAtualizado.content,
                 userClass: usuarioAtualizado.userClass,
+                gradeId: usuarioAtualizado.gradeId, // Adicionar este campo
                 schoolId: usuarioAtualizado.schoolId,
                 districtId: usuarioAtualizado.districtId,
                 updatedAt: usuarioAtualizado.updatedAt
@@ -500,6 +544,7 @@ exports.buscarUsuario = async (req, res) => {
 
         let school = null;
         let district = null;
+        let grade = null;
         const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
 
         // Não buscar schoolId ou districtId para usuários Master
@@ -525,7 +570,18 @@ exports.buscarUsuario = async (req, res) => {
             }
         }
 
-        res.json({ ...usuario.toJSON(), school, district });
+        // Se o usuário for aluno e tiver gradeId, buscar detalhes da turma
+        if (usuario.role === 'Aluno' && usuario.gradeId) {
+            const gradeServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/grades/${usuario.gradeId}`;
+            const gradeResponse = await fetchDataWithAuth(gradeServiceUrl, 'GET', null, accessToken);
+            if (gradeResponse.ok) {
+                grade = await gradeResponse.json();
+            } else {
+                console.error('Erro ao buscar turma do school-service:', gradeResponse.statusText);
+            }
+        }
+
+        res.json({ ...usuario.toJSON(), school, district, grade });
     } catch (error) {
         console.error('Erro ao buscar usuário:', error);
         res.status(500).json({ message: error.message });
@@ -617,7 +673,7 @@ exports.filterUsers = async (req, res) => {
             return res.status(401).json({ error: 'Usuário não autenticado' });
         }
         const user = await User.findByPk(req.user.id);
-        const whereClause = applyUserFilters(user, req.query); // Use req.query para os filtros
+        const whereClause = applyUserFilters(user, req.query);
 
         const users = await User.findAll({ where: whereClause });
 
@@ -666,7 +722,16 @@ exports.getUsersData = async (req, res) => {
             console.error('Erro ao buscar escolas do school-service:', schoolResponse.statusText);
         }
 
-        const grades = await Grade.findAll();
+        // Buscar turmas do microsserviço school-service
+        const gradeServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/grades`;
+        const gradeResponse = await fetchDataWithAuth(gradeServiceUrl, 'GET', null, accessToken);
+        let grades = [];
+        if (gradeResponse.ok) {
+            grades = await gradeResponse.json();
+        } else {
+            console.error('Erro ao buscar turmas do school-service:', gradeResponse.statusText);
+        }
+
         let whereClause = {};
 
         if (user.role !== 'Master') {

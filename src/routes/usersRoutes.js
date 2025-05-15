@@ -84,18 +84,41 @@ router.post('/create', isAuthenticated, async (req, res) => {
         if (req.body.phone) {
             req.body.phone = req.body.phone.replace(/[^\d]/g, '');
         }
-        // Adiciona a senha padrão ao corpo da requisição SE a senha não for fornecida
+
+        let userData = { ...req.body };
+
+        // Lógica baseada no papel do usuário logado
+        if (req.user.role !== 'Master') {
+            if (req.user.role === 'Inspetor') {
+                userData.districtId = req.user.districtId;
+            } else {
+                userData.districtId = req.user.districtId;
+                userData.schoolId = req.user.schoolId;
+            }
+        }
+        
         const userDataWithPassword = {
             ...req.body,
             password: ('password' in req.body) ? req.body.password : DEFAULT_PASSWORD
         };
-        console.log('userDataWithPassword:', userDataWithPassword);
 
         const newUser = await usersService.createUser(userDataWithPassword, accessToken);
         return res.status(201).json(newUser);
     } catch (error) {
         console.error('Erro ao adicionar usuário:', error);
-        return res.status(500).json({ message: 'Erro ao adicionar usuário', error: error.message });
+        
+        // Verifica se é um erro do microserviço
+        if (error.response?.data?.message) {
+            return res.status(error.response.status || 400).json({
+                message: error.response.data.message
+            });
+        }
+
+        // Se não for erro do microserviço, retorna erro genérico
+        return res.status(500).json({ 
+            message: 'Erro interno ao criar usuário',
+            error: error.message 
+        });
     }
 });
 
@@ -121,7 +144,17 @@ router.put('/edit/:id', isAuthenticated, async (req, res) => {
         return res.json(updatedUser);
     } catch (error) {
         console.error(`Erro ao atualizar usuário com ID ${id}:`, error);
-        return res.status(500).json({ message: 'Erro ao atualizar usuário', error: error.message });
+        
+        if (error.response?.data?.message) {
+            return res.status(error.response.status || 400).json({
+                message: error.response.data.message
+            });
+        }
+
+        return res.status(500).json({ 
+            message: 'Erro ao atualizar usuário',
+            error: error.message 
+        });
     }
 });
 
@@ -131,10 +164,20 @@ router.delete('/delete/:id', isAuthenticated, async (req, res) => {
     const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
     try {
         await usersService.deleteUser(id, accessToken);
-        return res.status(204).send(); // No content
+        return res.status(204).send();
     } catch (error) {
         console.error(`Erro ao deletar usuário com ID ${id}:`, error);
-        return res.status(500).json({ message: 'Erro ao deletar usuário', error: error.message });
+        
+        if (error.response?.data?.message) {
+            return res.status(error.response.status || 400).json({
+                message: error.response.data.message
+            });
+        }
+
+        return res.status(500).json({ 
+            message: 'Erro ao deletar usuário',
+            error: error.message 
+        });
     }
 });
 
@@ -174,12 +217,22 @@ router.get('/list/:id', isAuthenticated, async (req, res) => {
 router.get('/filter', isAuthenticated, async (req, res) => {
     const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
     try {
-        console.log('Filtros recebidos:', req.query); // Log para debug
+        console.log('Filtros recebidos:', req.query);
         const filteredUsers = await usersService.filterUsers(req.query, accessToken);
         return res.json(filteredUsers);
     } catch (error) {
         console.error('Erro ao filtrar usuários:', error);
-        return res.status(500).json({ message: 'Erro ao filtrar usuários', error: error.message });
+        
+        if (error.response?.data?.message) {
+            return res.status(error.response.status || 400).json({
+                message: error.response.data.message
+            });
+        }
+
+        return res.status(500).json({ 
+            message: 'Erro ao filtrar usuários',
+            error: error.message 
+        });
     }
 });
 
@@ -203,7 +256,17 @@ router.post('/reset-password', isAuthenticated, async (req, res) => {
         return res.json(result);
     } catch (error) {
         console.error('Erro ao resetar senha do usuário:', error);
-        return res.status(500).json({ message: 'Erro ao resetar senha do usuário', error: error.message });
+        
+        if (error.response?.data?.message) {
+            return res.status(error.response.status || 400).json({
+                message: error.response.data.message
+            });
+        }
+
+        return res.status(500).json({ 
+            message: 'Erro ao resetar senha do usuário',
+            error: error.message 
+        });
     }
 });
 

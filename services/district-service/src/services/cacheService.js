@@ -3,19 +3,64 @@ const logger = require('../utils/logger');
 
 class CacheService {
     constructor() {
-        this.client = new Redis({
-            host: process.env.REDIS_HOST || 'localhost',
-            port: process.env.REDIS_PORT || 6379,
-            password: process.env.REDIS_PASSWORD,
-            retryStrategy: (times) => {
-                const delay = Math.min(times * 50, 2000);
-                return delay;
-            }
-        });
+        try {
+            this.client = new Redis({
+                host: process.env.REDIS_HOST || 'localhost',
+                port: process.env.REDIS_PORT || 6379,
+                password: process.env.REDIS_PASSWORD,
+                connectTimeout: 5000,
+                maxRetriesPerRequest: 3,
+                retryStrategy: (times) => {
+                    if (times > 3) {
+                        logger.warn('Redis max retries reached - falling back to no cache');
+                        return null; // stop retrying
+                    }
+                    const delay = Math.min(times * 50, 2000);
+                    return delay;
+                },
+                lazyConnect: true // Don't connect immediately
+            });
 
-        this.client.on('error', (err) => {
-            logger.error('Erro no Redis:', err);
-        });
+            // Better error handling
+            this.client.on('error', (err) => {
+                logger.error('Erro no Redis:', err);
+            });
+
+            this.client.on('connect', () => {
+                logger.info('Conectado ao Redis com sucesso');
+            });
+
+            this.client.on('close', () => {
+                logger.warn('Conexão com Redis fechada');
+            });
+
+            // Initialize connection
+            this.initialize();
+
+        } catch (error) {
+            logger.error('Erro ao criar cliente Redis:', error);
+            this.createMockClient();
+        }
+    }
+
+    async initialize() {
+        try {
+            await this.client.connect();
+        } catch (error) {
+            logger.error('Erro ao conectar ao Redis:', error);
+            this.createMockClient();
+        }
+    }
+
+    createMockClient() {
+        logger.warn('Usando cliente mock para cache');
+        this.client = {
+            get: async () => null,
+            set: async () => null,
+            del: async () => null,
+            keys: async () => [],
+            on: () => null
+        };
     }
 
     async get(key) {
@@ -56,4 +101,6 @@ class CacheService {
     }
 }
 
-module.exports = new CacheService(); 
+// Create and export a singleton instance
+const cacheService = new CacheService();
+module.exports = cacheService;
