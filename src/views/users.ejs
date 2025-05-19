@@ -9,7 +9,7 @@
             <p>Gerenciamento dos usuários do sistema.</p>
         </header>
         <input type="hidden" id="userRole" value="<%= user.role %>">
-
+        <input type="hidden" id="userSchool" value="<%= user.schoolId %>">
         <% if (users.some(user => user.status === 'inactive')) { %> 
             <!-- Apenas um div invisível com a mensagem -->
             <div id="inactiveUsersMessage" data-message="Existem usuários com status inativo aguardando aprovação." class="hidden"></div>
@@ -37,8 +37,8 @@
                     
                     <% if (['Master', 'Inspetor', 'Diretor', 'Secretario'].includes(user.role)) { %>
                         <div>
-                            <label for="districtFilter">Distrito:</label>
-                            <select id="districtFilter" <%= user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Secretario' ? 'disabled' : '' %>>
+                            <label for="filterDistrict">Distrito:</label>
+                            <select id="filterDistrict" <%= user.role === 'Inspetor' || user.role === 'Diretor' || user.role === 'Secretario' ? 'disabled' : '' %>>
                                 <% if (user.role === 'Master') { %>
                                     <option value="">Selecione um distrito</option>
                                     <% districts.forEach(district => { %>
@@ -53,8 +53,8 @@
                     <% } %>
             
                     <div>
-                        <label for="schoolFilter">Escola:</label>
-                        <select id="schoolFilter" <%= ['Diretor', 'Coordenador', 'Pedagogo', 'Secretario'].includes(user.role) ? 'disabled' : '' %>>
+                        <label for="filterSchool">Escola:</label>
+                        <select id="filterSchool" <%= ['Diretor', 'Coordenador', 'Pedagogo', 'Secretario'].includes(user.role) ? 'disabled' : '' %>>
                             <% if (['Master', 'Inspetor'].includes(user.role)) { %>
                                 <option value="">Selecione uma escola</option>
                                 <% if (schools) { %>
@@ -80,16 +80,16 @@
                             <option value="">Selecione uma disciplina</option>
                         </select>
                     </div>
-            
                     <div>
                         <label for="filterGrade">Turma:</label>
                         <select id="filterGrade" name="gradeId">
                             <option value="">Selecione uma turma</option>
                         </select>
                     </div>
-            
-                    <button id="filterUsers">Filtrar</button>
-                    <button id="cleanFilter">Limpar</button>
+                    <div class="filter-buttons">
+                        <button id="filterUsers">Filtrar</button>
+                        <button id="cleanFilter">Limpar</button>
+                    </div>
                 </div>
             <% } %>
         </div>        
@@ -237,8 +237,18 @@
                             <label for="registerGrade">Turma:</label>
                             <select id="registerGrade" name="gradeId">
                                 <option value="">Selecione uma turma</option>
-                                <% if (grades && grades.length > 0) { %>
-                                    <% grades.forEach(grade => { %>
+                                <% 
+                                let gradesToShow = [];
+                                
+                                if (user.role === 'Master' || user.role === 'Inspetor') {
+                                    gradesToShow = grades;
+                                } else {
+                                    gradesToShow = grades.filter(grade => grade.schoolId === user.schoolId);
+                                }
+                                
+                                if (gradesToShow && gradesToShow.length > 0) { 
+                                %>
+                                    <% gradesToShow.forEach(grade => { %>
                                         <option value="<%= grade.id %>"><%= grade.name %></option>
                                     <% }); %>
                                 <% } %>
@@ -365,8 +375,17 @@
                             <label for="editGrade">Turma:</label>
                             <select id="editGrade" name="gradeId">
                                 <option value="">Selecione uma turma</option>
-                                <% if (grades && grades.length > 0) { %>
-                                    <% grades.forEach(grade => { %>
+                                <% 
+                                let gradesToShowEdit = [];
+                                
+                                if (user.role === 'Master' || user.role === 'Inspetor') {
+                                    gradesToShowEdit = grades;
+                                } else {
+                                    gradesToShowEdit = grades.filter(grade => grade.schoolId === user.schoolId);
+                                }
+                                if (gradesToShowEdit && gradesToShowEdit.length > 0) { 
+                                %>
+                                    <% gradesToShowEdit.forEach(grade => { %>
                                         <option value="<%= grade.id %>" <%= user.gradeId === grade.id ? 'selected' : '' %>>
                                             <%= grade.name %>
                                         </option>

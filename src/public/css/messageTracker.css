@@ -1,0 +1,62 @@
+/* Estilos para indicadores de status de mensagens WhatsApp */
+.message-status {
+    display: inline-block;
+    margin-left: 5px;
+}
+
+.message-status-sent {
+    color: #999;
+}
+
+.message-status-delivered {
+    color: #2196F3;
+}
+
+.message-status-read {
+    color: #4CAF50;
+}
+
+.message-status-failed {
+    color: #F44336;
+}
+
+.message-status-pending {
+    color: #FFC107;
+}
+
+/* Estilos para notificações */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.notification.error {
+    background-color: #F44336;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Estilos para a seção de WhatsApp no modal */
+.whatsapp-section {
+    margin-top: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.whatsapp-status {
+    margin-top: 8px;
+    font-size: 0.9em;
+}

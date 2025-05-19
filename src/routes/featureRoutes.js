@@ -48,7 +48,7 @@ router.get('/',
 // Rota para página de configurações de features
 router.get('/settings', 
     isAuthenticated, 
-    requireRole(['Master', 'Inspetor', 'Secretario']), 
+    requireRole(['Master', 'Inspetor', 'Secretario', 'Diretor']), 
     async (req, res) => {
         const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
         try {
@@ -130,7 +130,7 @@ router.delete('/delete/:id',
 
 // Atribuir feature a um usuário
 router.post('/assign',
-    requireRole(['Master', 'Inspetor', 'Secretario']),
+    requireRole(['Master', 'Inspetor', 'Secretario', 'Diretor']),
     async (req, res) => {
         const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
         try {
@@ -146,7 +146,7 @@ router.post('/assign',
 
 // Remover feature de um usuário
 router.delete('/assign',
-    requireRole(['Master', 'Inspetor', 'Secretario']),
+    requireRole(['Master', 'Inspetor', 'Secretario', 'Diretor']),
     async (req, res) => {
         const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
         try {
@@ -162,7 +162,7 @@ router.delete('/assign',
 
 // Obter features de um usuário específico
 router.get('/user/:userId',
-    requireRole(['Master', 'Inspetor', 'Secretario']),
+    requireRole(['Master', 'Inspetor', 'Secretario', 'Diretor']),
     async (req, res) => {
         const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
         try {
@@ -192,7 +192,7 @@ router.get('/check',
 
 // Listar todas as features
 router.get('/list',
-    requireRole(['Master', 'Inspetor', 'Secretario']),
+    requireRole(['Master', 'Inspetor', 'Secretario', 'Diretor']),
     async (req, res) => {
         const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
         try {
@@ -207,7 +207,7 @@ router.get('/list',
 
 // Obter feature por ID
 router.get('/list/:id',
-    requireRole(['Master', 'Inspetor', 'Secretario']),
+    requireRole(['Master', 'Inspetor', 'Secretario', 'Diretor']),
     async (req, res) => {
         const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
         try {
@@ -216,6 +216,60 @@ router.get('/list/:id',
         } catch (error) {
             console.error('Erro ao buscar feature:', error);
             res.status(500).json({ error: 'Erro ao buscar feature' });
+        }
+    }
+);
+
+// Atribuir feature a usuários em lote
+router.post('/assign-batch',
+    requireRole(['Master', 'Inspetor', 'Secretario', 'Diretor']),
+    async (req, res) => {
+        const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+        try {
+            const { featureId, role, districtId, schoolId } = req.body;
+            
+            if (!featureId || !role) {
+                return res.status(400).json({ error: 'Feature ID e cargo são obrigatórios' });
+            }
+            
+            const result = await featureService.assignFeatureToBatch(
+                featureId, 
+                role, 
+                districtId, 
+                schoolId, 
+                accessToken
+            );
+            res.json(result);
+        } catch (error) {
+            console.error('Erro ao atribuir feature em lote:', error);
+            res.status(500).json({ error: 'Erro ao atribuir feature em lote' });
+        }
+    }
+);
+
+// Remover feature de usuários em lote
+router.post('/remove-batch',
+    requireRole(['Master', 'Inspetor', 'Secretario', 'Diretor']),
+    async (req, res) => {
+        const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+        try {
+            const { featureId, role, districtId, schoolId } = req.body;
+            
+            if (!featureId || !role) {
+                return res.status(400).json({ error: 'Feature ID e cargo são obrigatórios' });
+            }
+            
+            const result = await featureService.removeFeatureFromBatch(
+                featureId, 
+                role, 
+                districtId, 
+                schoolId, 
+                accessToken
+            );
+            res.json(result);
+        } catch (error) {
+            console.error('Erro ao remover feature em lote:', error);
+            res.status(500).json({ error: 'Erro ao remover feature em lote' });
         }
     }
 );

@@ -1,244 +1,446 @@
-/* Modal Container - Responsável pelo overlay escuro */
-.modalContainer {
-    position: fixed;
+/* Tabela de usuários */
+.admin-users-section, .admin-district-section {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: var(--form-bg);
+}
+
+.table th,
+.table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+    font-family: var(--font-family);
+}
+
+.table th {
+    background-color: var(--focus-color);
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.table tr:nth-child(even) {
+    background-color: var(--bg-color);
+}
+
+.inactive-user, .inactive-district {
+    background-color: #ffcccc; /* Vermelho claro */
+    color: #a00; /* Texto vermelho escuro */
+}
+
+/* Fundo diferente para usuários inativos */
+.inactive-user, .inactive-district {
+    background-color: #ffcccc; /* Vermelho claro */
+}
+
+/* Texto dos usuários inativos em vermelho escuro */
+.inactive-text {
+    color: #a00;
+    font-weight: bold;
+}
+
+/* Botões de Ação */
+.btn {
+    padding: 6px 12px; /* Tamanho mais compacto */
+    border: none;
+    border-radius: 5px; /* Arredondamento suave */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: normal;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+/* Estilo do Botão de Edição */
+.btn-edit {
+    background-color: #f0f0f0; /* Cor neutra e suave */
+    color: #333; /* Cor mais discreta */
+    border: 1px solid #ccc; /* Borda suave */
+}
+
+.btn-edit:hover {
+    background-color: #e0e0e0; /* Leve mudança na cor */
+    border-color: #bbb; /* Suaviza o destaque */
+}
+
+/* Estilo do Botão de Exclusão */
+.btn-delete {
+    background-color: #f8d7da; /* Cor suave para exclusão */
+    color: #721c24; /* Cor mais suave para texto */
+    border: 1px solid #f5c6cb; /* Borda discreta */
+}
+
+.btn-delete:hover {
+    background-color: #f5c6cb; /* Leve mudança no hover */
+    border-color: #f1a7b1; /* Suaviza o destaque no hover */
+}
+
+/* Estilo do Botão de Reiniciar Senha */
+.btn-reset-password {
+    background-color: #fff3cd; /* Cor suave para ação neutra */
+    color: #856404; /* Texto em cor mais discreta */
+    border: 1px solid #ffecb5; /* Borda suave */
+}
+
+.btn-reset-password:hover {
+    background-color: #ffecb5; /* Leve mudança no hover */
+    border-color: #ffeeba; /* Suaviza a borda no hover */
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed; /* Modal posicionado em relação à viewport */
     top: 0;
     left: 0;
     width: 100%;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.5); /* Fundo escuro aqui */
-    z-index: 1000;
-    display: none;
+    height: 100vh; /* Ocupa 100% da altura da tela */
+    background: rgba(0, 0, 0, 0.5); /* Fundo escurecido */
+    z-index: 1000; /* Fica acima de outros elementos */
+    display: flex; /* Flexbox para centralizar */
     justify-content: center;
     align-items: center;
-    padding: 20px;
-}
-
-/* Modal - Apenas o conteúdo */
-.modal {
-    position: relative;
-    width: 80%;
-    max-width: 1200px;
-    background: white; /* Fundo branco para o modal */
-    border-radius: 5px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin: auto; /* Centraliza horizontalmente */
-    transform: translateY(0); /* Reset qualquer transform anterior */
+    padding: 20px; /* Espaçamento para não ficar encostado nas bordas */
 }
 
 /* Conteúdo do Modal */
 .modal-content {
-    width: 100%;
-    max-height: 80vh;
-    max-width: 100%;
-    overflow-y: auto;
-    padding: 20px;
-    position: relative;
-}
-
-/* Container principal dos popups */
-.popup-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 2002;
-    display: none;
-    background: rgba(0, 0, 0, 0.5); /* Fundo escuro semitransparente */
-    backdrop-filter: blur(2px); /* Efeito de blur suave no fundo */
-    justify-content: center;
-    align-items: center;
-}
-
-/* Reset do popup base */
-#message-popup {
-    position: fixed;
+    position: fixed; /* Modal posicionado em relação à viewport */
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) translateY(100vh); /* Começa abaixo da tela */
-    min-width: 300px;
-    max-width: 500px;
-    width: 90%;
-    background: white;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2); /* Sombra mais pronunciada */
-    padding: 20px 25px;
-    border-radius: 12px;
-    display: none;
-    pointer-events: auto;
-    z-index: 2003; /* Aumentado para ficar acima do overlay */
-    text-align: center;
-}
-
-/* Quando o popup está visível - Ajustada a animação */
-#message-popup[style*="display: block"] {
-    transform: translate(-50%, -50%) translateY(0);
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-/* Estados do popup com cores mais intensas para contrastar com o overlay */
-#message-popup.success { 
-    background: #f0fff4;
-    border: 2px solid #48bb78;
-    color: #276749;
-}
-
-#message-popup.error { 
-    background: #fff5f5;
-    border: 2px solid #f56565;
-    color: #c53030;
-}
-
-#message-popup.info { 
-    background: #ebf8ff;
-    border: 2px solid #4299e1;
-    color: #2c5282;
-}
-
-/* Conteúdo do popup */
-#message-popup .popup-content {
+    transform: translate(-50%, -50%);
+    width: 80%; /* Largura ajustada para 80% da tela */
+    max-width: 1200px; /* Definindo um limite máximo de largura */
+    max-height: 90%; /* Altura máxima do conteúdo do modal */
+    overflow-y: auto; /* Permite rolar verticalmente */
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
     position: relative;
-    padding: 10px 25px;
-    font-size: 1.1em;
-    font-weight: 500;
 }
 
-/* Botão fechar */
-#message-popup .close-popup {
-    position: absolute;
-    right: 10px;
-    top: 10px;
-    background: none;
-    border: none;
-    font-size: 24px;
+/* Certifique-se de que o conteúdo do modal tenha a rolagem quando for grande */
+.modal-content::-webkit-scrollbar {
+    width: 10px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+}
+
+/* Estiliza especificamente o campo de Data de Nascimento no modal */
+.modalDate {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    color: #333;
+    outline: none;
+    transition: border-color 0.3s ease-in-out;
+}
+
+/* Efeito ao focar no campo */
+.modalDate:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+/* Ajusta o ícone do calendário */
+.modalDate::-webkit-calendar-picker-indicator {
     cursor: pointer;
-    padding: 5px;
-    opacity: 0.6;
-    transition: opacity 0.2s;
+    filter: invert(50%);
 }
 
-#message-popup .close-popup:hover {
-    opacity: 1;
+/* Estiliza especificamente o campo de Data de Nascimento no modal */
+#editDateOfBirth, .defaultDate, #registerYear, #registerDescription {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    color: #333;
+    outline: none;
+    transition: border-color 0.3s ease-in-out;
 }
 
-/* Animação */
-@keyframes slideIn {
+/* Efeito ao focar no campo */
+#editDateOfBirth:focus, .defaultDate:focus, #registerYear:focus, #registerDescription:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+/* Ajusta o ícone do calendário */
+#editDateOfBirth::-webkit-calendar-picker-indicator, .defaultDate::-webkit-calendar-picker-indicator, #registerYear::-webkit-calendar-picker-indicator, #registerDescription::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(50%);
+}
+
+
+/* Estiliza especificamente o campo de Data de Nascimento no modal */
+#registerDateOfBirth {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    color: #333;
+    outline: none;
+    transition: border-color 0.3s ease-in-out;
+}
+
+/* Efeito ao focar no campo */
+#registerDateOfBirth:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+/* Ajusta o ícone do calendário */
+#registerDateOfBirth::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(50%);
+}
+
+
+
+/* Animação de entrada */
+@keyframes fadeInDown {
     from {
-        transform: translateX(100%);
-        opacity: 0;
+      opacity: 0;
+      transform: translateY(-20px);
     }
     to {
-        transform: translateX(0);
-        opacity: 1;
+      opacity: 1;
+      transform: translateY(0);
     }
 }
 
-/* Estado ativo do popup */
-#message-popup.active {
-    display: block;
-    opacity: 1;
-    animation: slideIn 0.3s ease-out;
-}
-
-/* Estilo específico para loading */
-.popup.loading {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2001;
-}
-
-/* Loading */
-#loading {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 2001;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    pointer-events: none; /* Permite cliques por padrão */
-}
-
-#loading:not([hidden]) {
-    display: flex;
-    pointer-events: auto; /* Bloqueia cliques apenas quando visível */
-}
-
-/* Spinner do loading */
-.spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Previne scroll durante loading */
-body.loading-active {
-    overflow: hidden;
-}
-
-/* Estilo para botões desabilitados */
-.btn:disabled,
-.btn.disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-
-/* Específico para botão de salvar */
-.btn-save:disabled,
-.btn-save.disabled {
-    background: #cccccc;
-    border-color: #bbbbbb;
-    color: #666666;
-}
-
-/* Spinner para os selects */
-.select-spinner {
+/* Botão de fechar */
+.modal-content .close {
     position: absolute;
-    right: 30px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #3498db;
-    border-radius: 50%;
-    animation: spinSelect 1s linear infinite;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    color: var(--subtext-color);
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+.modal-content .close:hover {
+    color: var(--text-color);
+}
+
+/* Título do modal */
+.modal-content h2 {
+    margin-top: 0;
+    font-size: 24px;
+    color: var(--text-color);
+    margin-bottom: 20px;
+    font-family: var(--heading-font);
+}
+
+/* Estilo dos parágrafos */
+.modal-content p {
+    color: var(--subtext-color);
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+/* Labels */
+.modal-content label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+/* Inputs e selects */
+.modal-content input[type="text"],
+.modal-content input[type="email"],
+.modal-content select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+/* Botões */
+.modal-content .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: var(--font-family);
+}
+
+/* Botões de confirmação e salvamento */
+.modal-content .btn-confirm,
+.modal-content .btn-save {
+    background-color: var(--primary-color);
+    color: var(--form-bg);
+    transition: background-color 0.3s ease;
+}
+.modal-content .btn-confirm:hover,
+.modal-content .btn-save:hover {
+    background-color: var(--primary-hover);
+}
+
+/* Botão de cancelamento */
+.modal-content .btn-cancel {
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+.modal-content .btn-cancel:hover {
+    background-color: var(--primary-color);
+    color: var(--form-bg);
+}
+
+/* Espaçamento entre botões no formulário */
+.modal-content form button {
+    margin-right: 10px;
+}
+.modal-content form button:last-child {
+    margin-right: 0;
+}
+
+.btn-addUsers, .btn-addDistrict, .btn-addGrade {
+    font-size: 14px;
+    display: inline-flex;  /* Faz o botão ocupar somente o espaço do texto */
+    padding: 8px 15px;     /* Ajusta o espaçamento ao redor do texto */
+    margin: 0;
+    width:fit-content;  
+}
+
+/* Fechar o modal */
+.close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Ocultar a tabela quando o modal estiver aberto */
+.modal-active .admin-master-container {
     display: none;
 }
 
-@keyframes spinSelect {
-    0% { transform: translateY(-50%) rotate(0deg); }
-    100% { transform: translateY(-50%) rotate(360deg); }
+.topPageElements {
+    display: block;
+    align-items: left;
+    gap: 15px;
+    box-sizing: border-box;  
 }
 
-.select-wrapper {
+.topPageElements button {
+    margin-bottom: 10px;
+}   
+
+.user-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: left;
     position: relative;
 }
 
-.select-wrapper.loading .select-spinner {
-    display: block;
+/* Esconde os labels, mas mantém acessibilidade */
+.user-filter label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
 }
 
-/* USERS */
+/* Estilização APENAS dos campos de filtro, sem alterar botões */
+.user-filter select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    color: #333;
+    background-color: #fff;
+    min-width: 180px;
+    height: 38px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23555' d='M6 8.825l-4.9-4.9c-.3-.3-.3-.77 0-1.07s.77-.3 1.07 0L6 6.685l3.83-3.83c.3-.3.77-.3 1.07 0s.3.77 0 1.07l-4.9 4.9z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    padding-right: 30px;
+}
+
+/* Apenas o estado de foco para os selects */
+.user-filter select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* Criar um container para os campos de filtro */
+.filter-fields {
+    display: flex;
+    flex-wrap: nowrap; /* Impede que os campos quebrem para a próxima linha */
+    gap: 10px;
+    width: 100%;
+    overflow-x: auto; /* Adiciona rolagem horizontal se necessário */
+    padding-bottom: 5px; /* Espaço para a scrollbar */
+}
+
+/* Container específico para os botões de filtro */
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px; /* Espaço entre os campos e os botões */
+    width: 100%;
+    justify-content: flex-start;
+}
+
+/* Ajustes nos botões de filtro */
+#filterUsers, #cleanFilter {
+    padding: 8px 15px;
+    font-size: 14px;
+    border: none;
+    color: #fff;
+    background-color: var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto; /* Impede que os botões se expandam */
+    min-width: 100px; /* Largura mínima para os botões */
+}
+
+.filter-buttons {
+    display: flex;
+}
+
 .no-results {
     text-align: center;
     padding: 30px 0;
@@ -305,4 +507,21 @@ body.loading-active {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* Ajuste para responsividade em telas menores */
+@media (max-width: 768px) {
+    .filter-buttons {
+        justify-content: center; /* Centraliza os botões em telas menores */
+    }
+    
+    #filterUsers, #cleanFilter {
+        flex: 1; /* Em telas menores, permite que os botões ocupem toda a largura */
+        max-width: 200px; /* Mas com um limite máximo */
+    }
+
+    .filter-fields {
+        flex-wrap: wrap;
+        overflow-x: visible;
+    }
 }

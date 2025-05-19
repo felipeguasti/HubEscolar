@@ -8,15 +8,26 @@ const DISTRICT_SERVICE_URL = process.env.DISTRICT_SERVICE_URL;
 const CACHE_TTL = 24 * 60 * 60; // 24 horas em segundos
 
 class HeaderService {
-    async getOrCreateHeader(schoolId, authToken) {
+        async getOrCreateHeader(schoolId, authToken) {
         logger.info(`Iniciando getOrCreateHeader para schoolId: ${schoolId}`);
-
+    
+        // 1. Primeiro tentamos buscar do cache
         let header = await this.getFromCache(schoolId);
         if (header) {
             logger.info('Header encontrado no cache');
-            return header;
+            
+            // Verificar se todos os campos necessários estão presentes
+            if (header.schoolLogo !== undefined && 
+                header.districtLogo !== undefined && 
+                header.line1 && 
+                header.line2) {
+                return header;
+            } else {
+                logger.info('Header no cache está incompleto, buscando do banco');
+            }
         }
-
+    
+        // 2. Se não estiver no cache ou estiver incompleto, buscamos do banco
         header = await Header.findOne({ where: { schoolId } });
         
         if (!header) {
@@ -26,15 +37,37 @@ class HeaderService {
             logger.info('Header precisa ser atualizado');
             await this.updateHeaderCache(header, authToken);
         }
-
-        logger.info('Header antes de cache:', {
+    
+        // Log completo para debug
+        logger.info('Header recuperado/criado:', {
+            id: header?.id,
             schoolId: header?.schoolId,
-            hasLine1: !!header?.line1,
-            hasLine2: !!header?.line2
+            districtId: header?.districtId,
+            schoolLogo: header?.schoolLogo,
+            districtLogo: header?.districtLogo,
+            line1: header?.line1,
+            line2: header?.line2
         });
-
-        await this.setCache(schoolId, header);
-        return header;
+    
+        // Garantir que o objeto retornado tem todos os campos, mesmo que nulos
+        const fullHeader = {
+            id: header.id,
+            schoolId: header.schoolId,
+            districtId: header.districtId,
+            schoolLogo: header.schoolLogo || null,  // Garantir que não é undefined
+            districtLogo: header.districtLogo || null,
+            line1: header.line1,
+            line2: header.line2,
+            cachedSchoolName: header.cachedSchoolName,
+            cachedDistrictName: header.cachedDistrictName,
+            cachedState: header.cachedState,
+            cachedAddress: header.cachedAddress,
+            lastCacheUpdate: header.lastCacheUpdate
+        };
+    
+        // Atualizar o cache com todos os dados
+        await this.setCache(schoolId, fullHeader);
+        return fullHeader;
     }
 
     async createNewHeader(schoolId, authToken) {
@@ -50,6 +83,10 @@ class HeaderService {
 
             const formattedAddress = this.formatAddress(schoolData);
             console.log('Endereço formatado:', formattedAddress);
+
+            // Definir valores padrão para line1 e line2
+            const line1 = `ESTADO DO ${districtData.state || 'ES'}`;
+            const line2 = `SECRETARIA DE EDUCAÇÃO - ${districtData.name || ''}`;
 
             // Debug point antes de criar o header
             const headerData = {

@@ -1,0 +1,182 @@
+
+<section class="admin-master-container">
+    <!-- Incluir o Menu Lateral (Partial) -->
+    <%- include('partials/admin-sidebar') %>
+
+    <!-- Conteúdo Principal -->
+    <main class="admin-master-content">
+        <header class="admin-master-header">
+            <h1>Perfil da Escola</h1>
+            <p>Visualização e configuração dos dados da escola.</p>
+        </header>
+
+        <!-- ID oculto para uso em JavaScript -->
+        <input type="hidden" id="schoolId" value="<%= school.id %>">
+        <input type="hidden" id="userRole" value="<%= user.role %>">
+        <input type="hidden" id="userSchoolId" value="<%= user.schoolId %>">
+
+        <!-- Dados Básicos da Escola -->
+        <div class="card-container">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Informações da Escola</h2>
+                    <% if(canEdit) { %>
+                        <button id="btn-edit-school" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                    <% } %>
+                </div>
+                <div class="card-body">
+                    <form id="schoolForm" class="school-info">
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="schoolName">Nome</label>
+                                <input type="text" class="form-control" id="schoolName" value="<%= school.name %>" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group half-width">
+                                <label>Superintendência</label>
+                                <input type="text" class="form-control" value="<%= school.district ? school.district.name : 'Não definido' %>" readonly>
+                            </div>
+                            <div class="form-group half-width">
+                                <label for="schoolTelephone">Telefone</label>
+                                <input type="text" class="form-control" id="schoolTelephone" value="<%= school.telephone || 'Não definido' %>" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="schoolAddress">Endereço</label>
+                                <input type="text" class="form-control" id="schoolAddress" value="<%= school.address || 'Não definido' %>" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group third-width">
+                                <label for="schoolCity">Cidade</label>
+                                <input type="text" class="form-control" id="schoolCity" value="<%= school.city || 'Não definido' %>" readonly>
+                            </div>
+                            <div class="form-group third-width">
+                                <label for="schoolState">Estado</label>
+                                <input type="text" class="form-control" id="schoolState" value="<%= school.state || 'Não definido' %>" readonly>
+                            </div>
+                            <div class="form-group third-width">
+                                <label for="schoolCep">CEP</label>
+                                <input type="text" class="form-control" id="schoolCep" value="<%= school.cep || 'Não definido' %>" readonly>
+                            </div>
+                        </div>
+                        
+                        <!-- Botões de Salvar/Cancelar (escondidos inicialmente) -->
+                        <div class="form-row edit-controls" style="display: none;">
+                            <div class="form-buttons">
+                                <button type="button" class="btn btn-secondary" id="btn-cancel">Cancelar</button>
+                                <button type="button" class="btn btn-success" id="btn-save">Salvar Alterações</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Status e Informações Rápidas -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Status</h2>
+                </div>
+                <div class="card-body">
+                    <div class="info-item">
+                        <label>Status da Escola</label>
+                        <div>
+                            <span class="badge <%= school.status === 'active' ? 'badge-success' : 'badge-danger' %>">
+                                <%= school.status === 'active' ? 'Ativa' : 'Inativa' %>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <label>Data de Cadastro</label>
+                        <div>
+                            <%= new Date(school.createdAt).toLocaleDateString('pt-BR') %>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <label>Última Atualização</label>
+                        <div>
+                            <%= new Date(school.updatedAt).toLocaleDateString('pt-BR') %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuração do WhatsApp -->
+        <% if(canConfigWhatsApp) { %>
+        <div class="card-container">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Configuração do WhatsApp</h2>
+                    <div>
+                        <button id="btn-connect-whatsapp" class="btn btn-success">
+                            <i class="fas fa-qrcode"></i> Conectar WhatsApp
+                        </button>
+                        <button id="btn-disconnect-whatsapp" class="btn btn-danger">
+                            <i class="fas fa-unlink"></i> Desconectar
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="whatsapp-container">
+                        <div class="whatsapp-status">
+                            <div id="status-container" class="text-center">
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
+                                    <p>Verificando status...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="whatsapp-qrcode">
+                            <div id="qrcode-container" class="text-center" style="display: none;">
+                                <h3>Escaneie o QR Code para conectar</h3>
+                                <img src="" alt="QR Code" id="qr-image" style="max-width: 250px;" />
+                                <div class="qr-actions">
+                                    <button id="btn-refresh-qr" class="btn btn-primary">
+                                        <i class="fas fa-sync"></i> Atualizar QR Code
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="whatsapp-info">
+                                <div class="alert-box info">
+                                    <h3><i class="fas fa-info-circle"></i> Informações sobre o WhatsApp</h3>
+                                    <p>Configure o WhatsApp para enviar mensagens automatizadas para alunos e responsáveis.</p>
+                                    <ol>
+                                        <li>Clique em "Conectar WhatsApp"</li>
+                                        <li>Escaneie o QR Code com seu celular</li>
+                                        <li>Aguarde a confirmação da conexão</li>
+                                    </ol>
+                                    <p><strong>Importante:</strong> O celular usado para escanear o QR Code deve permanecer conectado à internet para que as mensagens sejam enviadas.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- Popups e Loading -->
+        <div class="popup-container">
+            <!-- Loading -->
+            <div id="loading" class="popup loading">
+                <div class="spinner"></div>
+            </div>
+
+            <!-- Message Popup -->
+            <div id="message-popup" class="popup message">
+                <div class="popup-content">
+                    <span id="message-text"></span>
+                    <button class="close-popup">&times;</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</section>

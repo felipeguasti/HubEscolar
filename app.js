@@ -31,6 +31,7 @@ const dashboardRoutes = require('./src/routes/dashboard');
 const reportRoutes = require('./src/routes/reportRoutes');
 const featureRoutes = require('./src/routes/featureRoutes');
 const headerRoutes = require('./src/routes/headerRoutes');
+const whatsappRoutes = require('./src/routes/whatsappRoutes');
 console.log('[HubEscolar - app.js] Módulos de rotas importados.');
 
 // Validação das variáveis de ambiente
@@ -123,6 +124,9 @@ app.use('/features', featureRoutes);
 console.log('[HubEscolar - app.js] Rotas de ferramentas carregadas.');
 app.use('/reports/headers', headerRoutes);
 console.log('[HubEscolar - app.js] Rotas de cabeçalhos carregadas.');
+app.use('/whatsapp', whatsappRoutes);
+console.log('[HubEscolar - app.js] Rotas de cabeçalhos carregadas.');
+
 
 // Rota inicial
 app.get('/', (req, res) => {

@@ -9,6 +9,35 @@ const { Op } = require('sequelize');
 const PDFDocument = require('pdfkit');
 const axios = require('axios');
 const USERS_SERVICE_URL = process.env.USERS_SERVICE_URL;
+const GRADE_SERVICE_URL = process.env.GRADE_SERVICE_URL;
+
+async function getStudentClassName(gradeId, accessToken) {
+    if (!gradeId) {
+        logger.info('GradeId não fornecido, retornando "Turma não informada"');
+        return 'Turma não informada';
+    }
+
+    try {
+        logger.info(`Buscando informações da turma ID: ${gradeId}`);
+        const response = await axios.get(`${GRADE_SERVICE_URL}/grades/${gradeId}`, {
+            headers: { 
+                Authorization: `Bearer ${accessToken}` 
+            },
+            timeout: 5000
+        });
+
+        if (response.status === 200 && response.data && response.data.status === 'success' && response.data.data) {
+            logger.info(`Informações da turma obtidas com sucesso: ${response.data.data.name}`);
+            return response.data.data.name;
+        } else {
+            logger.warn(`Resposta inesperada ao buscar turma ${gradeId}: ${JSON.stringify(response.data)}`);
+            return `Turma ${gradeId}`;
+        }
+    } catch (error) {
+        logger.error(`Erro ao buscar informações da turma ${gradeId}: ${error.message}`);
+        return `Turma ${gradeId}`;
+    }
+}
 
 async function createReport(req, res) {
     try {
@@ -44,6 +73,10 @@ async function createReport(req, res) {
         const student = studentVerification.data;
         logger.info(`Aluno verificado: ID ${student.id}, Nome: ${student.name}`);
 
+        // Buscar o nome da turma do aluno
+        let studentClassName = await getStudentClassName(student.gradeId, accessToken);
+        logger.info(`Nome da turma do aluno: ${studentClassName}`);
+
         // 4. Buscar informações do usuário que fez a requisição
         let requesterUserDetails = null;
         if (requesterUser && requesterUser.id) {
@@ -66,7 +99,7 @@ async function createReport(req, res) {
         if (reportText) {
           const report = await Report.create({
             studentId: student.id,
-            studentClass: student.class || 'Não informada',
+            studentClass: studentClassName, // Usando o nome da turma obtido
             createdById: requesterUserDetails?.id,
             createdByRole: requesterUserDetails?.role,
             content: reportText,
@@ -137,6 +170,10 @@ async function createManualReport(req, res) {
       const student = studentVerification.data;
       logger.info(`Aluno verificado para relatório manual: ID ${student.id}, Nome: ${student.name}`);
 
+      // Buscar o nome da turma do aluno
+      let studentClassName = await getStudentClassName(student.gradeId, accessToken);
+      logger.info(`Nome da turma do aluno para relatório manual: ${studentClassName}`);
+
       // 5. Buscar informações do usuário que fez a requisição
       let requesterUserDetails = null;
       if (requesterUser && requesterUser.id) {
@@ -188,7 +225,7 @@ async function createManualReport(req, res) {
       }
 
       // 9. Montar o texto do relatório
-      let reportText = `O(a) aluno(a), ${student.name}, ${student.class ? `do ${student.class},` : 'da turma não informada,'} na data de hoje, ${hoje}, foi atendido(a) pelo(a) ${requesterUserDetails ? requesterUserDetails.role : 'usuário'}(a) ${requesterUserDetails ? requesterUserDetails.name : 'não identificado(a)'}`;
+      let reportText = `O(a) aluno(a), ${student.name}, ${studentClassName ? `do ${studentClassName},` : 'da turma não informada,'} na data de hoje, ${hoje}, foi atendido(a) pelo(a) ${requesterUserDetails ? requesterUserDetails.role : 'usuário'}(a) ${requesterUserDetails ? requesterUserDetails.name : 'não identificado(a)'}`;
 
       if (suspended && suspensionDuration > 0) {
           reportText += ` e foi suspenso(a) por ${suspensionDuration} dia(s)`;
@@ -226,7 +263,7 @@ async function createManualReport(req, res) {
       // Adicionar aqui o salvamento no banco antes do retorno
       const report = await Report.create({
         studentId: student.id,
-        studentClass: student.class || 'Não informada',
+        studentClass: studentClassName, // Usando o nome da turma obtido
         createdById: requesterUserDetails?.id,
         createdByRole: requesterUserDetails?.role,
         content: reportText,

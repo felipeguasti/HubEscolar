@@ -372,7 +372,20 @@ exports.atualizarUsuario = [
     body('state').optional(),
     body('zip').optional().custom(validarCEP).optional().customSanitizer(value => value ? value.replace(/[^\d]/g, '').padStart(8, '0') : value),
     body('horario').optional().isIn(['Manhã', 'Tarde', 'Noite', 'Integral']).withMessage('Horário inválido'),
-    body('gradeId').optional().isInt().withMessage('ID da turma deve ser um número inteiro'),
+    body('gradeId')
+        .optional()
+        .custom((value, { req }) => {
+            // Se o usuário for um Aluno, o valor deve ser um número inteiro
+            if (req.body.role === 'Aluno') {
+                if (!value || isNaN(parseInt(value))) {
+                    throw new Error('ID da turma deve ser um número inteiro para alunos');
+                }
+                return true;
+            }
+            
+            // Para outros papéis, permitir null
+            return true;
+        }),
     body('content').optional(),
     body('status').optional().isIn(['active', 'inactive']).withMessage('Status inválido'),
 

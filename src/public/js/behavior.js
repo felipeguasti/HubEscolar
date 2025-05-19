@@ -1,6 +1,14 @@
 document.addEventListener('DOMContentLoaded', function() {
     const isBehavior = window.location.pathname.includes("behavior");
     if (isBehavior) {
+        // Declarar no escopo global para uso em todas as funções
+        if (typeof MessageTracker !== 'undefined') {
+            window.messageTracker = new MessageTracker();
+            window.messageTracker.connectSocket();
+        } else {
+            console.warn('MessageTracker não está disponível. Funcionalidades de WhatsApp não estarão disponíveis.');
+        }
+        
         const searchStudentInput = document.getElementById('report-form-search-student');
         const autocompleteResultsList = document.getElementById('report-form-autocomplete-results');
         const selectedStudentsTable = document.getElementById('report-form-selected-students');
@@ -40,17 +48,69 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        function displayAutocompleteResults(students) {
+                // Modificar a função displayAutocompleteResults para buscar os nomes das turmas
+        async function displayAutocompleteResults(students) {
             autocompleteResultsList.innerHTML = '';
             highlightedIndex = -1; // Resetar o índice ao exibir novos resultados
-
+        
             if (students && students.length > 0) {
-                students.forEach((student, index) => {
+                // Objeto para armazenar em cache os nomes de turmas já buscados
+                const gradeCache = {};
+                
+                // Função auxiliar para buscar o nome da turma
+                                // Função auxiliar para buscar o nome da turma
+                async function getGradeName(gradeId) {
+                    // Se não tiver ID da turma, retornar string padrão
+                    if (!gradeId) return 'Sem turma';
+                    
+                    // Se já tivermos o nome da turma em cache, usar o cache
+                    if (gradeCache[gradeId]) return gradeCache[gradeId];
+                    
+                    try {
+                        const response = await fetch(`/grades/${gradeId}`);
+                        if (!response.ok) throw new Error(`Erro na requisição: ${response.status}`);
+                        
+                        const responseData = await response.json();
+                        
+                        // Verificar a estrutura da resposta e acessar o nome corretamente
+                        if (responseData.status === 'success' && responseData.data && responseData.data.name) {
+                            // A resposta tem formato: {"status":"success","data":{"id":16,"name":"1ºI05",...}}
+                            const gradeName = responseData.data.name;
+                            
+                            // Armazenar em cache para futuras referências
+                            gradeCache[gradeId] = gradeName;
+                            return gradeName;
+                        } else {
+                            console.error(`Formato de resposta inesperado para turma ${gradeId}:`, responseData);
+                            return `Turma ${gradeId}`;
+                        }
+                    } catch (error) {
+                        console.error(`Erro ao buscar turma ${gradeId}:`, error);
+                        return `Turma ${gradeId}`;
+                    }
+                }
+                
+                // Para exibir uma mensagem de carregamento enquanto buscamos os nomes das turmas
+                const loadingItem = document.createElement('li');
+                loadingItem.textContent = 'Carregando informações das turmas...';
+                autocompleteResultsList.appendChild(loadingItem);
+                
+                // Buscar os nomes das turmas e atualizar a lista
+                const studentsWithGradeNames = await Promise.all(students.map(async (student) => {
+                    const gradeName = await getGradeName(student.gradeId);
+                    return { ...student, gradeName };
+                }));
+                
+                // Limpar a mensagem de carregamento
+                autocompleteResultsList.innerHTML = '';
+                
+                // Exibir os alunos com os nomes das turmas
+                studentsWithGradeNames.forEach((student, index) => {
                     const listItem = document.createElement('li');
-                    listItem.textContent = `${student.name} (${student.userClass || 'Sem turma'})`;
+                    listItem.textContent = `${student.name} (${student.gradeName})`;
                     listItem.dataset.studentId = student.id;
                     listItem.dataset.studentName = student.name;
-                    listItem.dataset.studentClass = student.userClass || 'Sem turma';
+                    listItem.dataset.studentClass = student.gradeName; // Usando o nome da turma em vez do ID
                     listItem.addEventListener('click', addStudentToSelection);
                     autocompleteResultsList.appendChild(listItem);
                 });
@@ -178,161 +238,234 @@ document.addEventListener('DOMContentLoaded', function() {
             parentsMeetingGroup.style.display = this.checked ? 'block' : 'none';
         });
 
-        submitReportButton.addEventListener('click', async function() {
-            const selectedStudentsTable = document.getElementById('report-form-selected-students-list');
-            const studentRows = selectedStudentsTable.querySelectorAll('tr');
-            const numStudents = studentRows.length;
-            let studentsProcessed = 0;
+        // Modificar o event listener do botão submitReportButton
+submitReportButton.addEventListener('click', async function() {
+    // Verificar se pelo menos um aluno foi selecionado
+    const selectedStudentsTable = document.getElementById('report-form-selected-students-list');
+    const studentRows = selectedStudentsTable.querySelectorAll('tr');
+    
+    if (studentRows.length === 0) {
+        showNotification('Por favor, selecione pelo menos um aluno.', 'error');
+        return;
+    }
+    
+    // Verificar campos obrigatórios com base no modo (manual ou IA)
+    if (toggleIA.checked) {
+        // Modo IA
+        const iaSummary = document.getElementById('report-form-ia-summary').value.trim();
+        if (!iaSummary) {
+            showNotification('Por favor, forneça um resumo do ocorrido para a IA.', 'error');
+            // Destacar o campo com erro
+            document.getElementById('report-form-ia-summary').classList.add('error-field');
+            document.getElementById('report-form-ia-summary').addEventListener('input', function() {
+                this.classList.remove('error-field');
+            }, { once: true });
+            return;
+        }
+    } else {
+        // Modo Manual
+        // 1. Verificar se uma opção de ato indisciplinar foi selecionada
+        const disciplinaryOptionsSelect = document.getElementById('report-form-disciplinary-options');
+        if (disciplinaryOptionsSelect.selectedIndex === 0) {
+            showNotification('Por favor, selecione uma opção de ato disciplinar.', 'error');
+            // Destacar o campo com erro
+            disciplinaryOptionsSelect.classList.add('error-field');
+            disciplinaryOptionsSelect.addEventListener('change', function() {
+                this.classList.remove('error-field');
+            }, { once: true });
+            return;
+        }
+        
+        // 2. Verificar se o campo de observação foi preenchido
+        const reportObservation = document.getElementById('report-form-observation').value.trim();
+        if (!reportObservation) {
+            showNotification('Por favor, preencha o campo de observação.', 'error');
+            // Destacar o campo com erro
+            document.getElementById('report-form-observation').classList.add('error-field');
+            document.getElementById('report-form-observation').addEventListener('input', function() {
+                this.classList.remove('error-field');
+            }, { once: true });
+            return;
+        }
+        
+        // 3. Verificar campos condicionais
+        const suspended = document.getElementById('report-form-suspended').checked;
+        if (suspended) {
+            const suspensionDuration = document.getElementById('report-form-suspension-duration').value;
+            if (!suspensionDuration || suspensionDuration <= 0) {
+                showNotification('Por favor, informe a duração da suspensão.', 'error');
+                // Destacar o campo com erro
+                document.getElementById('report-form-suspension-duration').classList.add('error-field');
+                document.getElementById('report-form-suspension-duration').addEventListener('input', function() {
+                    this.classList.remove('error-field');
+                }, { once: true });
+                return;
+            }
+        }
+        
+        const callParents = document.getElementById('report-form-call-parents').checked;
+        if (callParents) {
+            const parentsMeeting = document.getElementById('report-form-parents-meeting-datetime').value;
+            if (!parentsMeeting) {
+                showNotification('Por favor, informe a data e hora da reunião com os responsáveis.', 'error');
+                // Destacar o campo com erro
+                document.getElementById('report-form-parents-meeting-datetime').classList.add('error-field');
+                document.getElementById('report-form-parents-meeting-datetime').addEventListener('input', function() {
+                    this.classList.remove('error-field');
+                }, { once: true });
+                return;
+            }
+        }
+    }
+    
+    // Se passou por todas as validações, continuar com o processamento original
+    const numStudents = studentRows.length;
+    let studentsProcessed = 0;
 
+    if (toggleIA.checked) {
+        const topics = document.getElementById('report-form-ia-summary').value.trim();
         
-            if (toggleIA.checked) {
-                const topics = document.getElementById('report-form-ia-summary').value.trim();
-                if (!topics) {
-                    alert('Por favor, forneça um resumo do ocorrido para a IA.');
-                    return;
-                }
+        for (const row of studentRows) {
+            const studentId = row.dataset.userId;
+            
+            if (studentId) {
+                showLoading();
+                try {
+                    const response = await fetch('/reports/create', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            studentId: studentId,
+                            topics: topics,
+                        }),
+                    });
+                    const data = await response.json();
+                    console.log(`Relatório de IA para o aluno ${studentId} enviado com sucesso:`, data);
+                    hideLoading();
         
-                for (const row of studentRows) {
-                    const studentId = row.dataset.userId;
+                    const studentName = row.querySelector('td:first-child').textContent || 'Nome não encontrado';
+                    const popupContent = `
+                        <div style="text-align: left;">
+                            <strong>Nome:</strong> ${studentName}<br>
+                            <strong>Data:</strong> ${formatarData(new Date())}<br>
+                            <strong>Assunto:</strong> Relatório gerado pela IA<br>
+                            <br>
+                            <div style="text-align: left;">
+                                ${data.report ? `<div style="text-align: left;">${data.report}</div>` : 'Nenhum relatório detalhado gerado.'}
+                            </div>
+                            <div style="background-color: #f0f7f0; color: #2e8b57; padding: 10px; margin-top: 15px; border-radius: 5px; text-align: center; font-weight: bold;">
+                                Relatório Salvo
+                            </div>
+                        </div>
+                    `;
+                    // Assumindo que sua função showPopup retorna uma Promise quando fechada
+                    await showPopup(popupContent || 'Relatório manual enviado com sucesso.');
         
-                    if (studentId) {
-                        showLoading();
-                        try {
-                            const response = await fetch('/reports/create', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    studentId: studentId,
-                                    topics: topics,
-                                }),
-                            });
-                            const data = await response.json();
-                            console.log(`Relatório de IA para o aluno ${studentId} enviado com sucesso:`, data);
-                            hideLoading();
-        
-                            const studentName = row.querySelector('td:first-child').textContent || 'Nome não encontrado';
-                            const popupContent = `
-                                <div style="text-align: left;">
-                                    <strong>Nome:</strong> ${studentName}<br>
-                                    <strong>Data:</strong> ${formatarData(new Date())}<br>
-                                    <strong>Assunto:</strong> Relatório gerado pela IA<br>
-                                    <br>
-                                    <div style="text-align: left;">
-                                        ${data.report ? `<div style="text-align: left;">${data.report}</div>` : 'Nenhum relatório detalhado gerado.'}
-                                    </div>
-                                    <div style="background-color: #f0f7f0; color: #2e8b57; padding: 10px; margin-top: 15px; border-radius: 5px; text-align: center; font-weight: bold;">
-                                        Relatório Salvo
-                                    </div>
-                                </div>
-                            `;
-                            // Assumindo que sua função showPopup retorna uma Promise quando fechada
-                            await showPopup(popupContent || 'Relatório manual enviado com sucesso.');
-        
-                        } catch (error) {
-                            console.error(`Erro ao enviar relatório de IA para o aluno ${studentId}:`, error);
-                            hideLoading();
-                            await showPopup('Erro ao enviar relatório de IA.');
-                        } finally {
-                            studentsProcessed++;
-                            if (studentsProcessed === numStudents) {
-                                window.location.reload(); // Atualiza a página após o último aluno
-                            }
-                        }
-                    } else {
-                        console.warn("Não foi possível encontrar o studentId para uma linha da tabela (IA).");
-                        studentsProcessed++;
-                        if (studentsProcessed === numStudents) {
-                            window.location.reload(); // Atualiza a página mesmo se houver um erro com o ID do aluno
-                        }
+                } catch (error) {
+                    console.error(`Erro ao enviar relatório de IA para o aluno ${studentId}:`, error);
+                    hideLoading();
+                    await showPopup('Erro ao enviar relatório de IA.');
+                } finally {
+                    studentsProcessed++;
+                    if (studentsProcessed === numStudents) {
+                        window.location.reload(); // Atualiza a página após o último aluno
                     }
                 }
             } else {
-                for (const row of studentRows) {
-                    const studentId = row.dataset.userId;
-        
-                    if (studentId) {
-                        showLoading();
-                        const reportLevelElements = document.querySelectorAll('input[name="disciplinary-level"]:checked');
-                        const reportLevel = reportLevelElements.length > 0 ? reportLevelElements[0].value : '';
-                        const disciplinaryOptionsSelect = document.getElementById('report-form-disciplinary-options');
-                        const selectedOption = disciplinaryOptionsSelect.options[disciplinaryOptionsSelect.selectedIndex];
-                        const reportObservation = document.getElementById('report-form-observation').value.trim();
-                        const reportRecommendation = document.getElementById('report-form-forwarding').value.trim();
-                        const suspended = document.getElementById('report-form-suspended').checked;
-                        const suspensionDuration = suspended ? parseInt(document.getElementById('report-form-suspension-duration').value) : null;
-                        const callParents = document.getElementById('report-form-call-parents').checked;
-                        const parentsMeeting = callParents ? document.getElementById('report-form-parents-meeting-datetime').value : null;
-                        const disciplinaryActIndex = selectedOption.dataset.actIndex;
-                        const reportContentText = selectedOption.value;
-        
-                        try {
-                            const response = await fetch('/reports/create/manual', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    studentId: studentId,
-                                    suspended: suspended,
-                                    suspensionDuration: suspensionDuration,
-                                    callParents: callParents,
-                                    parentsMeeting: parentsMeeting,
-                                    reportLevel: reportLevel,
-                                    disciplinaryActIndex: disciplinaryActIndex,
-                                    reportContentText: reportContentText,
-                                    reportObservation: reportObservation,
-                                    reportRecommendation: reportRecommendation,
-                                }),
-                            });
-                            const data = await response.json();
-                            console.log(`Relatório manual para o aluno ${studentId} enviado com sucesso:`, data);
-                            hideLoading();
-        
-                            const studentName = row.querySelector('td:first-child').textContent || 'Nome não encontrado';
-                            let popupContent = `
-                                <div style="text-align: left;">
-                                    <h3>Relatório disciplinar</h3>
-                                    <strong>Nome:</strong> ${studentName}<br>
-                                    <strong>Data:</strong> ${formatarData(new Date())}<br>
-                                    <strong>Assunto:</strong> ${reportContentText}<br>
-                                    <strong>Suspenso:</strong> ${suspended ? 'Sim' : 'Não'}<br>
-                                    <strong>Convocar o responsável:</strong> ${callParents ? 'Sim' : 'Não'}<br>
-                                    ${callParents && parentsMeeting ? `<strong>Dia da reunião com o responsável:</strong> ${formatarDataHora(parentsMeeting)}<br>` : ''}
-                                    <br>
-                                    <div style="text-align: left;">
-                                        ${data.report ? `<div style="text-align: left;">${data.report}</div>` : 'Nenhum relatório detalhado retornado.'}
-                                    </div>
-                                    <div style="background-color: #f0f7f0; color: #2e8b57; padding: 10px; margin-top: 15px; border-radius: 5px; text-align: center; font-weight: bold;">
-                                        Relatório Salvo
-                                    </div>
-                                </div>
-                            `;
-                            // Assumindo que sua função showPopup retorna uma Promise quando fechada
-                            await showPopup(popupContent || 'Relatório enviado com sucesso.');
-        
-                        } catch (error) {
-                            console.error(`Erro ao enviar relatório manual para o aluno ${studentId}:`, error);
-                            hideLoading();
-                            await showPopup('Erro ao enviar relatório.');
-                        } finally {
-                            studentsProcessed++;
-                            if (studentsProcessed === numStudents) {
-                                window.location.reload(); // Atualiza a página após o último aluno
-                            }
-                        }
-                    } else {
-                        console.warn("Não foi possível encontrar o studentId para uma linha da tabela (manual).");
-                        studentsProcessed++;
-                        if (studentsProcessed === numStudents) {
-                            window.location.reload(); 
-                        }
-                    } 
+                console.warn("Não foi possível encontrar o studentId para uma linha da tabela (IA).");
+                studentsProcessed++;
+                if (studentsProcessed === numStudents) {
+                    window.location.reload(); // Atualiza a página mesmo se houver um erro com o ID do aluno
                 }
             }
-            loadTodayReports();
-        });
+        }
+    } else {
+        for (const row of studentRows) {
+            const studentId = row.dataset.userId;
+        
+            if (studentId) {
+                showLoading();
+                const reportLevelElements = document.querySelectorAll('input[name="disciplinary-level"]:checked');
+                const reportLevel = reportLevelElements.length > 0 ? reportLevelElements[0].value : '';
+                const disciplinaryOptionsSelect = document.getElementById('report-form-disciplinary-options');
+                const selectedOption = disciplinaryOptionsSelect.options[disciplinaryOptionsSelect.selectedIndex];
+                const reportObservation = document.getElementById('report-form-observation').value.trim();
+                const reportRecommendation = document.getElementById('report-form-forwarding').value.trim();
+                const suspended = document.getElementById('report-form-suspended').checked;
+                const suspensionDuration = suspended ? parseInt(document.getElementById('report-form-suspension-duration').value) : null;
+                const callParents = document.getElementById('report-form-call-parents').checked;
+                const parentsMeeting = callParents ? document.getElementById('report-form-parents-meeting-datetime').value : null;
+                const disciplinaryActIndex = selectedOption.dataset.actIndex;
+                const reportContentText = selectedOption.value;
+        
+                try {
+                    const response = await fetch('/reports/create/manual', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            studentId: studentId,
+                            suspended: suspended,
+                            suspensionDuration: suspensionDuration,
+                            callParents: callParents,
+                            parentsMeeting: parentsMeeting,
+                            reportLevel: reportLevel,
+                            disciplinaryActIndex: disciplinaryActIndex,
+                            reportContentText: reportContentText,
+                            reportObservation: reportObservation,
+                            reportRecommendation: reportRecommendation,
+                        }),
+                    });
+                    const data = await response.json();
+                    console.log(`Relatório manual para o aluno ${studentId} enviado com sucesso:`, data);
+                    hideLoading();
+        
+                    const studentName = row.querySelector('td:first-child').textContent || 'Nome não encontrado';
+                    let popupContent = `
+                        <div style="text-align: left;">
+                            <h3>Relatório disciplinar</h3>
+                            <strong>Nome:</strong> ${studentName}<br>
+                            <strong>Data:</strong> ${formatarData(new Date())}<br>
+                            <strong>Assunto:</strong> ${reportContentText}<br>
+                            <strong>Suspenso:</strong> ${suspended ? 'Sim' : 'Não'}<br>
+                            <strong>Convocar o responsável:</strong> ${callParents ? 'Sim' : 'Não'}<br>
+                            ${callParents && parentsMeeting ? `<strong>Dia da reunião com o responsável:</strong> ${formatarDataHora(parentsMeeting)}<br>` : ''}
+                            <br>
+                            <div style="text-align: left;">
+                                ${data.report ? `<div style="text-align: left;">${data.report}</div>` : 'Nenhum relatório detalhado retornado.'}
+                            </div>
+                            <div style="background-color: #f0f7f0; color: #2e8b57; padding: 10px; margin-top: 15px; border-radius: 5px; text-align: center; font-weight: bold;">
+                                Relatório Salvo
+                            </div>
+                        </div>
+                    `;
+                    // Assumindo que sua função showPopup retorna uma Promise quando fechada
+                    await showPopup(popupContent || 'Relatório enviado com sucesso.');
+        
+                } catch (error) {
+                    console.error(`Erro ao enviar relatório manual para o aluno ${studentId}:`, error);
+                    hideLoading();
+                    await showPopup('Erro ao enviar relatório.');
+                } finally {
+                    studentsProcessed++;
+                    if (studentsProcessed === numStudents) {
+                        window.location.reload(); // Atualiza a página após o último aluno
+                    }
+                }
+            } else {
+                console.warn("Não foi possível encontrar o studentId para uma linha da tabela (manual).");
+                studentsProcessed++;
+                if (studentsProcessed === numStudents) {
+                    window.location.reload(); 
+                }
+            } 
+        }
+    }
+    loadTodayReports();
+});
 
         function fetchDisciplinaryOptions() {
             fetch('/reports/disciplinary-options') // Rota do hubescolar
@@ -392,37 +525,88 @@ document.addEventListener('DOMContentLoaded', function() {
             return new Date(dateTime).toLocaleDateString('pt-BR', options);
         }
         
+        // Função melhorada para formatar número de telefone
+        function formatPhone(phone) {
+            if (!phone) return '';
+            
+            // Remover caracteres não numéricos
+            const cleaned = phone.replace(/\D/g, '');
+            
+            // Se o número já começa com 55 (código do Brasil), considerar como já tendo código de país
+            if (cleaned.startsWith('55') && cleaned.length >= 12) {
+                // Formato: +55 (DDD) XXXXX-XXXX
+                const countryCode = cleaned.substring(0, 2);
+                const ddd = cleaned.substring(2, 4);
+                
+                // Verificar se o resto do número tem 9 ou 8 dígitos
+                if (cleaned.length >= 13) {
+                    // Número com 9 dígitos (formato móvel atual)
+                    return `+${countryCode} (${ddd}) ${cleaned.substring(4, 9)}-${cleaned.substring(9)}`;
+                } else {
+                    // Número com 8 dígitos (formato fixo ou móvel antigo)
+                    return `+${countryCode} (${ddd}) ${cleaned.substring(4, 8)}-${cleaned.substring(8)}`;
+                }
+            } 
+            // Se o número não começa com 55, assumir que é um número brasileiro sem código de país
+            else if (cleaned.length >= 10) {
+                // Extrair o DDD (primeiros 2 dígitos)
+                const ddd = cleaned.substring(0, 2);
+                
+                // Verificar se o resto do número tem 9 ou 8 dígitos
+                if (cleaned.length >= 11) {
+                    // Número com 9 dígitos (formato móvel atual)
+                    return `+55 (${ddd}) ${cleaned.substring(2, 7)}-${cleaned.substring(7)}`;
+                } else {
+                    // Número com 8 dígitos (formato fixo ou móvel antigo)
+                    return `+55 (${ddd}) ${cleaned.substring(2, 6)}-${cleaned.substring(6)}`;
+                }
+            } 
+            // Para outros formatos, apenas adicionar +55 na frente
+            else {
+                return `+55 ${cleaned}`;
+            }
+        }
+        
+        // Atualizar a função loadTodayReports com uma solução mais simples
         async function loadTodayReports() {
             try {
-                // Obter a data de hoje no formato YYYY-MM-DD
-                const today = new Date().toISOString().split('T')[0];
+                showLoading();
                 
-                const response = await fetch(`/reports/list?startDate=${today}&endDate=${today}`);
-        
+                const now = new Date();
+                const today = now.toISOString().split('T')[0]; // "2025-05-19"
+                
+                console.log("Buscando relatórios para o dia:", today);
+                
+                // Usar apenas a data sem hora para evitar problemas
+                const response = await fetch(`/reports/list?date=${today}`);
+
                 if (!response.ok) {
-                    throw new Error('Falha ao carregar relatórios');
+                    throw new Error(`Falha ao carregar relatórios: ${response.status}`);
                 }
-        
+
                 const data = await response.json();
+                console.log("Relatórios carregados:", data.reports?.length || 0);
+                
+                // Resto do código permanece igual...
                 const reportsTable = document.getElementById('reports-table-selected');
                 const reportsTableTitle = document.querySelector('.reports-table-title');
                 const tbody = document.getElementById('reports-table-selected-list');
-        
+
                 // Limpar tabela existente
                 tbody.innerHTML = '';
-        
+
                 if (data.reports && data.reports.length > 0) {
                     // Mostrar título e tabela
                     reportsTableTitle.style.display = 'block';
                     reportsTable.style.display = 'table';
-        
+
                     // Preencher tabela com relatórios
                     data.reports.forEach(report => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td>${report.studentName}</td>
-                            <td>${report.studentClass}</td>
-                            <td>${report.reportLevel}</td>
+                            <td>${report.studentName || 'Nome não disponível'}</td>
+                            <td>${report.studentClass || 'Turma não disponível'}</td>
+                            <td>${report.reportLevel || 'Não classificado'}</td>
                             <td>
                                 <button class="view-report-btn" data-report-id="${report.id}">
                                     👁️ Ver
@@ -434,12 +618,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         `;
                         tbody.appendChild(row);
                     });
-        
+
                     // Adicionar event listeners para os botões
                     document.querySelectorAll('.view-report-btn').forEach(btn => {
                         btn.addEventListener('click', () => viewReport(btn.dataset.reportId));
                     });
-        
+
                     document.querySelectorAll('.delete-report-btn').forEach(btn => {
                         btn.addEventListener('click', () => deleteReport(btn.dataset.reportId));
                     });
@@ -448,27 +632,134 @@ document.addEventListener('DOMContentLoaded', function() {
                     reportsTableTitle.style.display = 'none';
                     reportsTable.style.display = 'none';
                 }
-        
+                
+                hideLoading();
             } catch (error) {
                 console.error('Erro ao carregar relatórios:', error);
-                showPopup('Erro ao carregar relatórios do dia');
+                showPopup('Erro ao carregar relatórios do dia: ' + error.message);
+                hideLoading();
             }
         }
         
-        // Função para visualizar relatório
+        // Função para visualizar relatório (modificada para buscar telefone do responsável)
         async function viewReport(reportId) {
             try {
+                showLoading();
+                
+                // Buscar dados do relatório
                 const response = await fetch(`/reports/list?id=${reportId}`);
-        
+
                 if (!response.ok) throw new Error('Falha ao carregar relatório');
-        
+
                 const data = await response.json();
                 const report = data.reports[0];
-        
+
                 if (!report) throw new Error('Relatório não encontrado');
-        
+                
+                // Buscar informações completas do aluno para obter o telefone
+                let studentPhone = null;
+                try {
+                    const studentResponse = await fetch(`/users/list/${report.studentId}`);
+                    if (studentResponse.ok) {
+                        const studentData = await studentResponse.json();
+                        // Verificar se o telefone existe e tem um formato válido
+                        if (studentData && studentData.phone) {
+                            studentPhone = studentData.phone;
+                            console.log(`Telefone encontrado para o aluno ${report.studentName}: ${studentPhone}`);
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`Erro ao buscar dados do aluno ${report.studentId}:`, error);
+                }
+                
+                // Verificar se o relatório já tem uma mensagem WhatsApp associada
+                let whatsappStatusHtml = '';
+
+                if (report.deliveryMethod === 'whatsapp' && report.status === 'delivered') {
+                    // Se foi entregue por WhatsApp, mostrar o status mesmo que não tenha messageId
+                    const messageId = report.deliveryConfirmation || 'unknown-' + Date.now();
+                    
+                    // Verificar o status atual da mensagem
+                    let status = 'sent';
+                    if (report.deliveryConfirmation) {
+                        try {
+                            status = await messageTracker.checkMessageStatus(messageId);
+                            console.log(`Status atual da mensagem ${messageId}: ${status}`);
+                        } catch (err) {
+                            console.warn(`Erro ao verificar status da mensagem ${messageId}:`, err);
+                        }
+                    }
+                    
+                    // Formatar uma hora legível para a entrega
+                    const deliveredAtFormatted = report.deliveredAt 
+                        ? formatarDataHora(report.deliveredAt)
+                        : formatarDataHora(new Date());
+                    
+                    whatsappStatusHtml = `
+                        <div class="whatsapp-status">
+                            <p><strong>Status da mensagem:</strong> 
+                                <span class="message-status" data-message-id="${messageId}">
+                                    ${report.deliveryConfirmation 
+                                       ? messageTracker.getStatusHTML(status)
+                                       : '<span class="status-badge sent">Enviado <i class="fas fa-check"></i></span>'}
+                                </span>
+                            </p>
+                            <p><small>Enviado em: ${deliveredAtFormatted}</small></p>
+                        </div>
+                    `;
+                    
+                    // Registrar callback para atualização apenas se tiver messageId válido
+                    if (report.deliveryConfirmation) {
+                        messageTracker.onStatusChange(messageId, (newStatus) => {
+                            const statusElement = document.querySelector(`[data-message-id="${messageId}"]`);
+                            if (statusElement) {
+                                statusElement.innerHTML = messageTracker.getStatusHTML(newStatus);
+                            }
+                        });
+                    }
+                }
+
+                // Preparar texto resumido do relatório para WhatsApp
+                const whatsappText = 
+                    `*Relatório Disciplinar*\n\n` +
+                    `Aluno: ${report.studentName}\n` +
+                    `Turma: ${report.studentClass}\n` +
+                    `Data: ${new Date(report.createdAt).toLocaleDateString()}\n` +
+                    `Nível: ${report.reportLevel}\n\n` +
+                    `${report.suspended ? `🚨 Aluno suspenso por ${report.suspensionDuration} dias.\n` : ''}` +
+                    `${report.callParents ? `📅 Reunião agendada para ${new Date(report.parentsMeeting).toLocaleString()}.\n\n` : '\n'}` +
+                    `Detalhes: ${report.content.replace(/<[^>]*>?/gm, '')}`;
+                
+                
+                const showWhatsAppButton = !(report.deliveryMethod === 'whatsapp' && report.status === 'delivered');
+                
+                // Preparar HTML para a seção de WhatsApp com o telefone obtido
+                const whatsappSectionHtml = studentPhone ? `
+                    <div class="whatsapp-section" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+                        ${showWhatsAppButton ? `
+                            <button id="send-whatsapp-report" class="btn btn-success" 
+                                    data-report-id="${reportId}" 
+                                    data-student-id="${report.studentId}"
+                                    data-student-name="${report.studentName}"
+                                    data-phone="${studentPhone}"
+                                    data-message="${encodeURIComponent(whatsappText)}"
+                                    style="background-color: #25D366; border-color: #25D366; padding: 6px 10px;">
+                                <i class="fab fa-whatsapp" style="margin-right: 5px;"></i> Enviar para Responsável (${formatPhone(studentPhone)})
+                            </button>
+                        ` : ''}
+                        ${whatsappStatusHtml}
+                    </div>
+                ` : `
+                    <div class="whatsapp-section" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+                        <p>⚠️ Número de telefone do responsável não cadastrado</p>
+                        <a href="/users/edit/${report.studentId}" target="_blank" class="btn btn-primary btn-sm">
+                            <i class="fas fa-user-edit"></i> Atualizar Cadastro do Aluno
+                        </a>
+                    </div>
+                `;
+
                 const popupContent = `
-                    <div class="report-detail" style="text-align: left; overflow-x: auto;" "max-width: 120vw;">
+                    <div class="report-detail" style="text-align: left; overflow-x: auto; max-width: 80vw;">
                         <h2>Relatório Detalhado</h2>
                         <h3>Detalhes do Relatório</h3>
                         <p><strong>Aluno:</strong> ${report.studentName}</p>
@@ -478,36 +769,154 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="report-content">${report.content}</div>
                         ${report.suspended ? `<p><strong>Suspenso por:</strong> ${report.suspensionDuration} dias</p>` : ''}
                         ${report.callParents ? `<p><strong>Reunião agendada:</strong> ${new Date(report.parentsMeeting).toLocaleString()}</p>` : ''}
+                        ${report.parentResponse ? `
+                        <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+                            <p><strong>Resposta do Responsável:</strong></p>
+                            <div class="parent-response" style="background-color: #f9f9f9; padding: 10px; border-radius: 5px;">${report.parentResponse}</div>
+                        </div>` : ''}
+                        
+                        ${whatsappSectionHtml}
                     </div>
                 `;
-        
+
+                hideLoading();
                 showPopup(popupContent);
+                
+                // Adicionar event listener para o botão de WhatsApp após o popup ser mostrado
+                const sendWhatsAppButton = document.getElementById('send-whatsapp-report');
+                if (sendWhatsAppButton) {
+                    sendWhatsAppButton.addEventListener('click', sendReportWhatsApp);
+                }
             } catch (error) {
+                console.error('Erro ao carregar detalhes do relatório:', error);
+                hideLoading();
                 showPopup('Erro ao carregar detalhes do relatório');
             }
         }
         
-        // Função para deletar relatório
-        async function deleteReport(reportId) {
-            if (!confirm('Tem certeza que deseja excluir este relatório?')) {
-                return;
-            }
-        
+        // Função para enviar relatório por WhatsApp (atualizada com verificação de prontidão)
+        async function sendReportWhatsApp(event) {
+            const button = event.currentTarget;
+            const reportId = button.dataset.reportId;
+            const phone = button.dataset.phone;
+            const message = decodeURIComponent(button.dataset.message);
+            const studentName = button.dataset.studentName;
+            
+            // Mostrar spinner no botão para feedback
+            const originalButtonHtml = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando conexão...';
+            button.disabled = true;
+            
             try {
-                const response = await fetch(`/reports/delete/${reportId}`, {
-                    method: 'DELETE'
+                // Obter o ID da escola atual do usuário
+                const schoolId = document.querySelector('meta[name="school-id"]')?.content || '1';
+                
+                // Verificar status da sessão antes de enviar a mensagem
+                let sessionReady = false;
+                let attemptsRemaining = 3; // Tentar até 3 vezes
+                
+                while (!sessionReady && attemptsRemaining > 0) {
+                    try {
+                        // Verificar se o cliente está pronto
+                        const statusResponse = await fetch('/whatsapp/messages/status?sessionId=' + schoolId);
+                        const statusData = await statusResponse.json();
+                        
+                        if (statusData.status === 'ready' || statusData.connected === true) {
+                            sessionReady = true;
+                            console.log('Cliente WhatsApp pronto:', statusData);
+                        } else {
+                            // Se não estiver pronto, aguardar e mostrar status
+                            button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Conectando... (${statusData.status || 'iniciando'})`;
+                            
+                            // Mostrar notificação informativa
+                            showNotification(`Conectando ao WhatsApp... ${attemptsRemaining} tentativas restantes`, 'info');
+                            
+                            // Aguardar 5 segundos antes de tentar novamente
+                            await new Promise(resolve => setTimeout(resolve, 5000));
+                            attemptsRemaining--;
+                        }
+                    } catch (err) {
+                        console.warn('Erro ao verificar status da sessão:', err);
+                        attemptsRemaining--;
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                    }
+                }
+                
+                if (!sessionReady) {
+                    throw new Error("WhatsApp não está pronto. Tente novamente em alguns instantes.");
+                }
+                
+                // Cliente está pronto, atualizar botão
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+                
+                // Enviar mensagem usando MessageTracker
+                const result = await messageTracker.sendMessage(phone, message, {
+                    sessionId: schoolId,
+                    referenceId: reportId,
+                    referenceType: 'report'
                 });
-        
-                if (!response.ok) throw new Error('Falha ao excluir relatório');
-        
-                // Recarregar a tabela após exclusão
-                loadTodayReports();
-                showPopup('Relatório excluído com sucesso');
-        
+                
+                // Atualizar o relatório com os dados de entrega
+                await messageTracker.updateReportDelivery(reportId, result.messageId, phone);
+                
+                // Adicionar elemento de status após o botão
+                const statusContainer = document.createElement('div');
+                statusContainer.className = 'whatsapp-status';
+                statusContainer.innerHTML = `
+                    <p><strong>Status da mensagem:</strong> 
+                        <span class="message-status" data-message-id="${result.messageId}">
+                            ${messageTracker.getStatusHTML('sent')}
+                        </span>
+                    </p>
+                `;
+                
+                // Inserir o container de status após o botão
+                button.parentNode.insertBefore(statusContainer, button.nextSibling);
+                
+                // Registrar callback para atualizar status
+                messageTracker.onStatusChange(result.messageId, (status) => {
+                    const statusElement = document.querySelector(`[data-message-id="${result.messageId}"]`);
+                    if (statusElement) {
+                        statusElement.innerHTML = messageTracker.getStatusHTML(status);
+                    }
+                });
+                
+                // Restaurar botão com texto de sucesso
+                button.innerHTML = '<i class="fas fa-check"></i> Enviado';
+                button.className = 'btn btn-secondary';
+                button.disabled = true;
+                
+                // Notificar usuário
+                showNotification(`Mensagem enviada para o responsável de ${studentName}`);
+                
             } catch (error) {
-                console.error('Erro ao excluir relatório:', error);
-                showPopup('Erro ao excluir relatório');
+                console.error('Erro ao enviar mensagem:', error);
+                // Restaurar botão original
+                button.innerHTML = originalButtonHtml;
+                button.disabled = false;
+                showNotification('Erro ao enviar mensagem: ' + error.message, 'error');
             }
+        }
+        
+        // Função para exibir notificação temporária
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = message;
+            document.body.appendChild(notification);
+            
+            // Mostrar a notificação
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            // Remover após 5 segundos
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 5000);
         }
         updateReportFieldsVisibility();
         fetchDisciplinaryOptions();
@@ -524,3 +933,27 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+const validationStyles = document.createElement('style');
+validationStyles.textContent = `
+    .error-field {
+        border: 2px solid #ff3333 !important;
+        background-color: #fff8f8 !important;
+        animation: errorShake 0.4s linear;
+    }
+    
+    @keyframes errorShake {
+        0% { margin-left: 0; }
+        25% { margin-left: -5px; }
+        50% { margin-left: 5px; }
+        75% { margin-left: -5px; }
+        100% { margin-left: 0; }
+    }
+    
+    .notification.error {
+        background-color: #ff3333;
+        color: white;
+        box-shadow: 0 4px 8px rgba(255, 51, 51, 0.2);
+    }
+`;
+document.head.appendChild(validationStyles);

@@ -8,7 +8,7 @@
         <section class="admin-master-cards">
 
             <!-- Card 1: Gerar relatórios -->
-            <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Coordenador' || user.role === 'Secretario' || user.role === 'Pedagogo' || user.role === 'Diretor') { %>
+            <% if (user.role === 'Inspetor' || user.role === 'Coordenador' || user.role === 'Secretario' || user.role === 'Pedagogo' || user.role === 'Diretor') { %>
             <div class="admin-card">
                 <h3>Consulta e impressão de Relatórios</h3>
                 <p>Consulte relatórios dos alunos, imprima e envie para os responsáveis por vários meios.</p>
@@ -35,7 +35,7 @@
             <% } %>
 
             <!-- Card 4: Atas e registros de reuniões -->
-            <% if (user.role === 'Master' || user.role === 'Diretor' || user.role === 'Secretario') { %>
+            <% if (user.role === 'Diretor' || user.role === 'Secretario') { %>
                 <div class="admin-card">
                     <h3>Gerenciar o cabeçalho</h3>
                     <p>Crie e edite o Cabeçalho dos relatórios.</p>

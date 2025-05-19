@@ -303,4 +303,56 @@ router.post("/:id/deliver", async (req, res) => {
     }
 });
 
+// Rota para atualizar entrega via WhatsApp
+router.patch("/:id/update-delivery", async (req, res) => {
+    try {
+        const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+        const reportId = req.params.id;
+        const { deliveryMethod, deliveryConfirmation, deliveredAt, status } = req.body;
+        
+        if (!accessToken) {
+            return res.status(401).json({ error: 'Token de autorização não fornecido.' });
+        }
+
+        // Validar campos obrigatórios
+        if (!deliveryMethod || !deliveryConfirmation) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Método de entrega e confirmação são obrigatórios.' 
+            });
+        }
+
+        // Preparar payload para o serviço de relatórios
+        const deliveryData = {
+            method: deliveryMethod,          // Manter consistência com a API existente ('method' vs 'deliveryMethod')
+            confirmationData: deliveryConfirmation,
+            deliveredBy: req.user.id,
+            deliveredAt: deliveredAt || new Date().toISOString(),
+            status: status || 'delivered'
+        };
+
+        // Chamar o serviço para atualizar o status de entrega
+        const updatedReport = await reportService.registerDelivery(
+            accessToken, 
+            reportId, 
+            deliveryData
+        );
+
+        return res.status(200).json({ 
+            success: true,
+            message: 'Status de entrega atualizado com sucesso',
+            reportId,
+            report: updatedReport
+        });
+
+    } catch (error) {
+        console.error('Erro ao atualizar status de entrega:', error);
+        return res.status(500).json({ 
+            success: false,
+            message: 'Erro ao atualizar status de entrega', 
+            error: error.message 
+        });
+    }
+});
+
 module.exports = router;

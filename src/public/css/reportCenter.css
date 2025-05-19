@@ -318,6 +318,45 @@ h3 {
     box-shadow: 0 0 0 3px rgba(185, 255, 102, 0.2);
 }
 
+/* Lista de resultados */
+#autocomplete-results {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    width: 100%;
+    z-index: 1000;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+/* Itens da lista */
+#autocomplete-results li {
+    padding: 12px 16px; /* Espaçamento maior */
+    cursor: pointer; /* Indica que é clicável */
+    border-bottom: 1px solid #f0f0f0; /* Borda bem clara */
+    color: #333;
+    font-size: 14px;
+}
+
+/* Último item sem borda */
+#autocomplete-results li:last-child {
+    border-bottom: none;
+}
+
+/* Efeito hover suave */
+#autocomplete-results li:hover {
+    background-color: #f9f9f9; /* Hover bem clarinho */
+}
+
+/* Item selecionado/destacado */
+#autocomplete-results li.highlighted {
+    background-color: #f5f5f5;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
     .delivery-options {

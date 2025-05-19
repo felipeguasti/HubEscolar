@@ -49,6 +49,20 @@ router.delete('/assign',
     featureController.unassignFeatureFromUser
 );
 
+// Atribuir feature a usuários em lote
+router.post('/assign-batch', 
+    isAuthenticated, 
+    hasFeature('manage_user_features', ['Master', 'Inspetor', 'Secretario', 'Diretor']),
+    featureController.assignFeatureToBatch
+);
+
+// Remover feature de usuários em lote
+router.post('/remove-batch', 
+    isAuthenticated, 
+    hasFeature('manage_user_features', ['Master', 'Inspetor', 'Secretario', 'Diretor']),
+    featureController.removeFeatureFromBatch
+);
+
 // Buscar features de um usuário
 router.get('/user/:userId', 
     isAuthenticated,
@@ -75,7 +89,7 @@ router.get('/check',
     featureController.checkFeature
 );
 
-// Listar todas as features
+// Listar uma feature específica
 router.get('/list/:id', 
     isAuthenticated, 
     featureController.getFeatureById

@@ -1,0 +1,203 @@
+/* Adicione este estilo para tornar os itens de autocomplete clicáveis */
+.autocomplete-item {
+    cursor: pointer;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.autocomplete-item:hover {
+    background-color: #f5f5f5;
+}
+
+/* Remover os bullets da lista */
+.feature-form-autocomplete-results {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.feature-form-autocomplete-results li {
+    cursor: pointer;
+}
+
+/* Estilo para o item destacado durante navegação com teclado */
+.autocomplete-item.highlighted {
+    background-color: #e0e0e0;
+}
+
+/* Estilos para o botão de adição em lote */
+.btn-add-feature {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+    min-width: 20px;
+    min-height: 20px;
+}
+
+.btn-add-feature:hover {
+    background-color: #27ae60;
+}
+
+/* Adicionar o sinal + no botão */
+.btn-add-feature::before {
+    content: '+';
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Remover o texto "Atribuir" do botão */
+.btn-add-feature span {
+    display: none;
+}
+
+/* Estilos para o botão de remoção em lote */
+.btn-remove-feature {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin-left: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+    min-width: 20px;
+    min-height: 20px;
+    box-sizing: border-box;
+}
+
+.btn-remove-feature:hover {
+    background-color: #c0392b;
+}
+
+/* Se não tiver o ícone de lixeira do Font Awesome */
+.btn-remove-feature::before {
+    content: 'X';
+    font-size: 16px;
+}
+
+/* Para o layout das células de ação */
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Estilo para o status */
+#batchAssignStatus {
+    margin-left: 8px;
+}
+
+#batchAssignStatus .loading {
+    color: #3498db;
+}
+
+#batchAssignStatus .success {
+    color: #2ecc71;
+}
+
+#batchAssignStatus .error {
+    color: #e74c3c;
+}
+
+/* Estilos para o toggle de modo de atribuição */
+.assignment-mode-toggle {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* Estilo para o switch do toggle */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    margin-right: 10px;
+}
+
+/* Esconder o input checkbox real */
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* O slider do toggle */
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+/* O indicador do toggle (bolinha) */
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+/* Estilo quando o toggle está ativado */
+.toggle-switch input:checked + .toggle-slider {
+    background-color: #3498db;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+/* Estilo para os rótulos */
+.toggle-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #777;
+    margin: 0 5px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.toggle-label.active {
+    color: #3498db;
+    font-weight: 600;
+}
+
+/* Efeito de hover nos rótulos */
+.toggle-label:hover {
+    background-color: #f1f1f1;
+}
+
+.toggle-label.active:hover {
+    background-color: #e1f0fa;
+}
+
+/* Ícones para os rótulos (usando emoji como fallback) */
+#individualModeLabel:before {
+    content: "👤 ";
+}
+
+#batchModeLabel:before {
+    content: "👥 ";
+}
