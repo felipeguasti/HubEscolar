@@ -27,12 +27,12 @@
             
             <!-- Card 3: Atas e registros de reuniões -->
             <% if (user.role === 'Master' || user.role === 'Pedagogo' || user.role === 'Coordenador' || user.role === 'Diretor' || user.role === 'Secretario') { %>
-            <div class="admin-card">
+            <div class="admin-card" hidden>
                 <h3>Atas e Registros</h3>
                 <p>Crie Atas e Relatórios dos mais diversos de forma simples com a utilização de IA.</p>
                 <a href="/reports/meetings" class="admin-card-btn">Acessar</a>
             </div>
-            <% } %>
+            <% } %> 
 
             <!-- Card 4: Atas e registros de reuniões -->
             <% if (user.role === 'Diretor' || user.role === 'Secretario') { %>

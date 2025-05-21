@@ -293,7 +293,7 @@ const userHandlers = {
     
             // Preencher todos os campos
             const fields = [
-                'id', 'name', 'email', 'cpf', 'phone', 'dateOfBirth', 
+                'id', 'name', 'username', 'email', 'cpf', 'phone', 'dateOfBirth', 
                 'gender', 'role', 'horario', 'status', 'address', 'city', 
                 'state', 'zip', 'districtId'
             ];
@@ -408,6 +408,7 @@ const userHandlers = {
             // Coletar dados do formulário
             const fields = {
                 name: document.getElementById("registerName"),
+                username: document.getElementById("registerUsername"),
                 email: document.getElementById("registerEmail"),
                 role: document.getElementById("registerRole"),
                 district: document.getElementById("registerDistrict"),
@@ -449,6 +450,7 @@ const userHandlers = {
             // Se passou da verificação, criar objeto com os valores
             const userData = {
                 name: fields.name.value.trim(),
+                username: fields.username.value.trim(),
                 email: fields.email.value.trim(),
                 role: fields.role.value,
                 districtId: fields.district.value,
@@ -553,6 +555,7 @@ const userHandlers = {
             // Criar um objeto para armazenar os campos
              const fields = {
                 name: document.getElementById("editName"),
+                username: document.getElementById("editUsername"),
                 email: document.getElementById("editEmail"),
                 role: document.getElementById("editRole"),
                 district: document.getElementById("editDistrict"),
@@ -583,6 +586,7 @@ const userHandlers = {
             // Criar objeto userData apenas com campos que existem
             const userData = {
                 name: fields.name.value,
+                username: fields.username.value,
                 email: fields.email.value,
                 role: fields.role.value,
                 districtId: fields.district.value,
@@ -959,6 +963,7 @@ const userUtils = {
     validateUserData(userData) {
         const fieldNames = {
             name: 'Nome',
+            username: 'Username',
             email: 'E-mail',
             role: 'Função',
             cpf: 'CPF',
@@ -971,8 +976,7 @@ const userUtils = {
             zip: 'CEP'
         };
 
-        const requiredFields = ['name', 'email', 'role', 'cpf', 'phone', 'dateOfBirth', 
-            'gender', 'address', 'city', 'state', 'zip'];
+        const requiredFields = ['name', 'username', 'email', 'role'];
         
         const emptyFields = requiredFields.filter(field => !userData[field]);
         
@@ -1058,7 +1062,7 @@ const userUtils = {
         if (!date) return '';
         return date.split('/').reverse().join('-');
     },
-
+    
     updateTable(data) {
         const tbody = document.querySelector('table tbody');
         if (!tbody) {
@@ -1093,11 +1097,32 @@ const userUtils = {
                 return;
             }
     
-            // Código existente para quando há usuários
+            // Definir ordem de prioridade para os papéis
+            const rolePriority = {
+                'Master': 1,
+                'Inspetor': 2,
+                'Diretor': 3,
+                'Secretario': 4,
+                'Coordenador': 5,
+                'Pedagogo': 6,
+                'Professor': 7,
+                'Aluno': 8
+            };
+    
+            // Ordenar usuários: inativos primeiro, depois por role (conforme prioridade) e por fim alfabeticamente
             const sortedUsers = data.users.sort((a, b) => {
+                // Primeiro critério: status (inativos primeiro)
                 if (a.status === 'inactive' && b.status !== 'inactive') return -1;
                 if (a.status !== 'inactive' && b.status === 'inactive') return 1;
-                return new Date(b.createdAt) - new Date(a.createdAt);
+                
+                // Se ambos têm o mesmo status, ordenar por role conforme a prioridade definida
+                const roleA = rolePriority[a.role] || 999; // Se o papel não estiver na lista, vai para o fim
+                const roleB = rolePriority[b.role] || 999;
+                
+                if (roleA !== roleB) return roleA - roleB;
+                
+                // Se as roles são iguais, ordenar alfabeticamente por nome
+                return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
             });
     
             sortedUsers.forEach(user => {

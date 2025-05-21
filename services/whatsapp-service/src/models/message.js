@@ -20,7 +20,7 @@ const Message = sequelize.define('Message', {
         allowNull: false,
         validate: {
             notEmpty: true,
-            len: [1, 1000]
+            len: [1, 10000]
         }
     },
     type: {
@@ -34,7 +34,7 @@ const Message = sequelize.define('Message', {
         defaultValue: 'pending'
     },
     metadata: {
-        type: DataTypes.JSONB,
+        type: DataTypes.JSON,
         allowNull: true
     },
     timestamp: {

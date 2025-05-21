@@ -1,2 +1,3 @@
-2025/05/19-13:46:04.533 aa0c Creating DB D:\Documents\GitHub\hubescolar\services\whatsapp-service\.wwebjs_auth\session-4\Default\Service Worker\Database since it was missing.
-2025/05/19-13:46:04.638 aa0c Reusing MANIFEST D:\Documents\GitHub\hubescolar\services\whatsapp-service\.wwebjs_auth\session-4\Default\Service Worker\Database/MANIFEST-000001
+2025/05/25-14:22:36.955 8858 Reusing MANIFEST D:\Documents\GitHub\hubescolar\services\whatsapp-service\.wwebjs_auth\session-4\Default\Service Worker\Database/MANIFEST-000001
+2025/05/25-14:22:36.987 8858 Recovering log #3
+2025/05/25-14:22:36.988 8858 Reusing old log D:\Documents\GitHub\hubescolar\services\whatsapp-service\.wwebjs_auth\session-4\Default\Service Worker\Database/000003.log 

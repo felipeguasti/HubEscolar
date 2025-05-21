@@ -52,72 +52,66 @@ document.addEventListener('DOMContentLoaded', function() {
         async function displayAutocompleteResults(students) {
             autocompleteResultsList.innerHTML = '';
             highlightedIndex = -1; // Resetar o índice ao exibir novos resultados
-        
-            if (students && students.length > 0) {
-                // Objeto para armazenar em cache os nomes de turmas já buscados
-                const gradeCache = {};
-                
-                // Função auxiliar para buscar o nome da turma
-                                // Função auxiliar para buscar o nome da turma
-                async function getGradeName(gradeId) {
-                    // Se não tiver ID da turma, retornar string padrão
-                    if (!gradeId) return 'Sem turma';
-                    
-                    // Se já tivermos o nome da turma em cache, usar o cache
-                    if (gradeCache[gradeId]) return gradeCache[gradeId];
-                    
-                    try {
-                        const response = await fetch(`/grades/${gradeId}`);
-                        if (!response.ok) throw new Error(`Erro na requisição: ${response.status}`);
-                        
-                        const responseData = await response.json();
-                        
-                        // Verificar a estrutura da resposta e acessar o nome corretamente
-                        if (responseData.status === 'success' && responseData.data && responseData.data.name) {
-                            // A resposta tem formato: {"status":"success","data":{"id":16,"name":"1ºI05",...}}
-                            const gradeName = responseData.data.name;
-                            
-                            // Armazenar em cache para futuras referências
-                            gradeCache[gradeId] = gradeName;
-                            return gradeName;
-                        } else {
-                            console.error(`Formato de resposta inesperado para turma ${gradeId}:`, responseData);
-                            return `Turma ${gradeId}`;
-                        }
-                    } catch (error) {
-                        console.error(`Erro ao buscar turma ${gradeId}:`, error);
-                        return `Turma ${gradeId}`;
-                    }
+
+            if (!students || students.length === 0) {
+                if (searchStudentInput.value.trim()) {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = 'Nenhum aluno encontrado';
+                    autocompleteResultsList.appendChild(listItem);
                 }
-                
-                // Para exibir uma mensagem de carregamento enquanto buscamos os nomes das turmas
-                const loadingItem = document.createElement('li');
-                loadingItem.textContent = 'Carregando informações das turmas...';
-                autocompleteResultsList.appendChild(loadingItem);
-                
-                // Buscar os nomes das turmas e atualizar a lista
-                const studentsWithGradeNames = await Promise.all(students.map(async (student) => {
-                    const gradeName = await getGradeName(student.gradeId);
-                    return { ...student, gradeName };
-                }));
-                
-                // Limpar a mensagem de carregamento
+                return;
+            }
+
+            // Exibir mensagem de carregamento
+            const loadingItem = document.createElement('li');
+            loadingItem.textContent = 'Carregando informações das turmas...';
+            autocompleteResultsList.appendChild(loadingItem);
+
+            try {
+                // Obter IDs únicos de turmas para buscar apenas uma vez
+                const uniqueGradeIds = [...new Set(students.filter(s => s.gradeId).map(s => s.gradeId))];
+                const gradeCache = {};
+
+                // Buscar todas as turmas de uma vez
+                if (uniqueGradeIds.length > 0) {
+                    // Fazer requisições paralelas para todas as turmas
+                    await Promise.all(uniqueGradeIds.map(async gradeId => {
+                        try {
+                            const response = await fetch(`/grades/${gradeId}`);
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (data.status === 'success' && data.data && data.data.name) {
+                                    gradeCache[gradeId] = data.data.name;
+                                }
+                            }
+                        } catch (error) {
+                            console.error(`Erro ao buscar turma ${gradeId}:`, error);
+                        }
+                    }));
+                }
+
+                // Limpar lista e reconstruir com os dados já em cache
                 autocompleteResultsList.innerHTML = '';
                 
-                // Exibir os alunos com os nomes das turmas
-                studentsWithGradeNames.forEach((student, index) => {
+                // Agora exibir os alunos com os nomes das turmas já em cache
+                students.forEach((student, index) => {
                     const listItem = document.createElement('li');
-                    listItem.textContent = `${student.name} (${student.gradeName})`;
+                    const gradeName = gradeCache[student.gradeId] || 'Sem turma';
+                    
+                    listItem.textContent = `${student.name} (${gradeName})`;
                     listItem.dataset.studentId = student.id;
                     listItem.dataset.studentName = student.name;
-                    listItem.dataset.studentClass = student.gradeName; // Usando o nome da turma em vez do ID
+                    listItem.dataset.studentClass = gradeName;
                     listItem.addEventListener('click', addStudentToSelection);
                     autocompleteResultsList.appendChild(listItem);
                 });
-            } else if (searchStudentInput.value.trim()) {
-                const listItem = document.createElement('li');
-                listItem.textContent = 'Nenhum aluno encontrado';
-                autocompleteResultsList.appendChild(listItem);
+            } catch (error) {
+                console.error("Erro ao processar resultados de busca:", error);
+                autocompleteResultsList.innerHTML = '';
+                const errorItem = document.createElement('li');
+                errorItem.textContent = 'Erro ao carregar resultados';
+                errorItem.classList.add('autocomplete-error');
+                autocompleteResultsList.appendChild(errorItem);
             }
         }
 
@@ -719,13 +713,28 @@ submitReportButton.addEventListener('click', async function() {
                     }
                 }
 
+                function formatReportLevel(level) {
+                    if (!level) return "Não classificado";
+                    
+                    switch(level.toLowerCase()) {
+                        case 'infracionais':
+                            return "Ato Infracional";
+                        case 'leves':
+                            return "Leve";
+                        case 'graves':
+                            return "Grave";
+                        default:
+                            return level; // Retorna o valor original caso não seja um dos valores esperados
+                    }
+                }
+
                 // Preparar texto resumido do relatório para WhatsApp
                 const whatsappText = 
                     `*Relatório Disciplinar*\n\n` +
                     `Aluno: ${report.studentName}\n` +
                     `Turma: ${report.studentClass}\n` +
                     `Data: ${new Date(report.createdAt).toLocaleDateString()}\n` +
-                    `Nível: ${report.reportLevel}\n\n` +
+                    `Nível: ${formatReportLevel(report.reportLevel)}\n\n` +
                     `${report.suspended ? `🚨 Aluno suspenso por ${report.suspensionDuration} dias.\n` : ''}` +
                     `${report.callParents ? `📅 Reunião agendada para ${new Date(report.parentsMeeting).toLocaleString()}.\n\n` : '\n'}` +
                     `Detalhes: ${report.content.replace(/<[^>]*>?/gm, '')}`;
@@ -733,28 +742,58 @@ submitReportButton.addEventListener('click', async function() {
                 
                 const showWhatsAppButton = !(report.deliveryMethod === 'whatsapp' && report.status === 'delivered');
                 
-                // Preparar HTML para a seção de WhatsApp com o telefone obtido
-                const whatsappSectionHtml = studentPhone ? `
+                                // Na função viewReport, onde se gera o HTML para a seção de WhatsApp:
+                
+                // Verificar se há múltiplos números de telefone
+                let phoneNumbers = [];
+                if (studentPhone) {
+                    // Dividir a string se contiver o separador |
+                    phoneNumbers = studentPhone.includes('|') ? studentPhone.split('|') : [studentPhone];
+                }
+                
+                // Gerar HTML para botões de WhatsApp baseado nos números disponíveis
+                const whatsappButtonsHtml = phoneNumbers.map((phone, index) => {
+                    // Formatar cada número para exibição
+                    const formattedPhone = formatPhone(phone.trim());
+                    // Gerar identificador único para este botão
+                    const buttonId = `send-whatsapp-report-${index}`;
+                    
+                    return showWhatsAppButton ? `
+                        <button id="${buttonId}" class="btn btn-success whatsapp-send-button" 
+                                data-report-id="${reportId}" 
+                                data-student-id="${report.studentId}"
+                                data-student-name="${report.studentName}"
+                                data-phone="${phone.trim()}"
+                                data-message="${encodeURIComponent(whatsappText)}"
+                                style="background-color: #25D366; border-color: #25D366; padding: 6px 10px; margin-bottom: 5px; width: 100%;">
+                            <i class="fab fa-whatsapp" style="margin-right: 5px;"></i> Enviar para Responsável ${phoneNumbers.length > 1 ? `(${formattedPhone})` : formattedPhone}
+                        </button>
+                    ` : '';
+                }).join('');
+                
+                // Montar a seção de WhatsApp
+                const whatsappSectionHtml = phoneNumbers.length > 0 ? `
                     <div class="whatsapp-section" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
-                        ${showWhatsAppButton ? `
-                            <button id="send-whatsapp-report" class="btn btn-success" 
-                                    data-report-id="${reportId}" 
-                                    data-student-id="${report.studentId}"
-                                    data-student-name="${report.studentName}"
-                                    data-phone="${studentPhone}"
-                                    data-message="${encodeURIComponent(whatsappText)}"
-                                    style="background-color: #25D366; border-color: #25D366; padding: 6px 10px;">
-                                <i class="fab fa-whatsapp" style="margin-right: 5px;"></i> Enviar para Responsável (${formatPhone(studentPhone)})
-                            </button>
-                        ` : ''}
+                        ${phoneNumbers.length > 1 ? `<p><strong>Selecione um número para enviar o relatório:</strong></p>` : ''}
+                        ${whatsappButtonsHtml}
                         ${whatsappStatusHtml}
                     </div>
                 ` : `
                     <div class="whatsapp-section" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
                         <p>⚠️ Número de telefone do responsável não cadastrado</p>
-                        <a href="/users/edit/${report.studentId}" target="_blank" class="btn btn-primary btn-sm">
-                            <i class="fas fa-user-edit"></i> Atualizar Cadastro do Aluno
-                        </a>
+        
+                        <div class="phone-add-form" style="margin: 10px 0;">
+                            <div class="input-group mb-2">
+                                <input type="text" id="quick-phone-input" class="form-control" placeholder="(XX) XXXXXXXXX">
+                                <button id="quick-phone-add-btn" class="btn btn-success" data-student-id="${report.studentId}" data-report-id="${reportId}">
+                                    <i class="fas fa-plus"></i> Adicionar
+                                </button>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                                <span>Exemplo: (27) 999999999</span>
+                                <a href="/users/profile/${report.studentId}" target="_blank">Editar cadastro completo</a>
+                            </div>
+                        </div>
                     </div>
                 `;
 
@@ -787,6 +826,66 @@ submitReportButton.addEventListener('click', async function() {
                 if (sendWhatsAppButton) {
                     sendWhatsAppButton.addEventListener('click', sendReportWhatsApp);
                 }
+                
+                // Após o popup ser exibido:
+                phoneNumbers.forEach((phone, index) => {
+                    const buttonId = `send-whatsapp-report-${index}`;
+                    const sendButton = document.getElementById(buttonId);
+                    if (sendButton) {
+                        sendButton.addEventListener('click', sendReportWhatsApp);
+                    }
+                });
+                
+                // Adicionar event listener para o botão de adicionar telefone
+                const quickAddButton = document.getElementById('quick-phone-add-btn');
+                if (quickAddButton) {
+                    quickAddButton.addEventListener('click', async function() {
+                        const studentId = this.dataset.studentId;
+                        const reportId = this.dataset.reportId;
+                        const phoneInput = document.getElementById('quick-phone-input');
+                        const phone = phoneInput.value.trim();
+                        
+                        // Validar o número de telefone
+                        if (!phone || phone.length < 10) {
+                            showNotification('Por favor, insira um número de telefone válido', 'error');
+                            phoneInput.classList.add('error-field');
+                            setTimeout(() => phoneInput.classList.remove('error-field'), 1000);
+                            return;
+                        }
+                        
+                        try {
+                            // Desabilitar o botão durante o processamento
+                            this.disabled = true;
+                            const originalButtonText = this.innerHTML;
+                            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+                            
+                            // Usar a rota de edição existente
+                            const response = await fetch(`/users/edit/${studentId}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ phone })
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error('Falha ao atualizar telefone');
+                            }
+                            
+                            // Notificar usuário sobre o sucesso
+                            showNotification('Telefone adicionado com sucesso!');
+                            
+                            // Recarregar o relatório para mostrar o botão de WhatsApp
+                            await viewReport(reportId);
+                            
+                        } catch (error) {
+                            console.error('Erro ao adicionar telefone:', error);
+                            this.disabled = false;
+                            this.innerHTML = originalButtonText;
+                            showNotification('Erro ao salvar telefone: ' + error.message, 'error');
+                        }
+                    });
+                }
             } catch (error) {
                 console.error('Erro ao carregar detalhes do relatório:', error);
                 hideLoading();
@@ -794,9 +893,63 @@ submitReportButton.addEventListener('click', async function() {
             }
         }
         
-        // Função para enviar relatório por WhatsApp (atualizada com verificação de prontidão)
+        // Função para excluir relatório
+        async function deleteReport(reportId) {
+            if (!reportId) {
+                showNotification('ID do relatório não especificado', 'error');
+                return;
+            }
+            
+            // Confirmar exclusão com o usuário
+            const confirmDelete = window.confirm('Tem certeza que deseja excluir este relatório? Esta ação não pode ser desfeita.');
+            
+            if (!confirmDelete) {
+                return;
+            }
+            
+            try {
+                showLoading();
+                
+                // Fazer requisição para deletar o relatório
+                const response = await fetch(`/reports/delete/${reportId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erro ao excluir relatório: ${response.status}`);
+                }
+                
+                // Exibir notificação de sucesso
+                showNotification('Relatório excluído com sucesso');
+                
+                // Recarregar a lista de relatórios
+                loadTodayReports();
+                
+            } catch (error) {
+                console.error('Erro ao excluir relatório:', error);
+                showNotification(`Erro ao excluir relatório: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Função para enviar relatório por WhatsApp (atualizada com proteção contra cliques múltiplos)
         async function sendReportWhatsApp(event) {
             const button = event.currentTarget;
+            
+            // Impedir cliques múltiplos - verificação imediata
+            if (button.disabled || button.dataset.processing === 'true') {
+                console.log('Botão já está sendo processado, ignorando clique adicional');
+                return;
+            }
+            
+            // Marcar que estamos processando este botão
+            button.disabled = true;
+            button.dataset.processing = 'true';
+            
             const reportId = button.dataset.reportId;
             const phone = button.dataset.phone;
             const message = decodeURIComponent(button.dataset.message);
@@ -805,7 +958,6 @@ submitReportButton.addEventListener('click', async function() {
             // Mostrar spinner no botão para feedback
             const originalButtonHtml = button.innerHTML;
             button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando conexão...';
-            button.disabled = true;
             
             try {
                 // Obter o ID da escola atual do usuário
@@ -881,20 +1033,29 @@ submitReportButton.addEventListener('click', async function() {
                     }
                 });
                 
-                // Restaurar botão com texto de sucesso
+                // Substituir o botão por texto permanente de sucesso - 
+                // Importante: nunca reativar este botão específico
                 button.innerHTML = '<i class="fas fa-check"></i> Enviado';
                 button.className = 'btn btn-secondary';
                 button.disabled = true;
+                button.dataset.processing = 'false'; // Marcar como não processando, embora permaneça desativado
+                
+                // Remover o listener de evento original do botão para garantia extra
+                button.removeEventListener('click', sendReportWhatsApp);
                 
                 // Notificar usuário
                 showNotification(`Mensagem enviada para o responsável de ${studentName}`);
                 
             } catch (error) {
                 console.error('Erro ao enviar mensagem:', error);
-                // Restaurar botão original
-                button.innerHTML = originalButtonHtml;
-                button.disabled = false;
-                showNotification('Erro ao enviar mensagem: ' + error.message, 'error');
+                
+                // Restaurar botão original com um pequeno delay adicional para segurança
+                setTimeout(() => {
+                    button.innerHTML = originalButtonHtml;
+                    button.disabled = false;
+                    button.dataset.processing = 'false'; // Resetar flag de processamento
+                    showNotification('Erro ao enviar mensagem: ' + error.message, 'error');
+                }, 1000);
             }
         }
         
@@ -957,3 +1118,23 @@ validationStyles.textContent = `
     }
 `;
 document.head.appendChild(validationStyles);
+
+// Após adicionar o event listener do botão, adicionar função de máscara para o input
+
+// Adicionar máscara ao campo de telefone
+const phoneInput = document.getElementById('quick-phone-input');
+if (phoneInput) {    
+    phoneInput.addEventListener('input', function(e) {
+        // Remover tudo que não for número
+        let value = this.value.replace(/\D/g, '');
+        
+        // Aplicar máscara (XX) XXXXXXXXX (sem hífen)
+        if (value.length <= 2) {
+            // Apenas DDD
+            this.value = value.length ? `(${value}` : value;
+        } else {
+            // DDD + número do telefone (sem hífen)
+            this.value = `(${value.substring(0, 2)}) ${value.substring(2)}`;
+        }
+    });
+}

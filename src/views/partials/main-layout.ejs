@@ -9,6 +9,12 @@
         <link rel="stylesheet" href="/css/reportCenter.css">
     <% } %>
     <% if (title === 'Advertências') { %>
+        <link rel="stylesheet" href="/css/behavior.css">
+    <% } %>
+    <% if (title === 'Secretarias e escolas') { %>
+        <link rel="stylesheet" href="/css/district.css">
+    <% } %>
+    <% if (title === 'Advertências') { %>
         <link rel="stylesheet" href="/css/messageTracker.css">
         <meta name="school-id" content="<%= user && user.schoolId ? user.schoolId : '' %>">
     <% } %>
@@ -17,6 +23,7 @@
     <% } %>
     <% if (title === 'Usuários') { %>
         <link rel="stylesheet" href="/css/users.css">
+        <link rel="stylesheet" href="/css/popupLoadings.css">
     <% } %>
     <% if (title === 'Configurações das Ferramentas') { %>
         <link rel="stylesheet" href="/css/featureSettings.css">
@@ -117,7 +124,7 @@
     <% if (title === 'Dashboard') { %>
         <script src="/js/dashboard.js?v=<%= Date.now() %>"></script>
     <% } %>
-    <% if (title === 'Distritos') { %>
+    <% if (title === 'Secretarias e escolas') { %>
         <script src="/js/district.js?v=<%= Date.now() %>"></script>
     <% } %>
     <% if (title === 'Turmas') { %>

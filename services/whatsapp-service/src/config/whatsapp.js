@@ -160,6 +160,46 @@ class WhatsAppConfig {
     }
 
     /**
+     * Divide uma mensagem longa em partes menores para envio
+     * @param {string} message - A mensagem completa
+     * @param {number} maxLength - Tamanho máximo de cada parte (padrão: 4000 caracteres)
+     * @returns {Array} Array com as partes da mensagem
+     */
+    splitMessage(text, maxLength = 4000) {
+        const parts = [];
+        let remaining = text;
+        
+        while (remaining.length > 0) {
+            // Se a mensagem é menor que o limite máximo, enviar toda
+            if (remaining.length <= maxLength) {
+                parts.push(remaining);
+                break;
+            }
+            
+            // Procurar um bom ponto de quebra
+            let breakPoint = maxLength;
+            const possibleBreaks = ['\n\n', '\n', '. ', ', ', ' '];
+            
+            for (const breakChar of possibleBreaks) {
+                const lastBreak = remaining.lastIndexOf(breakChar, maxLength);
+                if (lastBreak > maxLength * 0.7) { // Pelo menos 70% da mensagem
+                    breakPoint = lastBreak + (breakChar === '. ' || breakChar === ', ' ? 1 : 0);
+                    break;
+                }
+            }
+            
+            // Adicionar a parte atual
+            parts.push(remaining.substring(0, breakPoint).trim());
+            remaining = remaining.substring(breakPoint).trim();
+        }
+        
+        // Adicionar numeração às partes
+        return parts.map((part, index) => 
+            parts.length > 1 ? `[${index + 1}/${parts.length}] ${part}` : part
+        );
+    }
+
+    /**
      * Enviar mensagem usando um cliente específico
      * @param {string} phone - número de telefone
      * @param {string} text - texto da mensagem
@@ -177,7 +217,36 @@ class WhatsAppConfig {
             // Formatar o número de telefone
             const formattedPhone = phone.includes('@c.us') ? phone : `${phone}@c.us`;
             
-            // Enviar a mensagem
+            // Verificar se a mensagem precisa ser dividida
+            if (text.length > 4000) {
+                logger.info(`Mensagem longa (${text.length} caracteres) sendo dividida em partes menores`);
+                const messageParts = this.splitMessage(text);
+                
+                const results = [];
+                // Enviar cada parte da mensagem
+                for (const part of messageParts) {
+                    const result = await clientData.client.sendMessage(formattedPhone, part);
+                    results.push({
+                        status: 'sent',
+                        messageId: result.id.id,
+                        sessionId
+                    });
+                    
+                    // Pequeno delay entre as mensagens para evitar bloqueios
+                    if (messageParts.length > 1) {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                }
+                
+                return {
+                    status: 'sent',
+                    multipart: true,
+                    parts: results.length,
+                    results
+                };
+            }
+            
+            // Para mensagens que não precisam ser divididas
             const result = await clientData.client.sendMessage(formattedPhone, text);
             return {
                 status: 'sent',
@@ -240,6 +309,8 @@ class WhatsAppConfig {
         
         return sessions;
     }
+
+    
 }
 
 module.exports = new WhatsAppConfig();

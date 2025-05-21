@@ -1,25 +1,15 @@
 const User = require('../models/User');
 const Log = require('../models/Log');
-const winston = require('winston');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json()
-    ),
-    transports: [
-        new winston.transports.Console(),
-    ],
-});
+const logService = require('../services/logService');
 
 async function getFetch() {
     try {
         const fetchModule = await import('node-fetch');
         return fetchModule.default;
     } catch (error) {
-        console.error('Erro ao importar node-fetch:', error);
+        logService.error('Erro ao importar node-fetch', {error: error.message});
         return null;
     }
 }
@@ -28,9 +18,9 @@ let fetch;
 getFetch().then(f => {
     fetch = f;
 });
+
 const { body, validationResult } = require('express-validator');
 const { emailExiste, invalidarCache } = require('../services/userCacheService');
-const logService = require('../services/logService');
 require('dotenv').config();
 const {
     verificarPermissaoCriacao,
@@ -69,14 +59,14 @@ exports.buscarUsuarioPorEmail = async (req, res) => {
     try {
         const user = await User.findOne({ where: { email } });
         if (user) {
-            logger.info(`Usuário encontrado com o email: ${email}`, { service: 'users-service' });
+            logService.info(`Usuário encontrado com o email: ${email}`, { service: 'users-service' });
             res.json(user);
         } else {
-            logger.warn(`Usuário com o email ${email} não encontrado.`, { service: 'users-service' });
+            logService.warn(`Usuário com o email ${email} não encontrado.`, { service: 'users-service' });
             res.status(404).json({ message: 'Usuário não encontrado.' });
         }
     } catch (error) {
-        logger.error('Erro ao buscar usuário por email:', error, { service: 'users-service' });
+        logService.error('Erro ao buscar usuário por email:', error, { service: 'users-service' });
         res.status(500).json({ message: 'Erro ao buscar usuário.' });
     }
 };
@@ -109,11 +99,12 @@ const verificarTentativas = (ip, isAuthenticated) => {
 exports.adicionarUsuario = [
     // Validações (mantidas)
     body('name').notEmpty().withMessage('Nome é obrigatório'),
+    body('username').notEmpty().withMessage('Username é obrigatório'),
     body('email').isEmail().withMessage('Email inválido'),
     body('password').notEmpty().withMessage('Senha é obrigatória'),
     body('role').notEmpty().withMessage('Papel é obrigatório'),
     body('cpf').optional().custom(validarCPF),
-    body('phone').optional().custom(validarTelefone), // Telefone agora é opcional
+    body('phone').optional().custom(validarTelefone),
     body('dateOfBirth').optional().custom(validarDataNascimento),
     body('gender').optional().isIn(['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer']).withMessage('Gênero inválido'),
     body('schoolId').optional(),
@@ -123,7 +114,19 @@ exports.adicionarUsuario = [
     body('state').optional(),
     body('zip').optional().custom(validarCEP).customSanitizer(value => value ? value.replace(/[^\d]/g, '').padStart(8, '0') : value),
     body('horario').optional().default('Integral').isIn(['Manhã', 'Tarde', 'Noite', 'Integral']).withMessage('Horário inválido'),
-    body('gradeId').optional().isInt().withMessage('ID da turma deve ser um número inteiro'),
+body('gradeId')
+    .optional()
+    .custom((value, { req }) => {
+        // Se o usuário for um Aluno, o valor deve ser um número inteiro
+        if (req.body.role === 'Aluno') {
+            if (!value || isNaN(parseInt(value))) {
+                throw new Error('ID da turma deve ser um número inteiro para alunos');
+            }
+            return true;
+        }
+        
+        return true;
+    }),
     body('content').optional(),
     body('status').optional().isIn(['active', 'inactive']).withMessage('Status inválido'),
 
@@ -132,11 +135,20 @@ exports.adicionarUsuario = [
         const isAuthenticated = !!req.user;
         const verificação = verificarTentativas(ip, isAuthenticated);
         if (verificação.bloqueado) {
+            await logService.warn('Bloqueio de tentativas de criação', {
+                ip,
+                tentativas: verificação.contador,
+                tempoRestante: verificação.tempoRestante
+            });
             return res.status(429).json({ message: `Muitas tentativas de criação. Tente novamente em ${verificação.tempoRestante} minutos.` });
         }
 
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            await logService.warn('Validação falhou na criação de usuário', { 
+                errors: errors.array(),
+                body: req.body
+            });
             return res.status(400).json({ errors: errors.array() });
         }
 
@@ -163,8 +175,9 @@ exports.adicionarUsuario = [
 
             const {
                 name,
+                username,
                 email: novoEmail,
-                password, // Usamos diretamente a senha do req.body
+                password,
                 cpf,
                 phone,
                 dateOfBirth,
@@ -228,10 +241,12 @@ exports.adicionarUsuario = [
             // Para não-alunos, gradeId deve ser null
             if (role !== 'Aluno') {
                 req.body.gradeId = null;
+                await logService.debug('gradeId definido como null para usuário não-aluno', { role });
             }
 
             const newUser = await User.create({
                 name,
+                username,
                 email: novoEmail,
                 password,
                 cpf: cpf || null,
@@ -253,15 +268,34 @@ exports.adicionarUsuario = [
             });
 
             invalidarCache();
-            await logService.logUserOperation('criacao', newUser.id, { criadoPor: usuarioLogado.id, role: newUser.role });
+            await logService.logUserOperation('criacao', newUser.id, { 
+                criadoPor: usuarioLogado.id, 
+                role: newUser.role,
+                email: newUser.email,
+                username: newUser.username
+            });
+            
+            await logService.info('Usuário criado com sucesso', { 
+                id: newUser.id, 
+                role: newUser.role, 
+                criadoPor: usuarioLogado.id 
+            });
+            
             res.status(201).json({ message: 'Usuário criado com sucesso.' });
 
         } catch (error) {
-            console.error(error);
+            // Melhorando o log de erro com detalhes estruturados
+            await logService.error('Erro ao criar usuário', { 
+                error: error.message,
+                stack: error.stack,
+                body: req.body,
+                name: error.name
+            });
+            
             if (error.name === 'SequelizeValidationError') {
                 return res.status(400).json({ message: 'Erro de validação', errors: error.errors });
             }
-            await logService.error('Erro ao criar usuário', { error: error.message });
+            
             res.status(500).json({ message: 'Erro ao criar usuário.' });
         }
     }
@@ -271,13 +305,13 @@ exports.listarUsuariosValidados = async (req, res) => {
     try {
         let whereClause = {};
 
-        console.log('req.query:', req.query); // Log dos parâmetros da query
+        await logService.debug('Parâmetros de consulta recebidos', { query: req.query });
 
         if (Object.keys(req.query).length > 0) {
             whereClause = applyUserListFilters(req.query);
-            console.log('whereClause (com filtros):', whereClause); // Log da whereClause com filtros
+            await logService.debug('whereClause (com filtros aplicados)', { whereClause });
         } else {
-            console.log('whereClause (sem filtros):', whereClause); // Log da whereClause sem filtros
+            await logService.debug('whereClause (sem filtros)', { whereClause });
         }
 
         const usuarios = await User.findAll({
@@ -285,10 +319,19 @@ exports.listarUsuariosValidados = async (req, res) => {
             attributes: { exclude: ['password'] }
         });
 
+        await logService.info('Usuários listados com sucesso', { 
+            quantidade: usuarios.length,
+            filtros: req.query
+        });
+        
         res.json(usuarios);
     } catch (error) {
-        console.error('Erro ao listar/filtrar usuários:', error);
-        await logService.error('Erro ao listar/filtrar usuários', { error: error.message });
+        await logService.error('Erro ao listar/filtrar usuários', { 
+            error: error.message,
+            stack: error.stack,
+            query: req.query
+        });
+        
         res.status(500).json({ message: 'Erro ao listar/filtrar usuários.' });
     }
 };
@@ -359,6 +402,7 @@ exports.listarUsuarios = async (req, res) => {
 exports.atualizarUsuario = [
     // Validações (mantidas)
     body('name').optional().notEmpty().withMessage('Nome é obrigatório'),
+    body('username').optional().notEmpty().withMessage('Username é obrigatório'),
     body('email').optional().isEmail().withMessage('Email inválido'),
     body('role').optional().notEmpty().withMessage('Papel é obrigatório'),
     body('cpf').optional().custom(validarCPF),
@@ -392,6 +436,11 @@ exports.atualizarUsuario = [
     async (req, res) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            await logService.warn('Validação falhou na atualização de usuário', { 
+                errors: errors.array(), 
+                userId: req.params.id,
+                body: req.body
+            });
             return res.status(400).json({ errors: errors.array() });
         }
 
@@ -400,9 +449,11 @@ exports.atualizarUsuario = [
             const dadosRecebidos = req.body;
             const usuarioLogado = req.user;
 
-            if (!usuarioLogado) {
-                return res.status(401).json({ message: 'Usuário não autenticado.' });
-            }
+            await logService.debug('Solicitação de atualização de usuário', {
+                userId: id,
+                editorId: usuarioLogado?.id,
+                campos: Object.keys(dadosRecebidos)
+            });
 
             const usuarioAlvo = await User.findByPk(id);
             if (!usuarioAlvo) {
@@ -450,6 +501,10 @@ exports.atualizarUsuario = [
 
             // Antes de fazer o update:
             if (updatedData.gradeId && dadosRecebidos.role === 'Aluno') {
+                await logService.debug('Verificando turma para aluno', {
+                    gradeId: updatedData.gradeId,
+                    userId: id
+                });
                 // Validar se a turma existe
                 try {
                     const gradeServiceUrl = `${process.env.SCHOOL_SERVICE_URL}/grades/${updatedData.gradeId}`;
@@ -473,6 +528,7 @@ exports.atualizarUsuario = [
             const usuarioAtualizado = await User.findByPk(id);
             const usuarioResponse = {
                 id: usuarioAtualizado.id,
+                username: usuarioAtualizado.username,
                 nome: usuarioAtualizado.name,
                 email: usuarioAtualizado.email,
                 role: usuarioAtualizado.role,
@@ -489,18 +545,34 @@ exports.atualizarUsuario = [
                 profilePic: usuarioAtualizado.profilePic,
                 content: usuarioAtualizado.content,
                 userClass: usuarioAtualizado.userClass,
-                gradeId: usuarioAtualizado.gradeId, // Adicionar este campo
+                gradeId: usuarioAtualizado.gradeId,
                 schoolId: usuarioAtualizado.schoolId,
                 districtId: usuarioAtualizado.districtId,
                 updatedAt: usuarioAtualizado.updatedAt
             };
 
-            await logService.logUserOperation('edicao', id, { editadoPor: usuarioLogado.id, alteracoes: updatedData });
+            await logService.logUserOperation('edicao', id, { 
+                editadoPor: usuarioLogado.id, 
+                alteracoes: updatedData,
+                camposAlterados: Object.keys(updatedData)
+            });
+            
+            await logService.info('Usuário atualizado com sucesso', {
+                id: id,
+                editorId: usuarioLogado.id,
+                camposAlterados: Object.keys(updatedData)
+            });
+            
             res.status(200).json(usuarioResponse);
 
         } catch (error) {
-            console.error('Erro ao atualizar o usuário:', error);
-            await logService.error('Erro ao atualizar usuário', { error: error.message, id: req.params.id });
+            await logService.error('Erro ao atualizar usuário', { 
+                error: error.message, 
+                stack: error.stack,
+                id: req.params.id,
+                body: req.body
+            });
+            
             res.status(500).json({ message: 'Erro ao atualizar o usuário.' });
         }
     }
@@ -510,36 +582,71 @@ exports.deletarUsuario = async (req, res) => {
     try {
         const { id } = req.params;
         if (!req.user || !req.user.id) {
+            await logService.warn('Tentativa de exclusão sem autenticação', { targetId: id });
             return res.status(401).json({ message: 'Usuário não autenticado.' });
         }
+        
         const usuarioLogado = req.user;
-        if (!usuarioLogado) {
-            return res.status(401).json({ message: 'Usuário não encontrado.' });
-        }
+        await logService.debug('Verificando permissão para exclusão', {
+            editorId: usuarioLogado.id,
+            editorRole: usuarioLogado.role,
+            targetId: id
+        });
+        
         const usuarioAlvo = await User.findByPk(id);
         if (!usuarioAlvo) {
+            await logService.warn('Tentativa de exclusão de usuário inexistente', { targetId: id });
             return res.status(404).json({ message: 'Usuário não encontrado.' });
         }
+        
         const permissaoExclusao = verificarPermissaoExclusao(usuarioLogado.role, usuarioAlvo.role);
         if (!permissaoExclusao.permitido) {
+            await logService.warn('Permissão negada para exclusão', {
+                editorId: usuarioLogado.id,
+                editorRole: usuarioLogado.role,
+                targetId: id,
+                targetRole: usuarioAlvo.role,
+                motivo: permissaoExclusao.mensagem
+            });
             return res.status(403).json({ message: permissaoExclusao.mensagem });
         }
 
         // 1. Excluir os logs associados ao usuário
-        await Log.destroy({
-            where: {
-                userId: id
-            }
+        const logsCount = await Log.destroy({
+            where: { userId: id }
+        });
+        
+        await logService.debug('Logs associados excluídos', {
+            targetId: id,
+            quantidade: logsCount
         });
 
         // 2. Excluir o usuário
         await User.destroy({ where: { id } });
+        
+        await logService.logUserOperation('exclusao', id, {
+            excluidoPor: usuarioLogado.id,
+            usuarioExcluido: {
+                id: usuarioAlvo.id,
+                username: usuarioAlvo.username,
+                email: usuarioAlvo.email,
+                role: usuarioAlvo.role
+            }
+        });
+        
+        await logService.info('Usuário excluído com sucesso', {
+            id: id,
+            excluidoPor: usuarioLogado.id
+        });
 
         res.json({ message: 'Usuário e logs associados excluídos com sucesso.' });
-
     } catch (error) {
-        console.error('Erro ao excluir o usuário e seus logs:', error);
-        await logService.error('Erro ao excluir usuário e seus logs', { error: error.message, id: req.params.id });
+        await logService.error('Erro ao excluir usuário e seus logs', {
+            error: error.message,
+            stack: error.stack,
+            id: req.params.id
+        });
+        
         res.status(500).json({ message: 'Erro ao excluir o usuário e seus logs.' });
     }
 };
@@ -637,45 +744,59 @@ exports.buscarUsuarioLogado = async (req, res) => {
 
 exports.resetarSenha = async (req, res) => {
     try {
-        console.log('users-service: Iniciando resetarSenha');
-        console.log('users-service: req.body:', req.body);
-        console.log('users-service: req.params:', req.params);
-
+        await logService.debug('Iniciando resetarSenha', {
+            body: req.body,
+            params: req.params,
+            requestor: req.user?.id
+        });
+        
         const id = req.body.userId || req.params.id;
-        console.log('users-service: ID a ser buscado:', id);
-
+        await logService.debug('ID para reset de senha:', { userId: id });
+        
         const usuario = await User.findByPk(id);
-        console.log('users-service: Resultado da busca (usuário):', usuario);
-
+        
         if (!usuario) {
-            console.log('users-service: Usuário não encontrado com ID:', id);
+            await logService.warn('Usuário não encontrado para reset de senha', { userId: id });
             return res.status(404).json({ message: 'Usuário não encontrado.' });
         }
 
         let newPasswordToSet = req.body.newPassword;
         const defaultPassword = process.env.DEFAULT_PASSWORD;
 
-        if (!newPasswordToSet) { // Se newPassword for vazio (ou undefined)
-            console.log('users-service: newPassword não fornecida, usando DEFAULT_PASSWORD');
+        if (!newPasswordToSet) {
+            await logService.debug('Nova senha não fornecida, usando senha padrão', { userId: id });
             newPasswordToSet = defaultPassword;
-        } else {
-            console.log('users-service: newPassword fornecida:', newPasswordToSet);
         }
 
         if (!defaultPassword && !newPasswordToSet) {
+            await logService.error('Senha padrão não configurada e nova senha não fornecida', { userId: id });
             return res.status(500).json({ message: 'Senha padrão não configurada e nenhuma nova senha fornecida.' });
         }
 
-        usuario.password = newPasswordToSet || defaultPassword; // Use newPassword se fornecida, senão a padrão
+        usuario.password = newPasswordToSet || defaultPassword;
         await usuario.save();
-        console.log('users-service: Senha do usuário com ID:', id, 'resetada com sucesso.');
+        
+        await logService.logUserOperation('resetSenha', id, {
+            resetadoPor: req.user?.id || 'sistema',
+            usouSenhaPadrao: !newPasswordToSet
+        });
+        
+        await logService.info('Senha resetada com sucesso', {
+            userId: id,
+            resetadoPor: req.user?.id || 'sistema'
+        });
 
         res.status(200).json({
             message: 'Senha resetada com sucesso!',
             novaSenha: newPasswordToSet || defaultPassword
         });
     } catch (error) {
-        console.error('users-service: Erro ao resetar a senha:', error);
+        await logService.error('Erro ao resetar senha', {
+            error: error.message,
+            stack: error.stack,
+            userId: req.body.userId || req.params.id
+        });
+        
         res.status(500).json({ message: 'Erro ao resetar a senha.' });
     }
 };
@@ -763,6 +884,7 @@ exports.getUsersData = async (req, res) => {
 
         res.json({
             users: sortedUsers,
+            usernames: user.username,
             districts: districts,
             schools: schools,
             grades: grades,

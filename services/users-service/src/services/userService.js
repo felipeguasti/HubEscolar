@@ -110,24 +110,43 @@ const validarCPF = (cpf) => {
 
 // Função para validar telefone
 const validarTelefone = (telefone) => {
-    // Remove todos os caracteres não numéricos
-    telefone = telefone.replace(/[^\d]/g, '');
-
-    // Verifica se o telefone está vazio (agora opcional)
+    // Se o telefone for nulo ou vazio, considera como válido (campo opcional)
     if (!telefone) {
-        return true; // Telefone vazio é considerado válido
+        return true;
     }
+    
+    // Verificar se contém múltiplos telefones
+    if (telefone.includes('|')) {
+        // Dividir os telefones e validar cada um
+        const telefones = telefone.split('|');
+        // Um telefone inválido torna todo o conjunto inválido
+        return telefones.every(tel => validarTelefoneSingular(tel.trim()));
+    }
+    
+    // Caso seja um único telefone
+    return validarTelefoneSingular(telefone);
+};
 
+// Função auxiliar para validar um único telefone
+const validarTelefoneSingular = (telefone) => {
+    // Remove todos os caracteres não numéricos
+    const numerosApenas = telefone.replace(/[^\d]/g, '');
+    
+    // Verifica se o telefone está vazio
+    if (!numerosApenas) {
+        return false; // Telefone vazio não é válido quando fornecido
+    }
+    
     // Verifica se é celular (começa com 9)
-    if (telefone.startsWith('9')) {
-        return telefone.length >= 9 && telefone.length <= 12;
+    if (numerosApenas.startsWith('9')) {
+        return numerosApenas.length >= 9 && numerosApenas.length <= 12;
     }
-
+    
     // Verifica se é fixo (começa com 2, 3, 4 ou 5)
-    if (/^[2-5]/.test(telefone)) {
-        return telefone.length >= 8 && telefone.length <= 11;
+    if (/^[2-5]/.test(numerosApenas)) {
+        return numerosApenas.length >= 8 && numerosApenas.length <= 11;
     }
-
+    
     // Se não se encaixar em nenhum dos padrões
     return false;
 };

@@ -302,7 +302,7 @@ async function generateStudentOccurrencesReport(studentId, requesterUser, authTo
                         if (occurrence.reportLevel) {
                             level = occurrence.reportLevel === 'leves' ? 'Leve' :
                                   occurrence.reportLevel === 'graves' ? 'Grave' :
-                                  occurrence.reportLevel === 'gravissimas' ? 'Gravíssima' :
+                                  occurrence.reportLevel === 'infracionais' ? 'Ato infracional' :
                                   occurrence.reportLevel === 'automatic' ? 'Automática' :
                                   occurrence.reportLevel;
                         }
@@ -352,7 +352,7 @@ async function generateStudentOccurrencesReport(studentId, requesterUser, authTo
                     const totalOcorrencias = occurrences.length;
                     const ocorrenciasLeves = occurrences.filter(o => o.reportLevel === 'leves').length;
                     const ocorrenciasGraves = occurrences.filter(o => o.reportLevel === 'graves').length;
-                    const ocorrenciasGravissimas = occurrences.filter(o => o.reportLevel === 'gravissimas').length;
+                    const ocorrenciasGravissimas = occurrences.filter(o => o.reportLevel === 'infracionais').length;
                     const outrasOcorrencias = totalOcorrencias - ocorrenciasLeves - ocorrenciasGraves - ocorrenciasGravissimas;
                     
                     // Desenhar tabela de estatísticas
@@ -366,7 +366,7 @@ async function generateStudentOccurrencesReport(studentId, requesterUser, authTo
                         { label: 'Total de ocorrências:', value: totalOcorrencias },
                         { label: 'Ocorrências leves:', value: ocorrenciasLeves },
                         { label: 'Ocorrências graves:', value: ocorrenciasGraves },
-                        { label: 'Ocorrências gravíssimas:', value: ocorrenciasGravissimas }
+                        { label: 'Ato infracional:', value: ocorrenciasGravissimas }
                     ];
                     
                     if (outrasOcorrencias > 0) {
@@ -383,7 +383,7 @@ async function generateStudentOccurrencesReport(studentId, requesterUser, authTo
                         statsY += 20;
                     });
                 }
-
+                
                 // Assinaturas
                 doc.moveDown(2);
                 addFooterWithSignatures(doc, requesterDetails);

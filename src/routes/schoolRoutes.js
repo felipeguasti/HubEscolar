@@ -23,7 +23,7 @@ router.get("/profile/:id", async (req, res) => {
         }
         
         // Verificar se pode editar (Diretor ou Secretário)
-        const canEdit = req.user && ['Diretor', 'Secretario'].includes(req.user.role);
+        const canEdit = req.user && ['Diretor', 'Secretario', 'Coordenador'].includes(req.user.role);
         
         // Verificar se o usuário pertence a esta escola (para Diretor/Secretário)
         const isSchoolMember = req.user && (

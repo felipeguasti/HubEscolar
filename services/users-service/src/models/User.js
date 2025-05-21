@@ -14,6 +14,24 @@ User.init({
     type: DataTypes.STRING,
     allowNull: false
   },
+  username: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: {
+      args: true,
+      msg: 'Este nome de usuário já está em uso.'
+    },
+    validate: {
+      len: {
+        args: [3, 30],
+        msg: 'Nome de usuário deve ter entre 3 e 30 caracteres.'
+      },
+      is: {
+        args: /^[a-zA-Z0-9._-]+$/i,
+        msg: 'Nome de usuário pode conter apenas letras, números, pontos, traços e sublinhados.'
+      }
+    }
+  },
   email: {
     type: DataTypes.STRING,
     allowNull: false,

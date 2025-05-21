@@ -8,6 +8,17 @@ const messageRoutes = require('./src/routes/messageRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 const errorHandler = require('./src/middlewares/error');
 const websockets = require('./src/config/websockets'); 
+const sequelize = require('./src/config/database');
+
+
+// Sincronização do banco de dados com tratamento de erros adequado
+sequelize.sync({ alter: true })
+  .then(() => {
+    logger.info('Database synchronized with altered models');
+  })
+  .catch((error) => {
+    logger.error('Error synchronizing database:', error);
+  });
 
 // Inicialização do Express
 const app = express();

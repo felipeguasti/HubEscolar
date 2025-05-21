@@ -109,13 +109,34 @@
                         </tr>
                     </thead>                    
                 </thead>
-                <tbody>
+                <tbody>                    
                     <% 
-                    // Filtrando e ordenando os usuários para que inativos apareçam primeiro e depois os ativos, ordenados por data
+                    // Definir prioridades de cargo
+                    const rolePriority = {
+                        'Master': 1,
+                        'Inspetor': 2,
+                        'Diretor': 3,
+                        'Secretario': 4,
+                        'Coordenador': 5,
+                        'Pedagogo': 6,
+                        'Professor': 7,
+                        'Aluno': 8
+                    };
+                    
+                    // Ordenar usuários: inativos primeiro, depois por cargo conforme prioridade e por fim alfabeticamente
                     const sortedUsers = users.sort((a, b) => {
+                        // Primeiro critério: status (inativos primeiro)
                         if (a.status === 'inactive' && b.status !== 'inactive') return -1;
                         if (a.status !== 'inactive' && b.status === 'inactive') return 1;
-                        return new Date(b.createdAt) - new Date(a.createdAt);
+                        
+                        // Se ambos têm o mesmo status, ordenar por cargo conforme a prioridade definida
+                        const roleA = rolePriority[a.role] || 999; // Se o cargo não estiver na lista, vai para o fim
+                        const roleB = rolePriority[b.role] || 999;
+                        
+                        if (roleA !== roleB) return roleA - roleB;
+                        
+                        // Se os cargos são iguais, ordenar alfabeticamente por nome
+                        return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
                     });
                     %>
 
@@ -147,6 +168,9 @@
             
                         <label for="registerName">Nome:</label>
                         <input type="text" id="registerName" name="name" value="">
+
+                        <label for="registerUsername">Username:</label>
+                        <input type="text" id="registerUsername" name="username" value="">
             
                         <label for="registerEmail">Email:</label>
                         <input type="email" id="registerEmail" name="email" value="">
@@ -284,7 +308,10 @@
                         <!-- Nome -->
                         <label for="editName">Nome:</label>
                         <input type="text" id="editName" name="name" value="<%= user.name %>">
-                    
+                        
+                        <label for="editUsername">Username:</label>
+                        <input type="text" id="editUsername" name="username" value="">
+
                         <!-- E-mail -->
                         <label for="editEmail">Email:</label>
                         <input type="email" id="editEmail" name="email" value="<%= user.email %>">

@@ -321,6 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const currentPage = parseInt(page) || 1;
                 const limit = 10;
                 const offset = (currentPage - 1) * limit;
+
         
                 if (isNaN(offset)) {
                     throw new Error('Invalid page number');
@@ -425,7 +426,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 const data = await response.json();
                 
-// Encontrar o relatório específico na lista
                 // Encontrar o relatório específico na lista
                 const report = data.reports.find(r => r.id === parseInt(reportId));
                 if (!report) {
@@ -459,21 +459,21 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ${report.reportRecommendation ? `
                                     <p><strong>Recomendações:</strong> ${report.reportRecommendation}</p>
                                 ` : ''}
-        
+
                                 ${report.suspended ? `
                                     <div class="suspension-info">
                                         <h3>Suspensão</h3>
                                         <p><strong>Duração:</strong> ${report.suspensionDuration} dias</p>
                                     </div>
                                 ` : ''}
-        
+
                                 ${report.callParents ? `
                                     <div class="parents-meeting">
                                         <h3>Reunião com Responsáveis</h3>
                                         <p><strong>Data Agendada:</strong> ${new Date(report.parentsMeeting).toLocaleString('pt-BR')}</p>
                                     </div>
                                 ` : ''}
-        
+
                                 ${report.deliveredAt ? `
                                     <div class="delivery-info">
                                         <h3>Informações de Entrega</h3>
@@ -630,7 +630,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `).join('');
         }
         
-        function updatePagination({ current, total, pages }) {
+        function updatePagination({ current, total, pages, studentId, classId }) {
             // Se não há páginas ou apenas uma, não precisamos paginação
             if (!pages || pages <= 1) {
                 // Tentar remover a paginação existente se houver
@@ -640,7 +640,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 return;
             }
-
+        
             // Verificar se o container já existe ou criar um se necessário
             let paginationContainer = document.querySelector('.pagination');
             if (!paginationContainer) {
@@ -656,7 +656,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
             }
-
+        
             let paginationHTML = '';
         
             // Botão Previous
@@ -667,10 +667,10 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         
             // Números das páginas
-            for (let i = 1; i <= totalPages; i++) {
+            for (let i = 1; i <= pages; i++) {
                 if (
                     i === 1 ||
-                    i === totalPages ||
+                    i === pages ||
                     (i >= current - 2 && i <= current + 2)
                 ) {
                     paginationHTML += `
@@ -686,7 +686,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
             // Botão Next
             paginationHTML += `
-                <button class="page-btn next" data-page="${current + 1}" ${current === totalPages ? 'disabled' : ''}>
+                <button class="page-btn next" data-page="${current + 1}" ${current === pages ? 'disabled' : ''}> 
                     &raquo;
                 </button>
             `;
@@ -699,9 +699,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!button.disabled) {
                     button.addEventListener('click', () => {
                         const newPage = parseInt(button.dataset.page);
-                        if (!isNaN(newPage) && newPage > 0 && newPage <= totalPages) {
+                        if (!isNaN(newPage) && newPage > 0 && newPage <= pages) {
                             console.log('Changing to page:', newPage);
-                            handleFilters(newPage, studentId); // Passa o studentId ao clicar no botão
+                            // Usar o studentId recebido como parâmetro
+                            handleFilters(newPage, studentId, classId);
                         }
                     });
                 }
