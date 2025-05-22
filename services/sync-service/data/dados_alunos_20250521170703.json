@@ -96,11 +96,8 @@
             "dt_nascimento": "01/04/2009",
             "sexo": "masculino",
             "idade": "16",
-            "telefone": "(27) 98886-6118",
-            "telefones": [
-                "(27) 98886-6118",
-                "(27) 9814-1410"
-            ]
+            "telefone": "",
+            "telefones": []
         },
         {
             "nome": "AMANDA ALVES RODRIGUES",
@@ -644,17 +641,6 @@
             "telefone": "(27) 99705-4878",
             "telefones": [
                 "(27) 99705-4878"
-            ]
-        },
-        {
-            "nome": "FELIPE GUASTI",
-            "dt_nascimento": "25/09/1985",
-            "sexo": "masculino",
-            "idade": "39",
-            "telefone": "(27) 998873776",
-            "telefones": [
-                "(27) 998873776",
-                "(27) 998883776"
             ]
         },
         {
@@ -2752,7 +2738,9 @@
             "idade": "14",
             "telefone": "",
             "telefones": []
-        },
+        }
+    ],
+    "1ªIV02-EM": [
         {
             "nome": "JOAO BERNARDO DE OLIVEIRA\rDA SILVA",
             "dt_nascimento": "31/01/2011",

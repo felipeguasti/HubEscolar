@@ -3,6 +3,8 @@ const Log = require('../models/Log');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const logService = require('../services/logService');
+const { Op } = require('sequelize');
+const sequelize = require('../config/db');
 
 async function getFetch() {
     try {
@@ -114,7 +116,7 @@ exports.adicionarUsuario = [
     body('state').optional(),
     body('zip').optional().custom(validarCEP).customSanitizer(value => value ? value.replace(/[^\d]/g, '').padStart(8, '0') : value),
     body('horario').optional().default('Integral').isIn(['Manhã', 'Tarde', 'Noite', 'Integral']).withMessage('Horário inválido'),
-body('gradeId')
+    body('gradeId')
     .optional()
     .custom((value, { req }) => {
         // Se o usuário for um Aluno, o valor deve ser um número inteiro
@@ -896,3 +898,125 @@ exports.getUsersData = async (req, res) => {
         res.status(500).json({ error: 'Erro ao carregar dados de usuários' });
     }
 };
+
+exports.checkUserExists = async (req, res) => {
+  try {
+    const { name, schoolId } = req.query;
+    
+    if (!name || !schoolId) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Nome e ID da escola são obrigatórios'
+      });
+    }
+    
+    // Usar exatamente as mesmas funções e na mesma ordem que o sync-service 
+    
+    // 1. Limpar o nome até o primeiro caractere especial
+    const nomeLimpo = limparNomeCompletoAteCaractereEspecial(name);
+    
+    // 2. Processar o nome considerando nome social e removendo caracteres especiais
+    const nomeTratado = processarNomeAluno(name);
+    
+    // 3. Normalizar para comparação (usar a mesma função que o sync-service usa)
+    const nomeNormalizado = normalizarNome(nomeTratado);
+    
+    // Buscar todos os usuários da escola que sejam alunos
+    const users = await User.findAll({
+      where: {
+        schoolId,
+        role: 'Aluno'
+      }
+    });
+    
+    // Comparar com a mesma função de normalização
+    const user = users.find(u => normalizarNome(u.name) === nomeNormalizado);
+    
+    if (user) {
+      // Usuário existe
+      return res.status(200).json({
+        exists: true,
+        user: {
+          id: user.id,
+          name: user.name,
+          gradeId: user.gradeId,
+          schoolId: user.schoolId,
+          phone: user.phone,
+          dateOfBirth: user.dateOfBirth,
+          gender: user.gender,
+          horario: user.horario
+        }
+      });
+    }
+    
+    // Usuário não existe
+    return res.status(404).json({
+      exists: false,
+      message: 'Usuário não encontrado'
+    });
+    
+  } catch (error) {
+    logService.error('Erro ao verificar usuário existente', {
+      error: error.message,
+      stack: error.stack
+    });
+    return res.status(500).json({
+      success: false,
+      message: `Erro ao verificar usuário: ${error.message}`
+    });
+  }
+};
+
+// Adicionar as funções auxiliares exatamente como estão no sync-service
+
+/**
+ * Normaliza um nome para comparação (remove acentos, converte para minúsculas)
+ */
+function normalizarNome(nome) {
+    return nome
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+}
+
+/**
+ * Trata nome de aluno considerando nome social entre parênteses e removendo caracteres especiais
+ */
+function processarNomeAluno(nomeCompleto) {
+    if (!nomeCompleto) return '';
+    
+    // Substituir todos os caracteres especiais por espaços
+    let nomeLimpo = nomeCompleto.replace(/[\r\n\t]/g, ' ').trim();
+    
+    // Verificar se há nome social entre parênteses
+    const regexNomeSocial = /\(([^)]+)\)/;
+    const match = nomeLimpo.match(regexNomeSocial);
+    
+    if (match && match[1]) {
+        // Se encontrou nome social entre parênteses, usa ele
+        const nomeSocial = match[1].trim();
+        // Limpar novamente para garantir que não há caracteres especiais no nome social
+        return nomeSocial.replace(/[\r\n\t]/g, ' ').trim();
+    }
+    
+    // Se não encontrou nome social, retorna o nome original limpo
+    return nomeLimpo;
+}
+
+/**
+ * Remove caracteres especiais e todo conteúdo após eles
+ */
+function limparNomeCompletoAteCaractereEspecial(nome) {
+    if (!nome) return '';
+    
+    // Procurar pela primeira ocorrência de qualquer caractere especial
+    const match = nome.match(/[\r\n\t]/);
+    if (match && match.index > 0) {
+        // Se encontrou, retornar apenas a parte antes do caractere especial
+        return nome.substring(0, match.index);
+    }
+    
+    // Se não encontrou caractere especial, retornar o nome original
+    return nome;
+}

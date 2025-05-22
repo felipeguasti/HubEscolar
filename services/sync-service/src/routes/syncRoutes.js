@@ -9,7 +9,7 @@ router.use(authMiddleware);
 
 /**
  * @swagger
- * /api/sync/status:
+ * /sync/status:
  *   get:
  *     summary: Verifica a disponibilidade do serviço SEGES
  *     tags: [Sync]
@@ -23,7 +23,7 @@ router.get('/status', syncController.verificarStatusSEGES);
 
 /**
  * @swagger
- * /api/sync/schools/{schoolId}/metrics:
+ * /sync/schools/{schoolId}/metrics:
  *   get:
  *     summary: Obtém métricas de sincronização da escola
  *     tags: [Sync]
@@ -44,7 +44,7 @@ router.get('/schools/:schoolId/metrics', syncController.getMetricas);
 
 /**
  * @swagger
- * /api/sync/schools/{schoolId}/import/classes:
+ * /sync/schools/{schoolId}/import/classes:
  *   post:
  *     summary: Importa turmas do SEGES para a escola
  *     tags: [Sync]
@@ -65,7 +65,7 @@ router.post('/schools/:schoolId/import/classes', syncController.importTurmas);
 
 /**
  * @swagger
- * /api/sync/schools/{schoolId}/import/students:
+ * /sync/schools/{schoolId}/import/students:
  *   post:
  *     summary: Importa alunos do SEGES para a escola
  *     tags: [Sync]
@@ -86,7 +86,7 @@ router.post('/schools/:schoolId/import/students', syncController.importAlunos);
 
 /**
  * @swagger
- * /api/sync/schools/{schoolId}/import/all:
+ * /sync/schools/{schoolId}/import/all:
  *   post:
  *     summary: Importa turmas e alunos do SEGES para a escola
  *     tags: [Sync]

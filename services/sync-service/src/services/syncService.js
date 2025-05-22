@@ -3,6 +3,13 @@ const logger = require('../utils/logger');
 const { SyncJob, SyncItem } = require('../models');
 const { Sequelize } = require('sequelize');
 const db = require('../config/db');
+const { 
+    normalizarNome, 
+    processarNomeAluno, 
+    limparNomeCompletoAteCaractereEspecial, 
+    gerarUsernameValido,
+    validarFormatarTelefones
+} = require('./syncHelpers');
 
 class SyncService {
     constructor() {
@@ -894,6 +901,10 @@ class SyncService {
                     this.normalizarNome(a.name)
                 );
                 
+                // Adicionar: buscar todos os alunos da escola, não só da turma atual
+                const todosAlunosDaEscola = await this.obterAlunosDaEscola(token, schoolId);
+                logger.info(`Encontrados ${todosAlunosDaEscola.length} alunos totais na escola`);
+                
                 // Processar apenas alunos que não existem na turma
                 let alunosNovos = 0;
                 let alunosJaExistentes = 0;
@@ -902,11 +913,63 @@ class SyncService {
                     // Normalizar nome para comparação
                     const nomeNormalizado = this.normalizarNome(aluno.nome);
                     
-                    // Verificar se aluno já existe na turma pelo nome
-                    if (nomesExistentes.includes(nomeNormalizado)) {
-                        logger.debug(`Aluno ${aluno.nome} já existe na turma ${turmaNome}, ignorando`);
+                    // Verificar se aluno já existe EM QUALQUER TURMA da escola
+                    const alunoExistente = todosAlunosDaEscola.find(a => 
+                        this.normalizarNome(a.name) === nomeNormalizado
+                    );
+                    
+                    if (alunoExistente) {
+                        // Se existir, verificar se precisa trocar de turma
+                        if (alunoExistente.gradeId !== turma.id) {
+                            // Se estiver em outra turma, marcar para atualização
+                            logger.info(`Aluno ${aluno.nome} encontrado em outra turma, marcando para atualização`);
+                            
+                            // Processar dados normalmente para incluir na lista de atualizações
+                            // mas adicionar flags especiais
+                            const alunoProcessado = {
+                                // Dados básicos
+                                name: aluno.name,
+                                username: aluno.username,
+                                email: aluno.email,
+                                password: 'trocarSenh@',
+                                
+                                // Dados do aluno
+                                cpf: null,
+                                phone: aluno.telefone ? aluno.telefone.replace(/[^\d() -]/g, '').trim() : null, 
+                                dateOfBirth: aluno.dt_nascimento ? aluno.dt_nascimento.split('/').reverse().join('-') : null,
+                                gender: aluno.sexo ? aluno.sexo.charAt(0).toUpperCase() + aluno.sexo.slice(1) : 'Prefiro não dizer',
+                                profilePic: null,
+                                
+                                // Dados institucionais
+                                role: 'Aluno',
+                                horario: "Integral", // Padrão
+                                gradeId: turma.id,
+                                schoolId: schoolId,
+                                districtId: districtId,
+                                
+                                // Outros dados
+                                address: null,
+                                city: null,
+                                state: null,
+                                zip: null,
+                                status: 'active',
+                                
+                                // Dados auxiliares para processamento
+                                _turmaNome: turmaNome,
+                                _usernameBase: aluno.username,
+                                _existente: true,
+                                _alunoId: alunoExistente.id,
+                                _mudancaTurma: true,
+                                _turmaAnterior: alunoExistente.gradeId
+                            };
+                            
+                            alunosProcessados.push(alunoProcessado);
+                        } else {
+                            // Aluno já está na turma correta, ignorar
+                            logger.debug(`Aluno ${aluno.nome} já existe na turma ${turmaNome}, não precisa atualizar`);
+                        }
                         alunosJaExistentes++;
-                        continue;
+                        continue; // Pular para o próximo aluno
                     }
                     
                     // Se não existe, processar o aluno
@@ -920,20 +983,13 @@ class SyncService {
                         // Gerar username e email consistentes
                         const username = gerarUsernameValido(aluno.nome);
                         const email = `${username}@escola.edu.br`;
-                        
-                        // Formatação de telefones (manter todos os telefones)
+                                            
+                        // Formatação de telefones usando a função do syncHelpers
                         let telefoneFormatado = '';
                         if (aluno.telefones && aluno.telefones.length > 0) {
-                            // Formatar cada telefone e juntá-los com |
-                            telefoneFormatado = aluno.telefones
-                                .map(tel => {
-                                    // Limpar formatação estranha mas manter números, parênteses e hífen
-                                    return tel.replace(/[^\d() -]/g, '').trim();
-                                })
-                                .filter(tel => tel.length > 0) // Remover telefones vazios
-                                .join('|');
+                            telefoneFormatado = validarFormatarTelefones(aluno.telefones);
                         } else if (aluno.telefone) {
-                            telefoneFormatado = aluno.telefone.replace(/[^\d() -]/g, '').trim();
+                            telefoneFormatado = validarFormatarTelefones(aluno.telefone);
                         }
                         
                         // Formatar data de nascimento
@@ -1037,11 +1093,7 @@ class SyncService {
      * @returns {string} Nome normalizado
      */
     normalizarNome(nome) {
-        return nome
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .trim();
+        return normalizarNome(nome); // Usa a função importada
     }
 
     /**
@@ -1078,6 +1130,40 @@ class SyncService {
         }
     }
     
+    /**
+     * Obtém lista de alunos de uma escola
+     * @param {string} token - Token JWT
+     * @param {number} schoolId - ID da escola
+     * @returns {Array} Lista de alunos
+     */
+    async obterAlunosDaEscola(token, schoolId) {
+        try {
+            // Fazer solicitação ao users-service para obter todos os alunos da escola
+            const response = await axios.get(
+                `${this.usersServiceUrl}/users/filter?schoolId=${schoolId}&role=Aluno`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            
+            // Verificar formato da resposta
+            if (response.data && response.data.users && Array.isArray(response.data.users)) {
+                return response.data.users;
+            } else if (Array.isArray(response.data)) {
+                return response.data;
+            }
+            
+            logger.warn(`Formato de resposta inesperado ao buscar alunos da escola ${schoolId}`, 
+                typeof response.data);
+            return [];
+        } catch (error) {
+            logger.error(`Erro ao obter alunos da escola ${schoolId}:`, error.message);
+            return []; // Retornar array vazio em caso de erro
+        }
+    }
+
     /**
      * Verifica a disponibilidade do serviço SEGES
      * @param {string} token - Token JWT para autenticação
@@ -1207,12 +1293,13 @@ class SyncService {
     async criarOuAtualizarAlunos(token, alunos) {
         const criados = [];
         const atualizados = [];
+        const ignorados = [];
         const erros = [];
         
         // Se não houver alunos para processar, retornar
         if (!alunos || alunos.length === 0) {
             logger.warn('Nenhum aluno para criar/atualizar');
-            return { criados: [], atualizados: [], erros: [] };
+            return { criados: [], atualizados: [], ignorados: [], erros: [] };
         }
         
         logger.info(`Criando/atualizando ${alunos.length} alunos`);
@@ -1220,12 +1307,12 @@ class SyncService {
         // Processar alunos sequencialmente para evitar problemas
         for (const aluno of alunos) {
             try {
-                // Preparar dados do aluno - garantindo formato adequado para a API
+                // Preparar dados do aluno para criação
                 const dadosAluno = {
                     name: aluno.name,
                     username: aluno.username,
                     email: aluno.email,
-                    password: 'trocarSenh@', // senha mais segura
+                    password: 'trocarSenh@123',
                     role: 'Aluno',
                     gradeId: aluno.gradeId,
                     schoolId: aluno.schoolId,
@@ -1235,14 +1322,83 @@ class SyncService {
                 };
                 
                 // Adicionar campos opcionais apenas se tiverem valor
-                if (aluno.phone) dadosAluno.phone = aluno.phone;
+                if (aluno.phone) {
+                    const telefoneValidado = validarFormatarTelefones(aluno.phone);
+                    if (telefoneValidado) dadosAluno.phone = telefoneValidado;
+                }
                 if (aluno.dateOfBirth) dadosAluno.dateOfBirth = aluno.dateOfBirth;
                 if (aluno.gender) dadosAluno.gender = aluno.gender;
                 
-                logger.debug(`Tentando criar aluno: ${dadosAluno.name}`);
+                // Verificar se aluno já existe
+                try {
+                    // Aplicar mesma normalização que usamos ao criar o nome
+                    const nomeTratado = processarNomeAluno(aluno.name);
+                    const nomeLimpo = limparNomeCompletoAteCaractereEspecial(nomeTratado);
+                    
+                    const checkResponse = await axios.get(
+                        `${this.usersServiceUrl}/users/check-exists`,
+                        {
+                            params: { 
+                                name: nomeLimpo, 
+                                schoolId: aluno.schoolId 
+                            },
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        }
+                    );
+                    
+                    // Se existir, verificar se precisa atualizar
+                    if (checkResponse.data && checkResponse.data.exists) {
+                        const usuarioExistente = checkResponse.data.user;
+                        
+                        // Verificar campos que mudaram
+                        const mudancas = {};
+                        if (aluno.gradeId !== usuarioExistente.gradeId) mudancas.gradeId = aluno.gradeId;
+                        if (aluno.horario && aluno.horario !== usuarioExistente.horario) mudancas.horario = aluno.horario;
+                        if (aluno.phone && aluno.phone !== usuarioExistente.phone) mudancas.phone = aluno.phone;
+                        
+                        // Se houver mudanças, atualizar
+                        if (Object.keys(mudancas).length > 0) {
+                            logger.info(`Atualizando usuário ${aluno.name} (ID: ${usuarioExistente.id})`);
+                            
+                            await axios.patch(
+                                `${this.usersServiceUrl}/users/${usuarioExistente.id}`,
+                                mudancas,
+                                { 
+                                    headers: { 
+                                        'Authorization': `Bearer ${token}`, 
+                                        'Content-Type': 'application/json' 
+                                    }
+                                }
+                            );
+                            
+                            atualizados.push({ 
+                                ...aluno, 
+                                id: usuarioExistente.id, 
+                                camposAtualizados: Object.keys(mudancas).join(', ') 
+                            });
+                            
+                            logger.info(`Usuário ${aluno.name} atualizado com sucesso`);
+                        } else {
+                            logger.info(`Usuário ${aluno.name} já existe e não precisa de atualizações`);
+                            ignorados.push({ ...aluno, id: usuarioExistente.id });
+                        }
+                        continue;
+                    }
+                } catch (checkError) {
+                    // Se o erro for 404, significa que o usuário não existe
+                    if (checkError.response && checkError.response.status === 404) {
+                        // Continuar para criar o usuário
+                        logger.info(`Usuário ${aluno.name} não existe, criando novo`);
+                    } else {
+                        // Outros erros na verificação
+                        throw checkError;
+                    }
+                }
                 
-                // Criar aluno
-                const response = await axios.post(
+                // Se chegou aqui, o usuário não existe e precisa ser criado
+                logger.info(`Criando novo usuário: ${aluno.name}`);
+                
+                const createResponse = await axios.post(
                     `${this.usersServiceUrl}/users/create`,
                     dadosAluno,
                     {
@@ -1253,197 +1409,47 @@ class SyncService {
                     }
                 );
                 
-                // Processar resposta de sucesso
-                if (response.data) {
-                    if (response.data.id) {
-                        // Caso 1: Retornou ID
-                        criados.push({
-                            ...dadosAluno,
-                            id: response.data.id
-                        });
-                        logger.info(`Aluno ${dadosAluno.name} criado com ID: ${response.data.id}`);
-                    } else if (response.data.message && response.data.message.includes('sucesso')) {
-                        // Caso 2: Mensagem de sucesso
-                        criados.push(dadosAluno);
-                        logger.info(`Aluno ${dadosAluno.name} criado com sucesso (sem ID retornado)`);
-                    } else {
-                        // Caso 3: Outro formato mas sem erro
-                        criados.push(dadosAluno);
-                        logger.info(`Aluno ${dadosAluno.name} possivelmente criado: ${JSON.stringify(response.data)}`);
-                    }
-                }
-            } catch (error) {
-                // Tratar erro 409 - Conflito (usuário já existe)
-                if (error.response && error.response.status === 409) {
-                    logger.debug(`Aluno ${aluno.name} já existe, pulando`);
-                    
-                    // Vamos apenas registrar que o aluno já existe
-                    atualizados.push({
+                // Verificar se a criação foi bem-sucedida
+                if (createResponse.data && createResponse.data.id) {
+                    criados.push({
                         ...aluno,
-                        message: 'Aluno já existe, não foi atualizado'
+                        id: createResponse.data.id
                     });
+                    logger.info(`Usuário ${aluno.name} criado com ID: ${createResponse.data.id}`);
+                } else {
+                    criados.push(aluno);
+                    logger.info(`Usuário ${aluno.name} aparentemente criado, mas sem ID retornado`);
                 }
-                // Tratar erro 400 - Bad Request (validação)
-                else if (error.response && error.response.status === 400) {
-                    logger.warn(`Erro de validação para aluno ${aluno.name}, tentando abordagem alternativa`);
-                    
-                    const horario = aluno.horario || "Integral";
-                    try {
-                        // Uso da nova função para gerar username
-                        const username = gerarUsernameValido(aluno.name);
-                        const email = `${username}@escola.edu.br`;
-                        // Criar versão simplificada com apenas os campos essenciais
-                        const alunoSimplificado = {
-                            name: processarNomeAluno(aluno.name),
-                            username: username,
-                            email: email,
-                            password: 'trocarSenh@',
-                            role: 'Aluno',
-                            gradeId: aluno.gradeId,
-                            schoolId: aluno.schoolId,
-                            districtId: aluno.districtId,
-                            horario: horario,
-                            status: 'active',
-                            phone: aluno.phone
-                        };
-                        
-                        logger.debug(`Tentando criar aluno com dados simplificados: ${alunoSimplificado.name}`);
-                        
-                        // Nova tentativa com dados simplificados
-                        const retryResponse = await axios.post(
-                            `${this.usersServiceUrl}/users/create`,
-                            alunoSimplificado,
-                            {
-                                headers: {
-                                    'Authorization': `Bearer ${token}`,
-                                    'Content-Type': 'application/json'
-                                }
-                            }
-                        );
-                        
-                        if (retryResponse.data) {
-                            criados.push({
-                                ...alunoSimplificado,
-                                id: retryResponse.data.id || 0,
-                                simplified: true
-                            });
-                            logger.info(`Aluno ${alunoSimplificado.name} criado com dados simplificados`);
-                        }
-                    } catch (retryError) {
-                        // Se ainda falhar, registrar erro detalhado
-                        const errorMessage = retryError.response?.data?.message || retryError.message;
-                        logger.error(`Falha ao criar aluno ${aluno.name} mesmo após simplificação: ${errorMessage}`);
-                        
-                        erros.push({
-                            aluno: aluno.name,
-                            erro: errorMessage,
-                            status: retryError.response?.status
-                        });
-                    }
+                
+            } catch (error) {
+                // Tratamento de erro melhorado
+                let errorMessage = error.message;
+                let statusCode = error.response?.status;
+                
+                if (error.response && error.response.data) {
+                    errorMessage = error.response.data.message || JSON.stringify(error.response.data);
                 }
-                // Outros erros
-                else {
-                    const errorMessage = error.response?.data?.message || error.message;
-                    logger.error(`Erro ao criar aluno ${aluno.name}: ${errorMessage}`);
-                    
-                    erros.push({
-                        aluno: aluno.name,
-                        erro: errorMessage,
-                        status: error.response?.status
-                    });
-                }
+                
+                logger.error(`Erro ao processar aluno ${aluno.name}: ${errorMessage} (Status: ${statusCode})`);
+                
+                erros.push({
+                    aluno: aluno.name,
+                    erro: errorMessage,
+                    status: statusCode
+                });
             }
         }
         
-        logger.info(`Resultado da criação/atualização: ${criados.length} criados, ${atualizados.length} existentes, ${erros.length} erros`);
+        logger.info(`Resultado final: ${criados.length} criados, ${atualizados.length} atualizados, ${ignorados.length} ignorados, ${erros.length} erros`);
         
-        return {
-            criados,
-            atualizados,
-            erros
+        return { 
+            criados, 
+            atualizados, 
+            ignorados, 
+            erros 
         };
     }
     
-}
-
-/**
- * Trata nome de aluno considerando nome social entre parênteses e removendo caracteres especiais
- * @param {string} nomeCompleto - Nome completo original do aluno
- * @returns {string} Nome processado
- */
-function processarNomeAluno(nomeCompleto) {
-    if (!nomeCompleto) return '';
-    
-    // Substituir todos os caracteres especiais por espaços
-    let nomeLimpo = nomeCompleto.replace(/[\r\n\t]/g, ' ').trim();
-    
-    // Verificar se há nome social entre parênteses
-    const regexNomeSocial = /\(([^)]+)\)/;
-    const match = nomeLimpo.match(regexNomeSocial);
-    
-    if (match && match[1]) {
-        // Se encontrou nome social entre parênteses, usa ele
-        const nomeSocial = match[1].trim();
-        logger.debug(`Nome social encontrado: "${nomeSocial}" para aluno "${nomeLimpo}"`);
-        // Limpar novamente para garantir que não há caracteres especiais no nome social
-        return nomeSocial.replace(/[\r\n\t]/g, ' ').trim();
-    }
-    
-    // Se não encontrou nome social, retorna o nome original limpo
-    return nomeLimpo;
-}
-
-/**
- * Gera username válido a partir do nome do aluno
- * @param {string} nomeCompleto - Nome completo do aluno
- * @returns {string} Username gerado
- */
-function gerarUsernameValido(nomeCompleto) {
-    // Processar o nome considerando nome social e caracteres especiais
-    const nomeTratado = processarNomeAluno(nomeCompleto);
-    
-    // Extrair primeiro e último nome
-    const nomePartes = nomeTratado.split(' ').filter(part => part.trim().length > 0);
-    
-    if (nomePartes.length === 0) {
-        // Se após todo processamento não houver nome válido, gerar username padrão
-        return `aluno${Date.now().toString().substring(8)}`;
-    }
-    
-    const primeiroNome = nomePartes[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const ultimoNome = nomePartes[nomePartes.length - 1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    
-    // Gerar username no formato primeiro.ultimo
-    let username = `${primeiroNome}.${ultimoNome}`;
-    
-    // Garantir que não exceda 30 caracteres
-    if (username.length > 27) {
-        username = username.substring(0, 27);
-    }
-    
-    // Adicionar número aleatório para evitar duplicação
-    username = `${username}${Math.floor(Math.random() * 100)}`;
-    
-    return username;
-}
-
-/**
- * Remove caracteres especiais e todo conteúdo após eles
- * @param {string} nome - Nome a ser limpo
- * @returns {string} Nome limpo até o primeiro caractere especial
- */
-function limparNomeCompletoAteCaractereEspecial(nome) {
-    if (!nome) return '';
-    
-    // Procurar pela primeira ocorrência de qualquer caractere especial
-    const match = nome.match(/[\r\n\t]/);
-    if (match && match.index > 0) {
-        // Se encontrou, retornar apenas a parte antes do caractere especial
-        return nome.substring(0, match.index);
-    }
-    
-    // Se não encontrou caractere especial, retornar o nome original
-    return nome;
 }
 
 module.exports = new SyncService();

@@ -137,14 +137,28 @@ const validarTelefoneSingular = (telefone) => {
         return false; // Telefone vazio não é válido quando fornecido
     }
     
+    // Verifica se tem pelo menos 10 dígitos (DDD + número)
+    if (numerosApenas.length < 10) {
+        return false;
+    }
+    
+    // Extrai o DDD e o número
+    const ddd = numerosApenas.substring(0, 2);
+    const numero = numerosApenas.substring(2);
+    
+    // Verifica se o DDD é válido
+    if (!/^[1-9][0-9]$/.test(ddd)) {
+        return false;
+    }
+    
     // Verifica se é celular (começa com 9)
-    if (numerosApenas.startsWith('9')) {
-        return numerosApenas.length >= 9 && numerosApenas.length <= 12;
+    if (numero.startsWith('9')) {
+        return numero.length >= 9 && numero.length <= 10;
     }
     
     // Verifica se é fixo (começa com 2, 3, 4 ou 5)
-    if (/^[2-5]/.test(numerosApenas)) {
-        return numerosApenas.length >= 8 && numerosApenas.length <= 11;
+    if (/^[2-5]/.test(numero)) {
+        return numero.length >= 8 && numero.length <= 9;
     }
     
     // Se não se encaixar em nenhum dos padrões
@@ -160,7 +174,7 @@ const validarDataNascimento = (data) => {
 
     const dataNascimento = new Date(data);
     const hoje = new Date();
-    const idadeMinima = 14; // Idade mínima para cadastro
+    const idadeMinima = 7; // Idade mínima para cadastro
 
     // Verifica se é uma data válida
     if (isNaN(dataNascimento.getTime())) return false;
