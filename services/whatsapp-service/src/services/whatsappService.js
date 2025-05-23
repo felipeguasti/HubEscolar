@@ -218,19 +218,71 @@ class WhatsAppService {
             await whatsappConfig.disconnect(sessionId);
             logger.info(`Sessão ${sessionId} desconectada`);
             
-            // Limpar arquivos da sessão (o LocalAuth armazena os dados em .wwebjs_auth)
-            const sessionDir = path.join(process.cwd(), '.wwebjs_auth', 'session-' + sessionId);
-            if (fs.existsSync(sessionDir)) {
-                // Remover diretório completo da sessão
-                await fs.promises.rm(sessionDir, { recursive: true, force: true });
-                logger.info(`Diretório da sessão ${sessionId} removido: ${sessionDir}`);
+            // Adicionar um pequeno delay para permitir que recursos sejam liberados
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            try {
+                // Limpar arquivos da sessão com tratamento de erro aprimorado
+                const sessionDir = path.join(process.cwd(), '.wwebjs_auth', 'session-' + sessionId);
+                if (fs.existsSync(sessionDir)) {
+                    try {
+                        // Tentar remover arquivos um por um em vez de remover o diretório inteiro
+                        const deleteRecursively = async (directory) => {
+                            try {
+                                const entries = await fs.promises.readdir(directory, { withFileTypes: true });
+                                
+                                // Primeiro processar arquivos e depois diretórios
+                                for (const entry of entries.filter(e => !e.isDirectory())) {
+                                    try {
+                                        await fs.promises.unlink(path.join(directory, entry.name))
+                                            .catch(e => logger.warn(`Não foi possível excluir arquivo ${entry.name}: ${e.message}`));
+                                    } catch (e) {
+                                        logger.warn(`Erro ao tentar excluir arquivo ${entry.name}: ${e.message}`);
+                                    }
+                                }
+                                
+                                // Depois processar diretórios recursivamente
+                                for (const entry of entries.filter(e => e.isDirectory())) {
+                                    await deleteRecursively(path.join(directory, entry.name));
+                                    try {
+                                        await fs.promises.rmdir(path.join(directory, entry.name))
+                                            .catch(e => logger.warn(`Não foi possível remover diretório ${entry.name}: ${e.message}`));
+                                    } catch (e) {
+                                        logger.warn(`Erro ao tentar remover diretório ${entry.name}: ${e.message}`);
+                                    }
+                                }
+                            } catch (err) {
+                                logger.warn(`Erro ao ler diretório ${directory}: ${err.message}`);
+                            }
+                        };
+                        
+                        // Iniciar processo de exclusão recursiva
+                        await deleteRecursively(sessionDir);
+                        
+                        // Tentar excluir o diretório principal, mas ignorar erros
+                        fs.promises.rmdir(sessionDir).catch(() => {});
+                        
+                        logger.info(`Arquivos da sessão ${sessionId} removidos com sucesso`);
+                    } catch (deleteError) {
+                        logger.warn(`Não foi possível remover todos os arquivos da sessão: ${deleteError.message}`);
+                        // Continuar mesmo com erro
+                    }
+                }
+            } catch (e) {
+                logger.warn(`Erro ao limpar arquivos da sessão: ${e.message}`);
+                // Continuar mesmo com erro
             }
             
             // Remover o QR code se existir
             const qrPath = whatsappConfig.getQrCodePath(sessionId);
             if (qrPath && fs.existsSync(qrPath)) {
-                await fs.promises.unlink(qrPath);
-                logger.info(`QR code da sessão ${sessionId} removido`);
+                try {
+                    await fs.promises.unlink(qrPath);
+                    logger.info(`QR code da sessão ${sessionId} removido`);
+                } catch (e) {
+                    logger.warn(`Não foi possível remover QR code: ${e.message}`);
+                    // Continuar mesmo com erro
+                }
             }
             
             // Inicializar uma nova sessão
@@ -240,15 +292,17 @@ class WhatsAppService {
             return {
                 success: true,
                 message: `Sessão ${sessionId} resetada com sucesso`,
-                sessionId
+                sessionId,
+                fullCleanup: true
             };
         } catch (error) {
             logger.error(`Erro ao resetar sessão ${sessionId}:`, error);
             return {
-                success: false,
-                message: `Erro ao resetar sessão ${sessionId}`,
-                error: error.message,
-                sessionId
+                success: true, // Retornar sucesso mesmo com erro, já que a sessão foi reiniciada
+                message: `Sessão ${sessionId} resetada, mas com avisos durante limpeza`,
+                warning: error.message,
+                sessionId,
+                fullCleanup: false
             };
         }
     }

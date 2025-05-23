@@ -116,10 +116,219 @@ function validarFormatarTelefones(telefones) {
     return telefonesValidos.length > 0 ? telefonesValidos.join('|') : '';
 }
 
+/**
+ * Determina o turno com base no nome da turma
+ * @param {string} turmaNome - Nome da turma
+ * @returns {string} Turno (Manhã, Tarde, Noite ou Integral)
+ */
+function determinarTurnoTurma(turmaNome) {
+    let shift = "Integral"; // Padrão
+    
+    // Verificar se o nome da turma tem pelo menos 3 caracteres
+    if (turmaNome.length >= 3) {
+        // Extrair a terceira letra
+        const terceiraLetra = turmaNome.charAt(2).toUpperCase();
+        
+        // Determinar turno com base na terceira letra
+        switch (terceiraLetra) {
+            case 'M':
+                shift = "Manhã";
+                break;
+            case 'V':
+                shift = "Tarde";
+                break;
+            case 'N':
+                shift = "Noite";
+                break;
+            case 'I':
+                shift = "Integral";
+                break;
+            default:
+                shift = "Integral"; // Padrão caso não identifique
+        }
+    }
+    
+    return shift;
+}
+
+/**
+ * Gera a descrição para uma turma com base no seu nome e turno
+ * @param {string} turmaNome - Nome da turma
+ * @param {string} shift - Turno da turma
+ * @returns {string} Descrição formatada da turma
+ */
+function gerarDescricaoTurma(turmaNome, shift) {
+    // Construir descrição baseada no nome da turma
+    let description = "Turma";
+    
+    if (turmaNome.includes("1ª")) {
+        description = "Turma do primeiro ano";
+    } else if (turmaNome.includes("2ª")) {
+        description = "Turma do segundo ano";
+    } else if (turmaNome.includes("3ª")) {
+        description = "Turma do terceiro ano";
+    } else if (turmaNome.includes("4ª")) {
+        description = "Turma do quarto ano";
+    } else if (turmaNome.includes("5ª")) {
+        description = "Turma do quinto ano";
+    } else if (turmaNome.includes("6ª")) {
+        description = "Turma do sexto ano";
+    } else if (turmaNome.includes("7ª")) {
+        description = "Turma do sétimo ano";
+    } else if (turmaNome.includes("8ª")) {
+        description = "Turma do oitavo ano";
+    } else if (turmaNome.includes("9ª")) {
+        description = "Turma do nono ano";
+    }
+    
+    // Adicionar nível de ensino
+    if (turmaNome.includes("EM")) {
+        description += " do ensino médio";
+    } else if (turmaNome.includes("EF")) {
+        description += " do ensino fundamental";
+    }
+    
+    description += ` do turno ${shift}`;
+    
+    return description;
+}
+
+/**
+ * Cria objeto de turma no formato esperado pelo school-service
+ * @param {string} turmaNome - Nome da turma
+ * @param {number} schoolId - ID da escola
+ * @param {number} districtId - ID do distrito
+ * @param {string} shift - Turno da turma
+ * @param {string} description - Descrição da turma
+ * @returns {Object} Objeto da turma formatado
+ */
+function criarObjetoTurma(turmaNome, schoolId, districtId, shift, description) {
+    const currentYear = new Date().getFullYear();
+    
+    return {
+        name: turmaNome,
+        schoolId: schoolId,
+        districtId: districtId || 1, // Usar valor padrão se não houver districtId
+        year: currentYear,
+        shift: shift,
+        startDate: "2025-02-03", // Data fixa conforme especificado
+        endDate: "2025-12-23",   // Data fixa conforme especificado
+        status: "active",
+        description: description
+    };
+}
+
+/**
+ * Filtra turmas que já existem na escola
+ * @param {Array} turmasProcessadas - Turmas processadas do SEGES
+ * @param {Array} turmasExistentes - Turmas existentes na escola
+ * @param {Function} logger - Função de log (opcional)
+ * @returns {Object} Turmas novas e existentes
+ */
+function filtrarTurmasExistentes(turmasProcessadas, turmasExistentes, logger) {
+    const turmasNovas = [];
+    const turmasExistentesArr = [];
+    
+    // Garantir que turmasExistentes seja um array
+    const turmasExistentesArray = Array.isArray(turmasExistentes) ? turmasExistentes : [];
+    
+    // Criar mapa para busca mais eficiente
+    const turmasExistentesMap = {};
+    turmasExistentesArray.forEach(turma => {
+        turmasExistentesMap[turma.name] = turma;
+    });
+    
+    // Filtrar turmas que já existem
+    turmasProcessadas.forEach(turma => {
+        if (turmasExistentesMap[turma.name]) {
+            // Turma existe
+            turmasExistentesArr.push({ 
+                ...turma, 
+                id: turmasExistentesMap[turma.name].id 
+            });
+        } else {
+            // Turma não existe
+            turmasNovas.push(turma);
+        }
+    });
+    
+    // Usar logger se fornecido
+    if (logger) {
+        logger.info(`${turmasNovas.length} turmas novas, ${turmasExistentesArr.length} turmas já existentes`);
+    }
+    
+    return {
+        turmasNovas,
+        turmasExistentes: turmasExistentesArr
+    };
+}
+
+
+/**
+ * Determina o horário de um aluno baseado no nome da turma
+ * @param {string} turmaNome - Nome da turma
+ * @returns {string} Horário do aluno (Manhã, Tarde, Noite ou Integral)
+ */
+function determinarHorarioAluno(turmaNome) {
+    // Usar a mesma lógica do turno para determinar o horário do aluno
+    return determinarTurnoTurma(turmaNome);
+}
+
+/**
+ * Formata uma data de nascimento do formato DD/MM/AAAA para YYYY-MM-DD
+ * @param {string} dataString - String de data no formato DD/MM/AAAA ou outro
+ * @returns {string|null} Data formatada em YYYY-MM-DD ou null se inválida
+ */
+function formatarDataNascimento(dataString) {
+    if (!dataString) return null;
+    
+    try {
+        // Se já estiver no formato YYYY-MM-DD, manter
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
+            return dataString;
+        }
+        
+        // Converter de DD/MM/YYYY para YYYY-MM-DD
+        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dataString)) {
+            const [dia, mes, ano] = dataString.split('/');
+            return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+        }
+        
+        return null;
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
+ * Formata um gênero para começar com letra maiúscula
+ * @param {string} generoString - String com o gênero
+ * @returns {string} Gênero formatado ou string vazia se inválido
+ */
+function formatarGenero(generoString) {
+    if (!generoString) return '';
+    
+    const generoNormalizado = generoString.trim().toLowerCase();
+    
+    if (generoNormalizado) {
+        return generoNormalizado.charAt(0).toUpperCase() + generoNormalizado.slice(1);
+    }
+    
+    return '';
+}
+
+// Atualizar exports para incluir as novas funções
 module.exports = {
     normalizarNome,
     processarNomeAluno,
     limparNomeCompletoAteCaractereEspecial,
     gerarUsernameValido,
-    validarFormatarTelefones
+    validarFormatarTelefones,
+    determinarTurnoTurma,
+    gerarDescricaoTurma,
+    criarObjetoTurma,
+    filtrarTurmasExistentes,
+    determinarHorarioAluno,
+    formatarDataNascimento,
+    formatarGenero
 };

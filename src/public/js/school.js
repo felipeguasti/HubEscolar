@@ -109,6 +109,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Verificar status da conexão do WhatsApp
     async function checkWhatsAppStatus() {
+        // Se não estiver verificando explicitamente (chamada manual), 
+        // evitar mostrar loading para não interromper o usuário
+        const isManualCheck = arguments.length > 0 && arguments[0] === true;
+        
+        if (isManualCheck) {
+            showLoading();
+        }
+        
         try {
             // Passar o schoolId como sessionId para o serviço
             const response = await fetch(`/whatsapp/auth/status?sessionId=${schoolId}`);
@@ -146,20 +154,100 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p>${error.message}</p>
                 </div>
             `;
+        } finally {
+            if (isManualCheck) {
+                hideLoading();
+            }
         }
     }
     
-    // Exibir QR Code para conexão
+    // Função aprimorada para mostrar loading com mensagem personalizada
+    function showLoadingWithMessage(message) {
+        // Verificar se já existe uma div de mensagem de loading
+        let loadingMessage = document.getElementById('loading-message');
+        
+        // Se não existir, criar uma
+        if (!loadingMessage) {
+            loadingMessage = document.createElement('div');
+            loadingMessage.id = 'loading-message';
+            loadingMessage.className = 'loading-message';
+            
+            // Estilizar a mensagem
+            Object.assign(loadingMessage.style, {
+                color: 'white',
+                textAlign: 'center',
+                maxWidth: '400px',
+                margin: '20px auto 0',
+                padding: '15px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)'
+            });
+            
+            // Adicionar ao container de loading
+            loading.appendChild(loadingMessage);
+        }
+        
+        // Definir o conteúdo da mensagem
+        loadingMessage.innerHTML = message;
+        
+        // Mostrar o loading
+        loading.style.display = 'flex';
+        popupContainer.classList.add('show');
+    }
+    
+    // Função modificada para exibir QR Code para conexão
     function showQRCode() {
-        qrcodeContainer.style.display = 'block';
+        // Mostrar loading com mensagem específica
+        showLoadingWithMessage(`
+            <h3 style="margin-bottom: 15px; color: #4cc9f0;">Preparando conexão do WhatsApp</h3>
+            <p>Estamos gerando o QR Code para você conectar seu WhatsApp.</p>
+            <p>Este processo pode levar alguns minutos.</p>
+            <p><strong>Importante:</strong></p>
+            <ul style="text-align: left; margin: 10px 0; list-style-type: disc; padding-left: 20px;">
+                <li>Se você já escaneou o QR Code anteriormente, pode não ser necessário escanear novamente.</li>
+                <li>Aguarde o status mudar para "Conectado" após o carregamento.</li>
+                <li>Mantenha seu celular conectado à internet.</li>
+            </ul>
+        `);
+        
+        // Iniciar a requisição do QR Code
         refreshQRCode();
+        
+        // Após 3 segundos, esconder loading e mostrar o container do QR code
+        setTimeout(() => {
+            hideLoading();
+            qrcodeContainer.style.display = 'block';
+            
+            // Verificar status após 5 segundos (para dar tempo de conectar caso já tenha escaneado antes)
+            setTimeout(() => {
+                checkWhatsAppStatus();
+            }, 5000);
+        }, 3000);
     }
     
     // Atualizar QR Code
     function refreshQRCode() {
         const timestamp = new Date().getTime();
-        // Usar schoolId como sessionId
-        qrImage.src = `/whatsapp/auth/qrcode?sessionId=${schoolId}&t=${timestamp}`;
+        
+        // Mostrar loading sem mensagem
+        showLoading();
+        
+        // Carregar a nova imagem com evento para detectar quando terminar
+        const newImage = new Image();
+        newImage.onload = function() {
+            // Atualizar o src da imagem existente
+            qrImage.src = this.src;
+            hideLoading();
+        };
+        
+        newImage.onerror = function() {
+            hideLoading();
+            showMessage('Erro ao carregar o QR Code. Tente novamente.');
+        };
+        
+        // Iniciar o carregamento da imagem
+        newImage.src = `/whatsapp/auth/qrcode?sessionId=${schoolId}&t=${timestamp}`;
     }
     
     // Desconectar WhatsApp

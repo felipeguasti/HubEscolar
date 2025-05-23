@@ -808,16 +808,32 @@ exports.filterUsers = async (req, res) => {
         if (!req.user) {
             return res.status(401).json({ error: 'Usuário não autenticado' });
         }
+        
         const user = await User.findByPk(req.user.id);
         const whereClause = applyUserFilters(user, req.query);
 
-        const users = await User.findAll({ where: whereClause });
+        // Parâmetros de paginação da URL
+        const page = parseInt(req.query.page) || 1; // Página atual, padrão: 1
+        const limit = parseInt(req.query.limit) || 10; // Registros por página, padrão: 10
 
-        const sortedUsers = users.sort((a, b) => {
+        // Buscar todos os usuários com os filtros aplicados (mantendo a lógica atual)
+        const allFilteredUsers = await User.findAll({ where: whereClause });
+
+        // Ordenar usando a mesma lógica existente
+        const sortedUsers = allFilteredUsers.sort((a, b) => {
             if (a.status === 'inactive' && b.status !== 'inactive') return -1;
             if (a.status !== 'inactive' && b.status === 'inactive') return 1;
             return new Date(b.createdAt) - new Date(a.createdAt);
         });
+
+        // Aplicar paginação depois da ordenação
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedUsers = sortedUsers.slice(startIndex, endIndex);
+        
+        // Calcular metadados de paginação
+        const totalItems = sortedUsers.length;
+        const totalPages = Math.ceil(totalItems / limit);
 
         let schools = [];
         const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
@@ -832,12 +848,25 @@ exports.filterUsers = async (req, res) => {
             }
         }
 
+        // Retornar a resposta com dados paginados e metadados de paginação
         res.json({
-            users: sortedUsers,
-            schools
+            users: paginatedUsers,
+            schools,
+            pagination: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                itemsPerPage: limit,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
         });
     } catch (err) {
-        console.error('Erro ao buscar usuários:', err);
+        logService.error('Erro ao buscar usuários:', {
+            error: err.message,
+            stack: err.stack,
+            query: req.query
+        });
         res.status(500).json({ error: 'Erro ao carregar os usuários' });
     }
 };

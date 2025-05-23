@@ -30,6 +30,7 @@
     <% } %>
     <% if (title && title.includes('Perfil - ') && typeof school !== 'undefined') { %>
         <link rel="stylesheet" href="/css/school.css">
+        <link rel="stylesheet" href="/css/popupLoadings.css">
     <% } %>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
@@ -65,6 +66,20 @@
                 </ul>
             </nav>
         </div>
+        <!-- Dropdown de navegação - exibir apenas para usuários logados -->
+        <% if (typeof user !== 'undefined' && user) { %>
+            <div class="mobile-nav-dropdown">
+                <button id="mobile-menu-btn" class="dropdown-toggle">
+                    <span>
+                        <i class="fas fa-compass nav-icon"></i> Navegação
+                    </span>
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </button>
+                <div id="mobile-dropdown-menu" class="dropdown-content">
+                    <!-- O conteúdo será preenchido via JavaScript -->
+                </div>
+            </div>
+        <% } %>
     </header>
     
 

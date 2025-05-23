@@ -1,0 +1,74 @@
+# TO-DO: Correções no Sistema de Sincronização
+
+## Problema Principal
+O sistema está com problemas quando um aluno muda de turma. O serviço identifica corretamente 
+a necessidade de atualização, mas falha ao executar a requisição de atualização.
+
+## Detalhes do Problema
+1. Quando um aluno é movido de uma turma para outra, o campo `gradeId` precisa ser atualizado
+2. A chamada de API para atualização está retornando erro 400 "Nome e ID da escola são obrigatórios"
+3. Endpoint e método incorretos estão sendo usados para a atualização
+
+## Correções Necessárias
+
+### 1. Corrigir o endpoint de atualização
+- **ATUAL** (incorreto): 
+  ```javascript
+  `${this.usersServiceUrl}/users/edit/${usuarioExistente.id}`
+
+- **CORRETO:**
+    `${this.usersServiceUrl}/users/edit/${usuarioExistente.id}`
+
+Verificar se este é realmente o endpoint correto no arquivo users.js da API
+
+2. Usar método PUT em vez de PATCH
+
+**ATUAL (incorreto):**
+await axios.patch(
+    `${this.usersServiceUrl}/users/edit/${usuarioExistente.id}`,
+    mudancas,
+    { headers: { ... } }
+);
+
+**CORRETO:**
+await axios.put(
+    `${this.usersServiceUrl}/users/edit/${usuarioExistente.id}`,
+    dadosCompletos,  // Objeto com todos os campos obrigatórios
+    { headers: { ... } }
+);
+
+3. Incluir todos os campos obrigatórios na requisição
+A API espera campos obrigatórios mesmo em uma atualização parcial
+Modificar o código para incluir name, schoolId e outros campos obrigatórios:
+
+const dadosAtualizacao = {
+    // Campos obrigatórios do usuário existente
+    name: usuarioExistente.name,
+    username: usuarioExistente.username,
+    email: usuarioExistente.email,
+    role: 'Aluno',
+    schoolId: usuarioExistente.schoolId,
+    
+    // Adicionar os campos que estão sendo alterados
+    ...mudancas
+};
+
+4. Adicionar logs detalhados
+Adicionar logs antes da requisição de atualização para facilitar diagnóstico
+
+logger.debug(`Dados enviados para atualização:`, dadosAtualizacao);
+
+Arquivos a Modificar
+services/sync-service/src/services/syncService.js
+Método criarOuAtualizarAlunos() (linhas ~1227-1237)
+Prioridade
+Alta - Esta correção é essencial para permitir a movimentação de alunos entre turmas no sistema.
+
+Testes a Realizar Após Correção
+Importar alunos para a turma "1ªIV01-EM"
+Mover um aluno para a turma "1ªIV02-EM" no arquivo de importação
+Executar sincronização novamente
+Verificar se o aluno foi atualizado corretamente
+
+
+Esta documentação clara permitirá que você retome facilmente o trabalho de correção quando for o momento, com todos os detalhes necessários sobre o problema e suas soluções.

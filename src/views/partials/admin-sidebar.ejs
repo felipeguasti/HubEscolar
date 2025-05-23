@@ -4,7 +4,7 @@
         <li><a href="/dashboard">Dashboard</a></li>
         
         <!-- Gerenciar Perfil da escola -->
-<% if (user.role !== 'Master' && user.role !== 'Inspetor' && user.schoolId) { %>
+        <% if (user.role !== 'Master' && user.role !== 'Inspetor' && user.schoolId) { %>
             <li><a href="/schools/profile/<%= user.schoolId %>">Informações da escola</a></li>
         <% } %>
 

@@ -70,6 +70,45 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
+    // Configurar dropdown de navegação para mobile
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileDropdown = document.getElementById('mobile-dropdown-menu');
+    
+    if (mobileMenuBtn && mobileDropdown) {
+        // Toggle dropdown quando o botão é clicado
+        mobileMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            mobileDropdown.classList.toggle('show');
+            this.classList.toggle('active');
+        });
+        
+        // Fechar dropdown quando clica fora
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.mobile-nav-dropdown')) {
+                mobileDropdown.classList.remove('show');
+                mobileMenuBtn.classList.remove('active');
+            }
+        });
+        
+        // Clonar links da sidebar para o dropdown
+        const sidebar = document.querySelector('.admin-master-sidebar');
+        if (sidebar) {
+            const sidebarItems = sidebar.querySelectorAll('.sidebar-menu li a');
+            sidebarItems.forEach(link => {
+                // Criar uma cópia do link para o dropdown
+                const dropdownLink = link.cloneNode(true);
+                
+                // Adicionar evento para fechar o dropdown após clicar
+                dropdownLink.addEventListener('click', function() {
+                    mobileDropdown.classList.remove('show');
+                    mobileMenuBtn.classList.remove('active');
+                });
+                
+                mobileDropdown.appendChild(dropdownLink);
+            });
+        }
+    }
+
 });
 // Exemplo de função para atualizar a interface com os usuários filtrados
 function atualizarListaUsuarios(users) {

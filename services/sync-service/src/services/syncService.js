@@ -4,11 +4,18 @@ const { SyncJob, SyncItem } = require('../models');
 const { Sequelize } = require('sequelize');
 const db = require('../config/db');
 const { 
-    normalizarNome, 
-    processarNomeAluno, 
-    limparNomeCompletoAteCaractereEspecial, 
+    normalizarNome,
+    processarNomeAluno,
+    limparNomeCompletoAteCaractereEspecial,
     gerarUsernameValido,
-    validarFormatarTelefones
+    validarFormatarTelefones,
+    determinarTurnoTurma,
+    gerarDescricaoTurma,
+    criarObjetoTurma,
+    filtrarTurmasExistentes,
+    determinarHorarioAluno,
+    formatarDataNascimento,
+    formatarGenero
 } = require('./syncHelpers');
 
 class SyncService {
@@ -55,9 +62,10 @@ class SyncService {
             );
             
             // 6. Filtrar turmas que já existem
-            const { turmasNovas, turmasExistentes } = this.filtrarTurmasExistentes(
+            const { turmasNovas, turmasExistentes } = filtrarTurmasExistentes(
                 turmasProcessadas, 
-                existingClasses
+                existingClasses, 
+                logger // Passar logger como terceiro parâmetro para logs
             );
             
             // 7. Criar turmas novas
@@ -563,15 +571,28 @@ class SyncService {
                 }
             });
             
-            logger.info(`${response.data.length} turmas existentes encontradas para escola ${schoolId}`);
-            return response.data;
+            // Verificar se a resposta contém dados e se é um array
+            let classes = [];
+            
+            if (response.data) {
+                if (Array.isArray(response.data)) {
+                    classes = response.data;
+                } else if (response.data.data && Array.isArray(response.data.data)) {
+                    // Alguns endpoints retornam { data: [...] }
+                    classes = response.data.data;
+                }
+            }
+            
+            logger.info(`${classes.length} turmas existentes encontradas para escola ${schoolId}`);
+            return classes; // Retorna sempre um array
         } catch (error) {
             logger.error(`Erro ao obter turmas existentes para escola ${schoolId}:`, error);
-            throw new Error(`Falha ao obter turmas existentes: ${error.message}`);
+            // Retornar array vazio em vez de propagar o erro
+            return [];
         }
     }
 
-    /**
+     /**
      * Processa turmas do SEGES para formato do school-service
      * @param {Object} segesData - Dados obtidos do SEGES
      * @param {number} schoolId - ID da escola
@@ -580,7 +601,6 @@ class SyncService {
      */
     processarTurmasSEGES(segesData, schoolId, districtId) {
         const turmasProcessadas = [];
-        const currentYear = new Date().getFullYear();
         
         // Verificar a estrutura dos dados recebidos
         logger.debug('Dados recebidos para processamento:', {
@@ -596,76 +616,10 @@ class SyncService {
             
             logger.debug(`Processando turma: ${turmaNome}`);
             
-            // Identificar turno baseado APENAS na terceira letra do nome da turma
-            let shift = "integral"; // Padrão
-            
-            // Verificar se o nome da turma tem pelo menos 3 caracteres
-            if (turmaNome.length >= 3) {
-                // Extrair a terceira letra
-                const terceiraLetra = turmaNome.charAt(2).toUpperCase();
-                
-                // Determinar turno com base na terceira letra
-                switch (terceiraLetra) {
-                    case 'M':
-                        shift = "Manhã";
-                        break;
-                    case 'V':
-                        shift = "Tarde";
-                        break;
-                    case 'N':
-                        shift = "Noite";
-                        break;
-                    case 'I':
-                        shift = "Integral";
-                        break;
-                    default:
-                        shift = "Integral"; // Padrão caso não identifique
-                }
-            }
-            
-            // Construir descrição baseada no nome da turma
-            let description = "Turma";
-            if (turmaNome.includes("1ª")) {
-                description = "Turma do primeiro ano";
-            } else if (turmaNome.includes("2ª")) {
-                description = "Turma do segundo ano";
-            } else if (turmaNome.includes("3ª")) {
-                description = "Turma do terceiro ano";
-            } else if (turmaNome.includes("4ª")) {
-                description = "Turma do quarto ano";
-            } else if (turmaNome.includes("5ª")) {
-                description = "Turma do quinto ano";
-            } else if (turmaNome.includes("6ª")) {
-                description = "Turma do sexto ano";
-            } else if (turmaNome.includes("7ª")) {
-                description = "Turma do sétimo ano";
-            } else if (turmaNome.includes("8ª")) {
-                description = "Turma do oitavo ano";
-            } else if (turmaNome.includes("9ª")) {
-                description = "Turma do nono ano";
-            }
-            
-            // Adicionar nível de ensino
-            if (turmaNome.includes("EM")) {
-                description += " do ensino médio";
-            } else if (turmaNome.includes("EF")) {
-                description += " do ensino fundamental";
-            }
-            
-            description += ` do turno ${shift}`;
-            
-            // Criar objeto de turma no formato esperado pelo school-service
-            const turmaNova = {
-                name: turmaNome,
-                schoolId: schoolId,
-                districtId: districtId || 1, // Usar valor padrão se não houver districtId
-                year: currentYear,
-                shift: shift,
-                startDate: "2025-02-03", // Data fixa conforme especificado
-                endDate: "2025-12-23",   // Data fixa conforme especificado
-                status: "active",
-                description: description
-            };
+            // Usar funções auxiliares do syncHelpers.js
+            const shift = determinarTurnoTurma(turmaNome);
+            const description = gerarDescricaoTurma(turmaNome, shift);
+            const turmaNova = criarObjetoTurma(turmaNome, schoolId, districtId, shift, description);
             
             turmasProcessadas.push(turmaNova);
             logger.debug(`Turma ${turmaNome} processada com sucesso`);
@@ -673,37 +627,6 @@ class SyncService {
         
         logger.info(`${turmasProcessadas.length} turmas processadas do SEGES`);
         return turmasProcessadas;
-    }
-
-    /**
-     * Filtra turmas que já existem na escola
-     * @param {Array} turmasProcessadas - Turmas processadas do SEGES
-     * @param {Array} turmasExistentes - Turmas existentes na escola
-     * @returns {Object} Turmas novas e existentes
-     */
-    filtrarTurmasExistentes(turmasProcessadas, turmasExistentes) {
-        const turmasNovas = [];
-        const turmasExistentesArr = [];
-        
-        // Filtrar turmas que já existem baseado no nome
-        turmasProcessadas.forEach(turma => {
-            const turmaExistente = turmasExistentes.find(
-                t => t.name === turma.name && t.year === turma.year
-            );
-            
-            if (turmaExistente) {
-                turmasExistentesArr.push({ ...turma, id: turmaExistente.id });
-            } else {
-                turmasNovas.push(turma);
-            }
-        });
-        
-        logger.info(`${turmasNovas.length} turmas novas, ${turmasExistentesArr.length} turmas já existentes`);
-        
-        return {
-            turmasNovas,
-            turmasExistentes: turmasExistentesArr
-        };
     }
 
     /**
@@ -849,6 +772,21 @@ class SyncService {
         
         logger.info(`${resultadoCriacao.criadas.length} turmas criadas para permitir importação de alunos`);
         
+        // Adicionar logs de diagnóstico
+        logger.debug(`Verificação de turmas:
+        - Total de turmas no SEGES: ${turmasNomes.length}
+        - Turmas existentes na escola: ${existingClasses.length}
+        - Turmas novas identificadas: ${turmasFaltantes.length}
+        - Turmas processadas para criação: ${turmasProcessadas.length}
+        - Turmas efetivamente criadas: ${resultadoCriacao.criadas.length}
+        `);
+        
+        // Verificar se há turmas processadas mas não criadas
+        if (turmasProcessadas.length > 0 && resultadoCriacao.criadas.length === 0) {
+            logger.warn('ALERTA: Havia turmas para criar, mas nenhuma foi criada!');
+            logger.debug('Erros na criação:', JSON.stringify(resultadoCriacao.erros));
+        }
+        
         return {
             todasTurmas,
             totalTurmasSEGES: turmasNomes.length,
@@ -898,7 +836,7 @@ class SyncService {
                 
                 // Nomes dos alunos existentes (normalizados para comparação)
                 const nomesExistentes = alunosExistentes.map(a => 
-                    this.normalizarNome(a.name)
+                    normalizarNome(a.name)
                 );
                 
                 // Adicionar: buscar todos os alunos da escola, não só da turma atual
@@ -911,11 +849,11 @@ class SyncService {
                 
                 for (const aluno of alunosTurma) {
                     // Normalizar nome para comparação
-                    const nomeNormalizado = this.normalizarNome(aluno.nome);
+                    const nomeNormalizado = normalizarNome(aluno.nome);
                     
                     // Verificar se aluno já existe EM QUALQUER TURMA da escola
                     const alunoExistente = todosAlunosDaEscola.find(a => 
-                        this.normalizarNome(a.name) === nomeNormalizado
+                        normalizarNome(a.name) === nomeNormalizado
                     );
                     
                     if (alunoExistente) {
@@ -992,47 +930,11 @@ class SyncService {
                             telefoneFormatado = validarFormatarTelefones(aluno.telefone);
                         }
                         
-                        // Formatar data de nascimento
-                        let dataFormatada = null;
-                        if (aluno.dt_nascimento) {
-                            const partes = aluno.dt_nascimento.split('/');
-                            if (partes.length === 3) {
-                                dataFormatada = `${partes[2]}-${partes[1]}-${partes[0]}`;
-                            }
-                        }
+                        const dataFormatada = formatarDataNascimento(aluno.dt_nascimento);
                         
-                        // Formatar gênero
-                        let generoFormatado = 'Prefiro não dizer';
-                        if (aluno.sexo) {
-                            generoFormatado = aluno.sexo.charAt(0).toUpperCase() + aluno.sexo.slice(1);
-                        }
+                        const generoFormatado = aluno.sexo ? formatarGenero(aluno.sexo) : 'Prefiro não dizer';
                         
-                        // Identificar horário baseado na mesma lógica do turno da turma
-                        let horario = "Integral"; // Padrão
-                        
-                        // Verificar se o nome da turma tem pelo menos 3 caracteres
-                        if (turmaNome.length >= 3) {
-                            // Extrair a terceira letra
-                            const terceiraLetra = turmaNome.charAt(2).toUpperCase();
-                            
-                            // Determinar horário com base na terceira letra (mesmo critério do turno)
-                            switch (terceiraLetra) {
-                                case 'M':
-                                    horario = "Manhã";
-                                    break;
-                                case 'V':
-                                    horario = "Tarde";
-                                    break;
-                                case 'N':
-                                    horario = "Noite";
-                                    break;
-                                case 'I':
-                                    horario = "Integral";
-                                    break;
-                                default:
-                                    horario = "Integral"; // Padrão caso não identifique
-                            }
-                        }
+                        const horario = determinarHorarioAluno(turmaNome);
                         
                         // Criar objeto do aluno
                         const alunoProcessado = {
@@ -1085,15 +987,6 @@ class SyncService {
         
         logger.info(`Total de ${alunosProcessados.length} alunos novos processados para importação`);
         return alunosProcessados;
-    }
-
-    /**
-     * Normaliza um nome para comparação (remove acentos, converte para minúsculas)
-     * @param {string} nome - Nome a normalizar
-     * @returns {string} Nome normalizado
-     */
-    normalizarNome(nome) {
-        return normalizarNome(nome); // Usa a função importada
     }
 
     /**
@@ -1361,7 +1254,7 @@ class SyncService {
                             logger.info(`Atualizando usuário ${aluno.name} (ID: ${usuarioExistente.id})`);
                             
                             await axios.patch(
-                                `${this.usersServiceUrl}/users/${usuarioExistente.id}`,
+                                `${this.usersServiceUrl}/users/edit/${usuarioExistente.id}`,
                                 mudancas,
                                 { 
                                     headers: { 

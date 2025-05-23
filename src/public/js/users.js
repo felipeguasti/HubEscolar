@@ -235,6 +235,41 @@ const userServices = {
         } finally {
             this.setDropdownLoading(schoolSelect, false);
         }
+    },
+
+    // Adicionar ao objeto userServices em users.js
+    async fetchPaginatedUsers(params = {}) {
+        try {
+            userUtils.showLoading();
+            
+            // Construir URL com parâmetros
+            const queryParams = new URLSearchParams();
+            
+            // Adicionar parâmetros de filtro
+            Object.entries(params).forEach(([key, value]) => {
+                if (value) queryParams.append(key, value);
+            });
+            
+            // Garantir parâmetros de paginação
+            if (!params.page) queryParams.set('page', '1');
+            if (!params.limit) queryParams.set('limit', '10');
+            
+            // Construir URL final
+            const url = `/users/filter?${queryParams.toString()}`;
+            
+            // Atualizar URL do navegador
+            const newUrl = `${window.location.pathname}?${queryParams.toString()}`;
+            window.history.pushState({}, '', newUrl);
+            
+            const response = await fetch(url);
+            const data = await this.handleResponse(response);
+            return data;
+        } catch (error) {
+            console.error("Error:", error);
+            throw error;
+        } finally {
+            userUtils.hideLoading();
+        }
     }
 };
 
@@ -449,7 +484,7 @@ const userHandlers = {
             // Criar objeto com os valores
             // Se passou da verificação, criar objeto com os valores
             const userData = {
-                name: fields.name.value.trim(),
+                name: fields.name.value.trim().toUpperCase(), // Converter para UPPERCASE
                 username: fields.username.value.trim(),
                 email: fields.email.value.trim(),
                 role: fields.role.value,
@@ -585,7 +620,7 @@ const userHandlers = {
     
             // Criar objeto userData apenas com campos que existem
             const userData = {
-                name: fields.name.value,
+                name: fields.name.value.trim().toUpperCase(), // Converter para UPPERCASE
                 username: fields.username.value,
                 email: fields.email.value,
                 role: fields.role.value,
@@ -914,7 +949,7 @@ const userUtils = {
     },
 
     async handleFilterUsers(event) {
-        event.preventDefault();
+        event?.preventDefault();
         try {
             // Coletar valores dos filtros
             const districtId = document.getElementById("filterDistrict")?.value || "";
@@ -923,7 +958,7 @@ const userUtils = {
             const content = document.getElementById("contentFilter")?.value || "";
             const grade = document.getElementById("filterGrade")?.value || "";
             const status = document.getElementById("statusFilter")?.value || "";
-    
+
             // Determinar qual ID de escola usar com base no papel do usuário
             const userRole = document.getElementById("userRole")?.value;
             const userSchool = document.getElementById("userSchool")?.value;
@@ -931,32 +966,29 @@ const userUtils = {
             if (userRole !== "Master" && userRole !== "Inspetor") {
                 schoolId = userSchool;
             }
-    
+
             // Construir parâmetros de consulta
-            const queryParams = new URLSearchParams();
-            if (districtId) queryParams.append("districtId", districtId);
-            if (schoolId) queryParams.append("schoolId", schoolId);
-            if (role) queryParams.append("role", role);
-            if (content) queryParams.append("content", content);
-            if (grade) queryParams.append("gradeId", grade);
-            if (status) queryParams.append("status", status);
-                
-            // Mostrar loading enquanto carrega
-            userUtils.showLoading();
+            const queryParams = {
+                page: 1, // Ao filtrar, sempre voltar para a página 1
+                limit: 10 // Valor padrão para itens por página
+            };
             
-            const url = queryParams.toString() ? 
-                `/users/filter?${queryParams.toString()}` : '/users/filter';
-    
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`Erro ao buscar usuários filtrados`);
-    
-            const data = await response.json();
-            userUtils.updateTable(data);
-            userUtils.hideLoading();
+            // Adicionar filtros aos parâmetros apenas se tiverem valor
+            if (districtId) queryParams.districtId = districtId;
+            if (schoolId) queryParams.schoolId = schoolId;
+            if (role) queryParams.role = role;
+            if (content) queryParams.content = content;
+            if (grade) queryParams.gradeId = grade;
+            if (status) queryParams.status = status;
+            
+            // Buscar dados com os filtros e paginação
+            const data = await userServices.fetchPaginatedUsers(queryParams);
+            
+            // Atualizar a tabela
+            this.updateTable(data);
         } catch (error) {
             console.error("Error:", error);
-            userUtils.showError("Erro ao filtrar usuários");
-            userUtils.hideLoading();
+            this.showError("Erro ao filtrar usuários");
         }
     },
 
@@ -1096,41 +1128,21 @@ const userUtils = {
                 
                 return;
             }
-    
-            // Definir ordem de prioridade para os papéis
-            const rolePriority = {
-                'Master': 1,
-                'Inspetor': 2,
-                'Diretor': 3,
-                'Secretario': 4,
-                'Coordenador': 5,
-                'Pedagogo': 6,
-                'Professor': 7,
-                'Aluno': 8
-            };
-    
-            // Ordenar usuários: inativos primeiro, depois por role (conforme prioridade) e por fim alfabeticamente
+
+            // Manter a lógica existente de ordenação e exibição dos usuários
             const sortedUsers = data.users.sort((a, b) => {
-                // Primeiro critério: status (inativos primeiro)
                 if (a.status === 'inactive' && b.status !== 'inactive') return -1;
                 if (a.status !== 'inactive' && b.status === 'inactive') return 1;
-                
-                // Se ambos têm o mesmo status, ordenar por role conforme a prioridade definida
-                const roleA = rolePriority[a.role] || 999; // Se o papel não estiver na lista, vai para o fim
-                const roleB = rolePriority[b.role] || 999;
-                
-                if (roleA !== roleB) return roleA - roleB;
-                
-                // Se as roles são iguais, ordenar alfabeticamente por nome
-                return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
+                return new Date(b.createdAt) - new Date(a.createdAt);
             });
-    
+
             sortedUsers.forEach(user => {
+                // Manter o código existente de renderizar cada linha
                 const tr = document.createElement('tr');
                 if (user.status === 'inactive') {
                     tr.classList.add('inactive-user');
                 }
-    
+
                 tr.innerHTML = `
                     <td>${user.name}</td>
                     <td>${user.email}</td>
@@ -1154,7 +1166,14 @@ const userUtils = {
                 
                 tbody.appendChild(tr);
             });
+
+            // Renderizar controles de paginação
+            if (data.pagination) {
+                this.renderPaginationControls(data);
+            }
         }
+        
+        // Reinstalar listeners nos botões
         userHandlers.setupListeners();
     },
 
@@ -1548,6 +1567,117 @@ const userUtils = {
                 }, 100);
             });
         }
+    },
+
+    renderPaginationControls(data) {
+        // Verificar se temos dados de paginação
+        if (!data.pagination) return;
+        
+        const { totalItems, totalPages, currentPage, itemsPerPage } = data.pagination;
+        
+        // Atualizar informações de total
+        document.getElementById('items-shown').textContent = 
+            Math.min(itemsPerPage, totalItems - (currentPage - 1) * itemsPerPage);
+        document.getElementById('total-items').textContent = totalItems;
+        
+        // Configurar botões de navegação
+        const prevButton = document.getElementById('prev-page');
+        const nextButton = document.getElementById('next-page');
+        
+        if (prevButton) {
+            prevButton.disabled = currentPage <= 1;
+            prevButton.onclick = () => this.changePage(currentPage - 1);
+        }
+        
+        if (nextButton) {
+            nextButton.disabled = currentPage >= totalPages;
+            nextButton.onclick = () => this.changePage(currentPage + 1);
+        }
+        
+        // Renderizar números de página
+        const pageNumbers = document.getElementById('page-numbers');
+        if (!pageNumbers) return;
+        
+        pageNumbers.innerHTML = '';
+        
+        // Determinar quais páginas mostrar
+        const maxButtons = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+        
+        if (endPage - startPage + 1 < maxButtons) {
+            startPage = Math.max(1, endPage - maxButtons + 1);
+        }
+        
+        // Adicionar primeira página
+        if (startPage > 1) {
+            const firstPageBtn = document.createElement('button');
+            firstPageBtn.className = 'page-number';
+            firstPageBtn.textContent = '1';
+            firstPageBtn.onclick = () => this.changePage(1);
+            pageNumbers.appendChild(firstPageBtn);
+            
+            // Adicionar elipses se necessário
+            if (startPage > 2) {
+                const ellipsis = document.createElement('span');
+                ellipsis.textContent = '...';
+                ellipsis.className = 'page-ellipsis';
+                pageNumbers.appendChild(ellipsis);
+            }
+        }
+        
+        // Adicionar páginas numéricas
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = `page-number ${i === currentPage ? 'active' : ''}`;
+            pageBtn.textContent = i;
+            pageBtn.onclick = () => this.changePage(i);
+            pageNumbers.appendChild(pageBtn);
+        }
+        
+        // Adicionar última página
+        if (endPage < totalPages) {
+            // Adicionar elipses se necessário
+            if (endPage < totalPages - 1) {
+                const ellipsis = document.createElement('span');
+                ellipsis.textContent = '...';
+                ellipsis.className = 'page-ellipsis';
+                pageNumbers.appendChild(ellipsis);
+            }
+            
+            const lastPageBtn = document.createElement('button');
+            lastPageBtn.className = 'page-number';
+            lastPageBtn.textContent = totalPages;
+            lastPageBtn.onclick = () => this.changePage(totalPages);
+            pageNumbers.appendChild(lastPageBtn);
+        }
+    },
+    
+    // Método para mudar de página
+    async changePage(page) {
+        try {
+            userUtils.showLoading();
+            
+            // Obter parâmetros atuais da URL
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('page', page);
+            
+            // Buscar dados com a nova página
+            const data = await userServices.fetchPaginatedUsers(Object.fromEntries(urlParams));
+            
+            // Atualizar a tabela com os novos dados
+            this.updateTable(data);
+        } catch (error) {
+            console.error('Erro ao mudar de página:', error);
+            this.showError('Erro ao carregar a página ' + page);
+        } finally {
+            userUtils.hideLoading();
+        }
+    },
+    
+    // Método para ler parâmetros da URL
+    getUrlParams() {
+        return Object.fromEntries(new URLSearchParams(window.location.search));
     }
 
 };
@@ -1556,6 +1686,7 @@ const userUtils = {
 document.addEventListener('DOMContentLoaded', async function() {
     const isUsers = window.location.pathname.includes("users");
     if (!isUsers) return;
+
     
     try {
 
@@ -1787,4 +1918,99 @@ document.addEventListener('DOMContentLoaded', async function() {
     } catch (error) {
         console.error('Erro ao carregar dados iniciais:', error);
     }
+
+    // Verificar se existem parâmetros de paginação na URL ao carregar
+    try {
+        const urlParams = userUtils.getUrlParams();
+        if (Object.keys(urlParams).length > 0) {
+            // Se existem parâmetros na URL, usá-los para o carregamento inicial
+            const data = await userServices.fetchPaginatedUsers(urlParams);
+            userUtils.updateTable(data);
+            
+            // Preencher os campos de filtro com os valores da URL
+            if (urlParams.districtId) {
+                const districtSelect = document.getElementById('filterDistrict');
+                if (districtSelect) districtSelect.value = urlParams.districtId;
+                
+                // Carregar escolas do distrito selecionado
+                if (userRole === "Master" || userRole === "Inspetor") {
+                    await userServices.loadSchools(urlParams.districtId);
+                }
+            }
+            
+            if (urlParams.schoolId) {
+                const schoolSelect = document.getElementById('filterSchool');
+                if (schoolSelect) {
+                    setTimeout(() => {
+                        schoolSelect.value = urlParams.schoolId;
+                        schoolSelect.dispatchEvent(new Event('change'));
+                    }, 300);
+                }
+            }
+            
+            // Preencher outros campos de filtro
+            const fieldMappings = {
+                'role': 'roleFilter',
+                'content': 'contentFilter',
+                'gradeId': 'filterGrade',
+                'status': 'statusFilter'
+            };
+            
+            Object.entries(fieldMappings).forEach(([param, fieldId]) => {
+                if (urlParams[param]) {
+                    const field = document.getElementById(fieldId);
+                    if (field) field.value = urlParams[param];
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao processar parâmetros da URL:', error);
+    }
+    
+    // Carregar os usuários com paginação no carregamento inicial
+    (async function loadInitialUsersWithPagination() {
+        try {
+            userUtils.showLoading();
+            
+            // Obter role e school do usuário atual
+            const userRole = document.getElementById("userRole")?.value;
+            const userSchool = document.getElementById("userSchool")?.value;
+            const userDistrict = document.getElementById("filterDistrict")?.value;
+            
+            // Construir parâmetros iniciais para filtro com paginação
+            const initialParams = {
+                page: 1,
+                limit: 10
+            };
+            
+            // Aplicar filtros baseados no papel do usuário
+            if (userRole !== "Master" && userRole !== "Inspetor") {
+                // Para usuários não admin, filtrar por sua própria escola
+                initialParams.schoolId = userSchool;
+            } else if (userRole === "Inspetor" && userDistrict) {
+                // Para inspetores, filtrar por seu distrito
+                initialParams.districtId = userDistrict;
+            }
+            
+            // Verificar se existem parâmetros na URL que devem sobrescrever os defaults
+            const urlParams = userUtils.getUrlParams();
+            if (Object.keys(urlParams).length > 0) {
+                // Combinar parâmetros da URL com os iniciais
+                Object.assign(initialParams, urlParams);
+            }
+            
+            console.log("Carregando usuários com parâmetros:", initialParams);
+            
+            // Buscar dados com paginação
+            const data = await userServices.fetchPaginatedUsers(initialParams);
+            
+            // Atualizar tabela com dados paginados
+            userUtils.updateTable(data);
+            
+        } catch (error) {
+            console.error("Erro ao carregar usuários iniciais:", error);
+        } finally {
+            userUtils.hideLoading();
+        }
+    })();
 });

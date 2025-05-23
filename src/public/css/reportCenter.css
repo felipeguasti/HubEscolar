@@ -431,6 +431,16 @@ h3 {
 
 /* Responsividade */
 @media (max-width: 768px) {
+    .admin-master-content {
+        padding: 0px;
+    }   
+    .reports-center-container {
+        max-width: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 10px
+    }
+
     .delivery-options {
         grid-template-columns: 1fr;
     }
@@ -462,6 +472,16 @@ h3 {
 
 /* Responsividade */
 @media (max-width: 480px) {
+    .admin-master-content {
+        padding: 0px;
+    }   
+    .reports-center-container {
+        max-width: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 10px
+    }
+
     .delivery-options {
         flex-direction: column;
     }
@@ -469,4 +489,10 @@ h3 {
     .delivery-option {
         width: 100%;
     }
+}
+
+@media screen and (max-width: 576px) {
+    .admin-master-content {
+        padding: 0 10px;
+    }  
 }

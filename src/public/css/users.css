@@ -498,6 +498,77 @@
     animation: pulse 2s infinite;
 }
 
+/* Estilos para paginação */
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pagination-info {
+    color: #666;
+    font-size: 14px;
+}
+
+.pagination-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-pagination {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    color: #333;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background-color: #e9e9e9;
+    border-color: #ccc;
+}
+
+.btn-pagination:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-numbers {
+    display: flex;
+    gap: 5px;
+}
+
+.page-number {
+    min-width: 32px;
+    height: 32px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background-color: #fff;
+    transition: all 0.2s;
+}
+
+.page-number:hover {
+    background-color: #f5f5f5;
+}
+
+.page-number.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    font-weight: bold;
+}
+
 @keyframes pulse {
     0% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.4); }
     70% { box-shadow: 0 0 0 10px rgba(230, 126, 34, 0); }
@@ -523,5 +594,285 @@
     .filter-fields {
         flex-wrap: wrap;
         overflow-x: visible;
+    }
+}
+
+/* Responsividade para paginação */
+@media (max-width: 768px) {
+    .pagination-controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .page-numbers {
+        margin-top: 10px;
+    }
+}
+
+/* Responsividade para tabelas em dispositivos móveis */
+@media (max-width: 768px) {
+    /* Abordagem de cartões para dispositivos móveis */
+    .table {
+        display: block;
+        border: none;
+    }
+    
+    .table thead {
+        display: none; /* Oculta os cabeçalhos da tabela */
+    }
+    
+    .table tbody {
+        display: block;
+    }
+    
+    .table tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 10px;
+        background-color: var(--form-bg);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .table tr.inactive-user {
+        background-color: #ffcccc;
+        border-left: 4px solid #e74a3b;
+    }
+    
+    .table td {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--bg-color);
+        text-align: right;
+        position: relative;
+    }
+    
+    .table td:last-child {
+        border-bottom: none;
+    }
+    
+    /* Adiciona labels para cada célula baseado no data-label */
+    .table td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        text-align: left;
+        color: var(--text-color);
+        padding-right: 10px;
+        width: 40%;
+    }
+    
+    /* Célula de ações - otimizada para dispositivos móveis */
+    .table td.action-cell {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 5px;
+        padding-top: 12px;
+        margin-top: 5px;
+        border-top: 1px solid var(--bg-color);
+    }
+    
+    .table td.action-cell:before {
+        content: '';
+        width: 0;
+    }
+    
+    /* Ajustes nos botões de ação para dispositivos móveis */
+    .table .btn {
+        padding: 8px 10px;
+        margin: 2px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Adicionar ícones aos botões para economizar espaço */
+    .table .btn:before {
+        margin-right: 5px;
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+    }
+    
+    .table .btn-edit:before {
+        content: "\f044"; /* Ícone de edição */
+    }
+    
+    .table .btn-delete:before {
+        content: "\f2ed"; /* Ícone de lixeira */
+    }
+    
+    .table .btn-reset-password:before {
+        content: "\f084"; /* Ícone de chave */
+    }
+    
+    /* Ajuste para o modal em dispositivos móveis */
+    .modal-content {
+        width: 95%;
+        max-width: 450px;
+        padding: 15px;
+    }
+    
+    .modal-content h2 {
+        font-size: 18px;
+        margin-bottom: 15px;
+    }
+    
+    /* Ajustar layout de formulários em dispositivos móveis */
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .form-col {
+        width: 100%;
+        margin-right: 0;
+    }
+    
+    /* Ajustes nos filtros de usuários */
+    .user-filter {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-fields {
+        flex-direction: column;
+    }
+    
+    .user-filter select {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    
+    .filter-buttons {
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+    
+    #filterUsers, #cleanFilter {
+        flex: 1;
+        min-width: unset;
+    }
+}
+
+/* Adicionar estilos para o cabeçalho de mobile nas tabelas */
+@media (max-width: 768px) {
+    .mobile-table-header {
+        display: block;
+        background-color: var(--focus-color);
+        color: var(--primary-color);
+        font-weight: bold;
+        padding: 10px;
+        border-radius: 6px 6px 0 0;
+        margin-bottom: 10px;
+        margin-top: 20px;
+    }
+    
+    /* Melhorar o layout do modal para mobile */
+    .modal-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .modal-actions .btn {
+        width: 100%;
+        margin: 0;
+        text-align: center;
+    }
+}
+
+/* Para telas muito pequenas, otimizar ainda mais */
+@media (max-width: 480px) {
+    .table td {
+        padding: 6px 8px;
+    }
+    
+    .table td:before {
+        width: 35%;
+        font-size: 12px;
+    }
+    
+    /* Otimização de top bars em telas muito pequenas */
+    .topPageElements {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .topPageElements button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    /* Ajuste para pagination em telas muito pequenas */
+    .pagination-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .page-numbers {
+        gap: 3px;
+    }
+    
+    .page-number {
+        min-width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+}
+
+/* Adicionar ao final do arquivo apenas os estilos específicos para botões em tabelas mobile */
+@media (max-width: 768px) {
+    /* Ajustar apenas os botões dentro da action-cell para ficarem com tamanho uniforme */
+    .table .btn {
+        flex: 1 1 auto;
+        min-width: 80px;
+        max-width: 100px;
+        margin: 3px;
+        font-size: 12px;
+        text-align: center;
+        justify-content: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        height: 30px; 
+    }
+
+      /* Melhorar tamanho do terceiro botão (resetar senha) */
+    .table .btn:nth-child(3),
+    .table .btn-reset-password {
+        flex: 1.3 1 auto;
+        min-width: 95px;
+        font-size: 11.5px;
+        letter-spacing: -0.2px;
+    }
+    
+    /* Organização melhor dos botões */
+    .table td.action-cell {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px;
+        padding: 8px 0;
+    }
+    
+    /* Assegurar que a célula de ação não tenha largura definida pelo conteúdo */
+    .table td.action-cell:before {
+        display: none;
+    }
+}
+
+/* Para telas muito pequenas, otimizar ainda mais */
+@media (max-width: 480px) {
+    /* Em telas muito pequenas, fazer os botões ocuparem mais espaço horizontal */
+    .table .btn {
+        flex: 1 1 30%;
+        min-width: 70px;
+        font-size: 11px;
+        padding: 8px 5px;
     }
 }
