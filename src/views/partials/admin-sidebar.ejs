@@ -3,6 +3,11 @@
         <!-- Gerenciar Dashboard - todos -->
         <li><a href="/dashboard">Dashboard</a></li>
         
+        <!-- Gerenciar Perfil da escola -->
+        <% if (user.role !== 'Master' && user.role !== 'Inspetor' && user.schoolId) { %>
+            <li><a href="/schools/profile/<%= user.schoolId %>">Informações da escola</a></li>
+        <% } %>
+
         <!-- Gerenciar Distritos e Escolas -->
         <% if (user.role === 'Master' || user.role === 'Inspetor') { %>
             <li><a href="/districts">Distritos e Escolas</a></li>
@@ -28,7 +33,7 @@
         <% } %>
 
         <!-- Gerenciar Ferramentas -->
-        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Secretario') { %>
+        <% if (user.role === 'Master' || user.role === 'Inspetor' || user.role === 'Secretario' || user.role === 'Diretor') { %>
             <li><a href="/features/settings">Gerenciar Ferramentas</a></li>
         <% } %>
         <% if (user.role !== 'Aluno') { %>

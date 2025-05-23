@@ -47,8 +47,19 @@ router.get('/', isAuthenticated, async (req, res) => {
         // Chamar o schools-service para obter a lista de escolas
         const schools = await schoolsService.getAllSchools(accessToken);
 
-        // Buscar as notas diretamente do banco de dados local
-        const grades = await gradeService.getAllGrades(accessToken);
+        // Buscar as turmas diretamente do banco de dados local
+        let grades = await gradeService.getAllGrades(accessToken);
+        
+        // Garantir que grades seja sempre um array
+        grades = Array.isArray(grades) ? grades : 
+                 (grades && Array.isArray(grades.data)) ? grades.data : [];
+        
+        // Adicionar debug para verificar a estrutura
+        console.log('Estrutura de grades:', {
+            isArray: Array.isArray(grades),
+            length: grades.length,
+            sample: grades.length > 0 ? grades[0] : null
+        });
 
         // Buscar o usuário a ser editado (se o userId for fornecido)
         let editingUser = null;
@@ -67,7 +78,8 @@ router.get('/', isAuthenticated, async (req, res) => {
             selectedDistrict: loggedInUser.districtId,
             selectedSchool: loggedInUser.schoolId,
             userRole: loggedInUser.role,
-            currentUserId: loggedInUser.id
+            currentUserId: loggedInUser.id,
+            userSchool: loggedInUser.schoolId
         });
 
     } catch (err) {
@@ -97,8 +109,32 @@ router.post('/create', isAuthenticated, async (req, res) => {
             }
         }
         
+        // Verificar se o usuário é um aluno e está sendo associado a uma turma
+        if (userData.role === 'Aluno' && userData.gradeId) {
+            try {
+                // Obter detalhes da turma para extrair o horário
+                console.log(`Usuário é Aluno - buscando detalhes da turma ID: ${userData.gradeId}`);
+                const gradeDetails = await gradeService.getGradeById(accessToken, userData.gradeId);
+                
+                // Verificar se os detalhes da turma foram obtidos corretamente
+                if (gradeDetails && gradeDetails.data) {
+                    // Sobrescrever o horário enviado pelo formulário com o horário da turma
+                    userData.horario = gradeDetails.data.shift;
+                    console.log(`Horário obtido da turma: ${userData.horario}`);
+                } else {
+                    console.warn(`Não foi possível obter detalhes da turma ID: ${userData.gradeId}`);
+                }
+            } catch (gradeError) {
+                console.error(`Erro ao buscar detalhes da turma: ${gradeError.message}`);
+                // Continuamos o processo mesmo se falhar a obtenção da turma
+            }
+        } else {
+            // Para outros papéis, manter o horário enviado pelo formulário
+            console.log(`Usuário não é Aluno ou não tem turma - usando horário do formulário: ${userData.horario}`);
+        }
+        
         const userDataWithPassword = {
-            ...req.body,
+            ...userData,
             password: ('password' in req.body) ? req.body.password : DEFAULT_PASSWORD
         };
 
@@ -122,7 +158,6 @@ router.post('/create', isAuthenticated, async (req, res) => {
     }
 });
 
-// No seu api-gateway (onde as rotas estão definidas)
 router.get('/list', isAuthenticated, async (req, res) => {
     const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
     try {
@@ -140,7 +175,39 @@ router.put('/edit/:id', isAuthenticated, async (req, res) => {
     const { id } = req.params;
     const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
     try {
-        const updatedUser = await usersService.updateUser(id, req.body, accessToken);
+        // Cria uma cópia dos dados recebidos
+        let userData = { ...req.body };
+        
+        // Remove espaços e símbolos do número de telefone
+        if (userData.phone) {
+            userData.phone = userData.phone.replace(/[^\d]/g, '');
+        }
+        
+        // Verificar se o usuário é um aluno e está sendo associado a uma turma
+        if (userData.role === 'Aluno' && userData.gradeId) {
+            try {
+                // Obter detalhes da turma para extrair o horário
+                console.log(`Editando Aluno - buscando detalhes da turma ID: ${userData.gradeId}`);
+                const gradeDetails = await gradeService.getGradeById(accessToken, userData.gradeId);
+                
+                // Verificar se os detalhes da turma foram obtidos corretamente
+                if (gradeDetails && gradeDetails.data) {
+                    // Sobrescrever o horário enviado pelo formulário com o horário da turma
+                    userData.horario = gradeDetails.data.shift;
+                    console.log(`Horário atualizado da turma: ${userData.horario}`);
+                } else {
+                    console.warn(`Não foi possível obter detalhes da turma ID: ${userData.gradeId}`);
+                }
+            } catch (gradeError) {
+                console.error(`Erro ao buscar detalhes da turma: ${gradeError.message}`);
+                // Continuamos o processo mesmo se falhar a obtenção da turma
+            }
+        } else {
+            // Para outros papéis, manter o horário enviado pelo formulário
+            console.log(`Usuário não é Aluno ou não tem turma - usando horário do formulário: ${userData.horario}`);
+        }
+        
+        const updatedUser = await usersService.updateUser(id, userData, accessToken);
         return res.json(updatedUser);
     } catch (error) {
         console.error(`Erro ao atualizar usuário com ID ${id}:`, error);

@@ -1,0 +1,601 @@
+/* Adicione este estilo para tornar os itens de autocomplete clicáveis */
+.autocomplete-item {
+    cursor: pointer;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.autocomplete-item:hover {
+    background-color: #f5f5f5;
+}
+
+/* Remover os bullets da lista */
+.feature-form-autocomplete-results {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.feature-form-autocomplete-results li {
+    cursor: pointer;
+}
+
+/* Estilo para o item destacado durante navegação com teclado */
+.autocomplete-item.highlighted {
+    background-color: #e0e0e0;
+}
+
+/* Estilos para o botão de adição em lote */
+.btn-add-feature {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+    min-width: 20px;
+    min-height: 20px;
+}
+
+.btn-add-feature:hover {
+    background-color: #27ae60;
+}
+
+/* Adicionar o sinal + no botão */
+.btn-add-feature::before {
+    content: '+';
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Remover o texto "Atribuir" do botão */
+.btn-add-feature span {
+    display: none;
+}
+
+/* Estilos para o botão de remoção em lote */
+.btn-remove-feature {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin-left: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+    min-width: 20px;
+    min-height: 20px;
+    box-sizing: border-box;
+}
+
+.btn-remove-feature:hover {
+    background-color: #c0392b;
+}
+
+/* Se não tiver o ícone de lixeira do Font Awesome */
+.btn-remove-feature::before {
+    content: 'X';
+    font-size: 16px;
+}
+
+/* Para o layout das células de ação */
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Estilo para o status */
+#batchAssignStatus {
+    margin-left: 8px;
+}
+
+#batchAssignStatus .loading {
+    color: #3498db;
+}
+
+#batchAssignStatus .success {
+    color: #2ecc71;
+}
+
+#batchAssignStatus .error {
+    color: #e74c3c;
+}
+
+/* Estilos para o toggle de modo de atribuição */
+.assignment-mode-toggle {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* Estilo para o switch do toggle */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    margin-right: 10px;
+}
+
+/* Esconder o input checkbox real */
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* O slider do toggle */
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+/* O indicador do toggle (bolinha) */
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+/* Estilo quando o toggle está ativado */
+.toggle-switch input:checked + .toggle-slider {
+    background-color: #3498db;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+/* Estilo para os rótulos */
+.toggle-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #777;
+    margin: 0 5px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.toggle-label.active {
+    color: #3498db;
+    font-weight: 600;
+}
+
+/* Efeito de hover nos rótulos */
+.toggle-label:hover {
+    background-color: #f1f1f1;
+}
+
+.toggle-label.active:hover {
+    background-color: #e1f0fa;
+}
+
+/* Ícones para os rótulos (usando emoji como fallback) */
+#individualModeLabel:before {
+    content: "👤 ";
+}
+
+#batchModeLabel:before {
+    content: "👥 ";
+}
+
+/* Tablets e dispositivos médios */
+@media (max-width: 768px) {
+    /* Estilos gerais para seções */
+    .features-body {
+        padding: 10px;
+    }
+
+    .features-main {
+        flex-direction: column;
+    }
+    
+    .features-section {
+        padding: 12px;
+        margin-bottom: 20px;
+    }
+    
+    /* Estilos para formulários */
+    .features-form-group {
+        flex-direction: column;
+        margin-bottom: 15px;
+    }
+    
+    .features-form-label {
+        margin-bottom: 5px;
+        width: 100%;
+    }
+    
+    .features-form-input {
+        width: 100%;
+    }
+    
+    /* Toggle de modo de atribuição */
+    .assignment-mode-toggle {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    /* Estilo para tabelas em dispositivos médios */
+    .features-table {
+        font-size: 14px;
+    }
+    
+    .features-table th, 
+    .features-table td {
+        padding: 8px 10px;
+    }
+    
+    /* Ajustar botões */
+    .features-button,
+    .btn {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    
+    /* Modal responsivo */
+    .modal-content {
+        width: 90%;
+        max-width: 500px;
+        padding: 15px;
+    }
+    
+    .modal-content h2 {
+        font-size: 18px;
+    }
+}
+
+/* Dispositivos móveis */
+@media (max-width: 576px) {
+    /* Transformar tabela em cards para mobile */
+    .features-table {
+        display: block;
+        border: none;
+    }
+    
+    .features-table thead {
+        display: none; /* Ocultar cabeçalhos */
+    }
+    
+    .features-table tbody {
+        display: block;
+    }
+    
+    .features-table tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        background-color: white;
+    }
+    
+    .features-table tr.feature-inactive {
+        border-left: 4px solid #e74c3c;
+    }
+    
+    .features-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        border-bottom: 1px solid #f5f5f5;
+        text-align: right;
+    }
+    
+    .features-table td:last-child {
+        border-bottom: none;
+    }
+    
+    /* Adicionar labels para cada célula */
+    .features-table td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        text-align: left;
+        padding-right: 10px;
+        flex: 1;
+    }
+    
+    /* Ajustar célula de ações */
+    .features-table td:last-child {
+        display: flex;
+        justify-content: flex-end;
+        border-top: 1px solid #eee;
+        padding-top: 12px;
+        margin-top: 5px;
+    }
+    
+    .features-table td:last-child:before {
+        content: '';
+        display: none;
+    }
+    
+    /* Estilizar botões de ação na tabela */
+    .features-table .btn {
+        padding: 6px 10px;
+        margin: 0 5px;
+        font-size: 12px;
+    }
+    
+    /* Estilizar badges de status */
+    .status-badge {
+        padding: 4px 8px;
+        font-size: 12px;
+        border-radius: 4px;
+    }
+    
+    /* Estilo para a tabela de usuários selecionados */
+    .feature-form-selected-users {
+        display: block;
+        border: none;
+    }
+    
+    .feature-form-table-head {
+        display: none;
+    }
+    
+    .feature-form-table-body {
+        display: block;
+    }
+    
+    .feature-form-table-body tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 10px;
+        background-color: white;
+    }
+    
+    .feature-form-table-body td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f5f5f5;
+    }
+    
+    .feature-form-table-body td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        text-align: left;
+        padding-right: 10px;
+        flex: 1;
+    }
+    
+    /* Ajustar os botões de ação em lote */
+    .action-buttons {
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        margin-top: 5px;
+    }
+    
+    .btn-add-feature,
+    .btn-remove-feature {
+        width: 32px;
+        height: 32px;
+    }
+    
+    /* Melhorar resultados de autocomplete em mobile */
+    .feature-form-autocomplete-results {
+        max-height: 200px;
+    }
+    
+    .autocomplete-item {
+        padding: 10px; /* Aumentar área de toque */
+    }
+    
+    /* Modal em tela cheia para dispositivos muito pequenos */
+    .modal-content {
+        width: 95%;
+        padding: 12px;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+    
+    #featureForm input,
+    #featureForm select,
+    #featureForm textarea {
+        font-size: 14px;
+        padding: 8px 10px;
+        margin-bottom: 12px;
+    }
+}
+
+/* Para dispositivos muito pequenos */
+@media (max-width: 400px) {
+    .features-section-title {
+        font-size: 16px;
+        text-align: center;
+    }
+    
+    /* Ajustar toggle de modo */
+    .toggle-label {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+    
+    .toggle-switch {
+        width: 40px;
+        height: 20px;
+    }
+    
+    .toggle-slider:before {
+        height: 14px;
+        width: 14px;
+    }
+    
+    .toggle-switch input:checked + .toggle-slider:before {
+        transform: translateX(20px);
+    }
+    
+    /* Modificar visual dos botões de ação em tabelas */
+    .features-table .btn {
+        padding: 6px 8px;
+        margin: 2px;
+        white-space: nowrap;
+    }
+}
+
+/* Modificar os estilos existentes da tabela de resultados */
+.feature-form-selected-users {
+    width: 100%;
+    overflow-x: auto; /* Permite rolagem horizontal em telas pequenas */
+    max-width: 100%; /* Certifica-se de que não extrapola a largura do container */
+    margin-bottom: 20px;
+    table-layout: fixed; /* Controla melhor o layout da tabela */
+}
+
+/* Ajustar a responsividade da tabela de resultados de busca */
+@media (max-width: 768px) {
+    /* Contêiner para a tabela de resultados */
+    .feature-form-table-container {
+        overflow-x: hidden; /* Esconder overflow horizontal */
+        width: 100%;
+    }
+    
+    /* Melhorar o layout da tabela de usuários selecionados */
+    .feature-form-selected-users {
+        display: block;
+        white-space: normal; /* Permite quebra de texto */
+    }
+    
+    /* Ajustar a largura dos elementos para impedir estouro */
+    #userSearchResults {
+        max-width: 100%;
+    }
+    
+    /* Garantir que células não causem overflow horizontal */
+    .feature-form-table-body td {
+        word-break: break-word; /* Quebrar palavras longas */
+        overflow-wrap: break-word;
+    }
+    
+    /* Controlar o layout da célula de ações */
+    .feature-form-table-body td:last-child {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap; /* Permite quebra dos botões quando necessário */
+    }
+}
+
+/* Para telas muito pequenas */
+@media (max-width: 480px) {
+    /* Transformar a tabela de resultados em cards */
+    .feature-form-selected-users {
+        margin-top: 15px;
+    }
+    
+    /* Melhorar a exibição dos usuários encontrados */
+    .feature-form-selected-users tr {
+        display: block;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #eee;
+        border-radius: 6px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    /* Layout vertical para cada célula */
+    .feature-form-selected-users td {
+        border: none;
+        padding: 5px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    /* Ocultar cabeçalho da tabela */
+    .feature-form-table-head {
+        display: none;
+    }
+    
+    /* Aplicar estilo especial à célula de ações */
+    .feature-form-selected-users td.user-actions {
+        justify-content: flex-end;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #eee;
+    }
+    
+    /* Certifique-se de que o container de autocomplete não causa overflow */
+    .feature-form-autocomplete-container {
+        position: relative;
+        width: 100%;
+    }
+    
+    /* Ajustar a lista de resultados de autocomplete */
+    .feature-form-autocomplete-results {
+        width: 100%;
+        left: 0;
+        right: 0;
+        border-radius: 0 0 6px 6px;
+    }
+}
+
+/* Correções específicas para o problema de responsividade */
+@media (max-width: 768px) {
+    .features-body {
+        padding: 3px;
+    }
+    .features-main {
+        padding: 10px;
+    }
+    /* Garantir que a seção de formulário tenha overflow controlado */
+    .features-section {
+        overflow: hidden; /* Impedir estouro horizontal */
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* Forçar o conteúdo a se ajustar ao container */
+    .features-form-content {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    /* Ajustar a largura do formulário para não causar overflow */
+    #featureForm, 
+    #userSearchForm {
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    /* Melhorar a exibição do campo de busca */
+    #userSearchInput {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* Melhorar o contêiner do autocomplete */
+    #userSearchResults {
+        width: 100%;
+        box-sizing: border-box;
+        left: 0;
+    }
+}

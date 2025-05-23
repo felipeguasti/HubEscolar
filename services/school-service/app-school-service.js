@@ -54,7 +54,7 @@ const limiter = rateLimit({
     skip: (req) => {
         // Adiciona log para debug do skip
         logger.debug(`Skip check - User Role: ${req.user?.role}`);
-        return req.user?.role === 'Master';
+        return req.user?.role === 'Master' || req.user?.role === 'Diretor';
     }
 });
 

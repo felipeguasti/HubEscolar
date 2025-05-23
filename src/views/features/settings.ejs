@@ -8,87 +8,148 @@
     </header>
     <main class="features-main">
       <!-- Feature Creation/Edit Section -->
-      <section id="feature-management" class="features-section">
-        <h2 class="features-section-title">Cadastro de Ferramentas</h2>
-        <div class="features-form-group">
-          <button id="btn-new-feature" class="features-button">Nova Ferramenta</button>
-        </div>
+      <% if (user.role === 'Master' || user.role === 'Inspetor') { %>
+        <section id="feature-management" class="features-section">
+          <h2 class="features-section-title">Cadastro de Ferramentas</h2>
+          <div class="features-form-group">
+            <button id="btn-new-feature" class="features-button">Nova Ferramenta</button>
+          </div>
 
-        <!-- Features Table -->
-        <table id="features-table" class="features-table">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Descrição</th>
-              <th>Rota</th>
-              <th>Status</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-            <tbody id="features-list">
-                <% features.forEach(feature => { %>
-                    <tr class="feature-row <%= feature.status === 'inactive' ? 'feature-inactive' : '' %>">
-                    <td><%= feature.name %></td>
-                    <td><%= feature.description %></td>
-                    <td><%= feature.route %></td>
-                    <td>
-                        <span class="status-badge <%= feature.status %>">
-                        <%= feature.status === 'active' ? 'Ativo' : 'Inativo' %>
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-edit" data-id="<%= feature.id %>">Editar</button>
-                        <button class="btn btn-delete" data-id="<%= feature.id %>">Excluir</button>
-                    </td>
-                    </tr>
-                <% }) %>
-            </tbody>
-        </table>
-      </section>
-
+          <!-- Features Table -->
+          <table id="features-table" class="features-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Rota</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+              <tbody id="features-list">
+                  <% features.forEach(feature => { %>
+                      <tr class="feature-row <%= feature.status === 'inactive' ? 'feature-inactive' : '' %>">
+                      <td><%= feature.name %></td>
+                      <td><%= feature.description %></td>
+                      <td><%= feature.route %></td>
+                      <td>
+                          <span class="status-badge <%= feature.status %>">
+                          <%= feature.status === 'active' ? 'Ativo' : 'Inativo' %>
+                          </span>
+                      </td>
+                      <td>
+                          <button class="btn btn-edit" data-id="<%= feature.id %>">Editar</button>
+                          <button class="btn btn-delete" data-id="<%= feature.id %>">Excluir</button>
+                      </td>
+                      </tr>
+                  <% }) %>
+              </tbody>
+          </table>
+        </section>
+      <% } %>
       <!-- User Assignment Section -->
       <section id="user-assignment" class="features-section">
         <h2 class="features-section-title">Atribuição de Ferramentas</h2>
+        
+        <!-- Toggle para alternar entre modos -->
+        <div class="assignment-mode-toggle">
+          <span id="individualModeLabel" class="toggle-label active">Individual</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="assignmentModeToggle">
+            <span class="toggle-slider"></span>
+          </label>
+          <span id="batchModeLabel" class="toggle-label">Em Lote</span>
+        </div>
+        
+        <!-- O restante do formulário permanece igual -->
         <div class="features-form-group">
-            <label for="userRole" class="features-form-label">Cargo:</label>
-            <select id="userRole" class="features-form-input" name="role">
-                <option value="">Selecione um cargo</option>
+          <label for="userRole" class="features-form-label">Cargo:</label>
+          <select id="userRole" class="features-form-input" name="role">
+              <option value="">Selecione um cargo</option>
+              <% if (user.role === 'Master') { %>
                 <option value="Master">Master</option>
+              <% } %>
+              <% if (user.role === 'Master' || user.role === 'Inspetor') { %>
                 <option value="Inspetor">Inspetor</option>
+              <% } %>
                 <option value="Diretor">Diretor</option>
                 <option value="Secretario">Secretário</option>
                 <option value="Coordenador">Coordenador</option>
                 <option value="Pedagogo">Pedagogo</option>
                 <option value="Professor">Professor</option>
                 <option value="Aluno">Aluno</option>
-            </select>
+          </select>
         </div>
-        <div class="features-form-group">
+        
+        <!-- Campo de secretaria existente, apenas adaptando a visibilidade -->
+        <div id="districtContainer" class="features-form-group" <%= user.role !== 'Master' ? 'style="display:none;"' : '' %>>
             <label for="userDistrict" class="features-form-label">Secretaria:</label>
-            <select id="userDistrict" class="features-form-input" name="districtId">
+            <select id="userDistrict" class="features-form-input" name="districtId" <%= user.role !== 'Master' ? 'disabled' : '' %>>
                 <option value="">Selecione uma secretaria</option>
                 <% districts.forEach(function(district) { %>
-                    <option value="<%= district.id %>" <%= user.districtId === district.id ? 'selected' : '' %>><%= district.name %></option>
+                    <option value="<%= district.id %>" 
+                        <%= user.districtId === district.id ? 'selected' : '' %>>
+                        <%= district.name %>
+                    </option>
                 <% }); %>
             </select>
         </div>
-        <div class="features-form-group">
+
+        <!-- Campo oculto para guardar o distrito do usuário quando não é Master -->
+        <% if (user.role !== 'Master') { %>
+            <input type="hidden" id="userDistrictHidden" value="<%= user.districtId %>">
+        <% } %>
+
+        <div id="schoolContainer" class="features-form-group" <%= !['Master', 'Inspetor'].includes(user.role) ? 'style="display:none;"' : '' %>>
+            <label for="userSchool" class="features-form-label">Escola:</label>
+            <select id="userSchool" class="features-form-input" name="schoolId" <%= !['Master', 'Inspetor'].includes(user.role) ? 'disabled' : '' %>>
+                <option value="">Selecione uma escola</option>
+                <!-- Escolas serão carregadas dinamicamente -->
+            </select>
+        </div>
+
+        <!-- Campo oculto para guardar a escola do usuário -->
+        <% if (!['Master', 'Inspetor'].includes(user.role)) { %>
+            <input type="hidden" id="userSchoolHidden" value="<%= user.schoolId %>">
+        <% } %>
+        
+        <!-- Elementos que alternam dependendo do modo -->
+        <div id="individualSearchGroup" class="features-form-group">
           <label for="user-search" class="features-form-label">Buscar Usuário:</label>
           <input type="text" id="user-search" class="features-form-input" placeholder="Digite o nome do usuário">
           <ul id="user-search-results" class="feature-form-autocomplete-results"></ul>
-          <table id="feature-form-selected-users" class="feature-form-selected-users" style="display:none;">
-            <thead class="feature-form-table-head">
-              <tr>
-                <th class="feature-form-table-header">Nome</th>
-                <th class="feature-form-table-header">Cargo</th>
-                <th class="feature-form-table-header">Ferramentas</th>
-                <th class="feature-form-table-header">Ações</th>
-              </tr>
-            </thead>
-            <tbody id="feature-form-selected-users-list" class="feature-form-table-body">
-              </tbody>
-          </table>
         </div>
+        
+        <div id="batchSearchGroup" class="features-form-group" style="display:none;">
+          <button id="batchSearchButton" class="features-button">Buscar Usuários</button>
+        </div>
+        
+        <!-- Tabela com dois possíveis cabeçalhos -->
+        <table id="feature-form-selected-users" class="feature-form-selected-users" style="display:none;">
+          <!-- Cabeçalho para modo individual -->
+          <thead id="individual-table-head" class="feature-form-table-head">
+            <tr>
+              <th class="feature-form-table-header">Nome</th>
+              <th class="feature-form-table-header">Cargo</th>
+              <th class="feature-form-table-header">Ferramentas</th>
+              <th class="feature-form-table-header">Ações</th>
+            </tr>
+          </thead>
+          
+          <!-- Cabeçalho para modo em lote -->
+          <thead id="batch-table-head" class="feature-form-table-head" style="display:none;">
+            <tr>
+              <th class="feature-form-table-header">Cargo</th>
+              <th class="feature-form-table-header">Quantidade de Usuários</th>
+              <th class="feature-form-table-header">Ferramentas</th>
+              <th class="feature-form-table-header">Ações</th>
+            </tr>
+          </thead>
+          
+          <tbody id="feature-form-selected-users-list" class="feature-form-table-body">
+            <!-- Conteúdo da tabela será preenchido via JavaScript -->
+          </tbody>
+        </table>
       </section>
     </main>
 

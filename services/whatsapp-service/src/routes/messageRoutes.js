@@ -11,5 +11,7 @@ router.use(auth);
 router.post('/send', validateMessage, messageController.sendMessage);
 router.get('/', messageController.getMessages);
 router.get('/status', messageController.getStatus);
+router.get('/status/:messageId', messageController.getMessageStatus);
+router.post('/status/batch', messageController.getBatchMessageStatus);
 
 module.exports = router;

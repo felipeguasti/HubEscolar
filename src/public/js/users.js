@@ -136,11 +136,18 @@ const userServices = {
         }
     },
 
-    async loadAllGrades() {
+    // No userServices, método loadAllGrades
+    async loadAllGrades(schoolId = null) {
         const gradeSelect = document.getElementById('filterGrade');
         this.setSelectLoading(gradeSelect);
         try {
-            const response = await fetch('/grades/list');
+            const effectiveSchoolId = userUtils.getEffectiveSchoolId(schoolId);
+            
+            // Se tiver schoolId, busca apenas as turmas daquela escola
+            const url = effectiveSchoolId ? `/grades/school/${effectiveSchoolId}` : '/grades/list';
+            console.log(`Buscando turmas de: ${url}`);
+            
+            const response = await fetch(url);
             const data = await this.handleResponse(response);
             return data;
         } finally {
@@ -149,7 +156,7 @@ const userServices = {
     },
 
     async fetchSchoolsByDistrict(districtId) {
-        const schoolSelect = document.getElementById('schoolFilter');
+        const schoolSelect = document.getElementById('filterSchool');
         this.setSelectLoading(schoolSelect);
         try {
             const response = await fetch(`/schools/list?districtId=${districtId}`);
@@ -166,7 +173,8 @@ const userServices = {
     },
 
     async fetchGradesBySchool(schoolId) {
-        return this.fetchWithLoading(`/grades/list?schoolId=${schoolId}`);
+        console.log(schoolId);
+        return this.fetchWithLoading(`/grades/school/${schoolId}`);
     },
 
     async loadSchools(district) {
@@ -182,8 +190,8 @@ const userServices = {
         }
     },
 
-    async loadClasses(district, school) {
-        const response = await fetch(`/grades/list?schoolId=${school}`);
+    async loadClasses(school) {
+        const response = await fetch(`/grades/school/${school}`);
         return await response.json();
     },
 
@@ -206,7 +214,7 @@ const userServices = {
 
     // Modificar os métodos de carregamento de dropdowns
     async loadSchools(districtId) {
-        const schoolSelect = document.getElementById('schoolFilter');
+        const schoolSelect = document.getElementById('filterSchool');
         if (!schoolSelect) return;
 
         this.setDropdownLoading(schoolSelect, true);
@@ -227,13 +235,48 @@ const userServices = {
         } finally {
             this.setDropdownLoading(schoolSelect, false);
         }
+    },
+
+    // Adicionar ao objeto userServices em users.js
+    async fetchPaginatedUsers(params = {}) {
+        try {
+            userUtils.showLoading();
+            
+            // Construir URL com parâmetros
+            const queryParams = new URLSearchParams();
+            
+            // Adicionar parâmetros de filtro
+            Object.entries(params).forEach(([key, value]) => {
+                if (value) queryParams.append(key, value);
+            });
+            
+            // Garantir parâmetros de paginação
+            if (!params.page) queryParams.set('page', '1');
+            if (!params.limit) queryParams.set('limit', '10');
+            
+            // Construir URL final
+            const url = `/users/filter?${queryParams.toString()}`;
+            
+            // Atualizar URL do navegador
+            const newUrl = `${window.location.pathname}?${queryParams.toString()}`;
+            window.history.pushState({}, '', newUrl);
+            
+            const response = await fetch(url);
+            const data = await this.handleResponse(response);
+            return data;
+        } catch (error) {
+            console.error("Error:", error);
+            throw error;
+        } finally {
+            userUtils.hideLoading();
+        }
     }
 };
 
 // HANDLERS
 const userHandlers = {
   
-    async openRegisterModal() {        
+        async openRegisterModal() {        
         try {
             // Reset de todos os campos do formulário
             document.getElementById('registerForm').reset();
@@ -249,8 +292,18 @@ const userHandlers = {
             await userServices.fetchSchoolsByDistrict(districtId);
             
             if (schoolSelect.value) {
-                const grades = await userServices.fetchGradesBySchool(schoolSelect.value);
-                userUtils.updateGradeSelect(grades);
+                // Determinar qual ID de escola usar com base no papel do usuário
+                const userRole = document.getElementById("userRole")?.value;
+                const userSchool = document.getElementById("userSchool")?.value;
+                
+                let effectiveSchoolId = schoolSelect.value;
+                if (userRole && userSchool && userRole !== "Master" && userRole !== "Inspetor") {
+                    console.log(`Usando escola do usuário (${userSchool}) em vez da selecionada (${schoolSelect.value})`);
+                    effectiveSchoolId = userSchool;
+                }
+                
+                const grades = await userServices.fetchGradesBySchool(effectiveSchoolId);
+                userUtils.updateGradeSelect(grades, 'register');
             }
     
             userUtils.openModal('registerModal');
@@ -259,7 +312,7 @@ const userHandlers = {
             userUtils.showError('Erro ao carregar dados iniciais');
         } 
     },
-    
+        
     async openEditModal(userId) {        
         try {
             const [userData, subjects] = await Promise.all([
@@ -271,13 +324,13 @@ const userHandlers = {
             document.getElementById("editUserId").value = userId;
             
             // Atualizar select de conteúdos
-            userUtils.updateContentSelect(subjects, 'editContent');
+            userUtils.updateContentSelect(subjects, 'editContent', userData.content);
     
             // Preencher todos os campos
             const fields = [
-                'id', 'name', 'email', 'cpf', 'phone', 'dateOfBirth', 
+                'id', 'name', 'username', 'email', 'cpf', 'phone', 'dateOfBirth', 
                 'gender', 'role', 'horario', 'status', 'address', 'city', 
-                'state', 'zip', 'districtId', 'schoolId', 'content'
+                'state', 'zip', 'districtId'
             ];
             
             fields.forEach(field => {
@@ -291,29 +344,61 @@ const userHandlers = {
                 }
             });
     
+            const contentSelect = document.getElementById('editContent');
+            if (contentSelect && userData.content) {
+                console.log(`Definindo disciplina/content: ${userData.content}`);
+                
+                setTimeout(() => {
+                    contentSelect.value = userData.content;
+                    if (contentSelect.value !== userData.content) {
+                        Array.from(contentSelect.options).forEach(option => {
+                            if (option.textContent === userData.content) {
+                                option.selected = true;
+                            }
+                        });
+                    }
+                }, 100);
+            }
+    
+            const districtSelect = document.getElementById('editDistrict');
+            if (districtSelect && userData.districtId) {
+                console.log(`Definindo district: ${userData.districtId}`);
+                districtSelect.value = userData.districtId;
+            }
+    
             // Atualizar a visibilidade dos campos baseado na role
             userUtils.updateFieldsVisibility(userData.role, 'edit');
     
             // Carregar as escolas do distrito selecionado
             if (userData.districtId) {
-                await userServices.fetchSchoolsBySchool(userData.districtId, userData.schoolId);
+                const schools = await userServices.fetchSchoolsBySchool(userData.districtId, userData.schoolId);
                 
-                // Selecionar a escola correta
+                // Atualizar o dropdown de escolas
                 const schoolSelect = document.getElementById('editSchool');
-                if (schoolSelect && userData.schoolId) {
-                    schoolSelect.value = userData.schoolId;
+                if (schoolSelect) {
+                    schoolSelect.innerHTML = '<option value="">Selecione uma escola</option>';
+                    schools.forEach(school => {
+                        const option = document.createElement('option');
+                        option.value = school.id;
+                        option.textContent = school.name;
+                        schoolSelect.appendChild(option);
+                    });
+                    
+                    if (userData.schoolId) {
+                        console.log(`Definindo escola: ${userData.schoolId}`);
+                        setTimeout(() => {
+                            schoolSelect.value = userData.schoolId;
+                        }, 50);
+                    }
                 }
             }
     
-            // Carregar as turmas da escola selecionada e definir a turma correta
             if (userData.schoolId) {
                 const grades = await userServices.fetchGradesBySchool(userData.schoolId);
                 userUtils.updateGradeSelect(grades, 'edit');
                 
-                // Importante: definir o valor após atualizar as opções
                 const gradeSelect = document.getElementById('editGrade');
                 if (gradeSelect && userData.gradeId) {
-                    // Aguardar um momento para garantir que as opções foram carregadas
                     setTimeout(() => {
                         gradeSelect.value = userData.gradeId;
                     }, 100);
@@ -358,6 +443,7 @@ const userHandlers = {
             // Coletar dados do formulário
             const fields = {
                 name: document.getElementById("registerName"),
+                username: document.getElementById("registerUsername"),
                 email: document.getElementById("registerEmail"),
                 role: document.getElementById("registerRole"),
                 district: document.getElementById("registerDistrict"),
@@ -398,7 +484,8 @@ const userHandlers = {
             // Criar objeto com os valores
             // Se passou da verificação, criar objeto com os valores
             const userData = {
-                name: fields.name.value.trim(),
+                name: fields.name.value.trim().toUpperCase(), // Converter para UPPERCASE
+                username: fields.username.value.trim(),
                 email: fields.email.value.trim(),
                 role: fields.role.value,
                 districtId: fields.district.value,
@@ -493,7 +580,7 @@ const userHandlers = {
         }
     },
 
-    async handleEditUser(userId) {
+        async handleEditUser(userId) {
         try {            
             // Primeiro, verificar se o userId existe
             if (!userId) {
@@ -503,6 +590,7 @@ const userHandlers = {
             // Criar um objeto para armazenar os campos
              const fields = {
                 name: document.getElementById("editName"),
+                username: document.getElementById("editUsername"),
                 email: document.getElementById("editEmail"),
                 role: document.getElementById("editRole"),
                 district: document.getElementById("editDistrict"),
@@ -532,7 +620,8 @@ const userHandlers = {
     
             // Criar objeto userData apenas com campos que existem
             const userData = {
-                name: fields.name.value,
+                name: fields.name.value.trim().toUpperCase(), // Converter para UPPERCASE
+                username: fields.username.value,
                 email: fields.email.value,
                 role: fields.role.value,
                 districtId: fields.district.value,
@@ -542,7 +631,6 @@ const userHandlers = {
                 dateOfBirth: fields.dateOfBirth.value,
                 gender: fields.gender.value,
                 content: fields.content.value,
-                gradeId: fields.grade.value,
                 horario: fields.horario.value,
                 address: fields.address.value,
                 city: fields.city.value,
@@ -550,6 +638,28 @@ const userHandlers = {
                 zip: fields.zip.value,
                 status: fields.status.value
             };
+    
+            // CORREÇÃO: Tratar o gradeId corretamente baseado no papel do usuário
+            if (userData.role === 'Aluno') {
+                // Para alunos, gradeId deve ser um número
+                userData.gradeId = fields.grade.value ? parseInt(fields.grade.value, 10) : null;
+                // Validar se é número válido
+                if (userData.gradeId === null || isNaN(userData.gradeId)) {
+                    throw new Error('Alunos precisam ter uma turma (ID numérico) definida');
+                }
+                userData.content = null; // Alunos não possuem content (disciplina)
+            } else if (userData.role === 'Professor') {
+                // Professores não possuem gradeId, deve ser null e não string vazia
+                userData.gradeId = null;
+                // Mas precisam ter content (disciplina)
+                if (!userData.content) {
+                    throw new Error('Professores precisam ter uma disciplina definida');
+                }
+            } else {
+                // Outros perfis não têm gradeId nem content
+                userData.gradeId = null;
+                userData.content = null;
+            }
     
             // Validar dados
             try {
@@ -559,6 +669,9 @@ const userHandlers = {
                 return;
             }
     
+            // Console para debug
+            console.log('Dados enviados para edição:', JSON.stringify(userData));
+    
             const result = await userServices.editUser(userId, userData);
     
             if (result.error) {
@@ -566,7 +679,7 @@ const userHandlers = {
                 return;
             }
     
-            userUtils.showSuccess('Usuário atualizado com sucesso!'); // Adicionar mensagem de sucesso
+            userUtils.showSuccess('Usuário atualizado com sucesso!');
             setTimeout(() => {
                 userUtils.closeModal();
                 location.reload();
@@ -630,13 +743,27 @@ const userHandlers = {
             userUtils.showError("Erro ao carregar escolas");
         }
     },
-
+    
     async handleGradeChange(schoolId) {
         try {
-            const grades = await userServices.fetchGradesBySchool(schoolId);
+            const effectiveSchoolId = userUtils.getEffectiveSchoolId(schoolId);
+            
+            const response = await userServices.fetchGradesBySchool(effectiveSchoolId);
             const gradeSelect = document.getElementById("registerGrade");
             gradeSelect.innerHTML = '<option value="">Selecione uma turma</option>';
-            grades.forEach(grade => {
+            
+            // Verificar a estrutura da resposta e extrair o array de turmas
+            const gradesArray = Array.isArray(response) ? response : 
+                Array.isArray(response.data) ? response.data :
+                [];
+            
+            // Console para debug
+            console.log('Dados de turmas recebidos:', response);
+            console.log('Array de turmas extraído:', gradesArray);
+            console.log('Escola efetiva usada:', effectiveSchoolId);
+            
+            // Iterar sobre o array
+            gradesArray.forEach(grade => {
                 const option = document.createElement("option");
                 option.value = grade.id;
                 option.textContent = grade.name;
@@ -644,6 +771,8 @@ const userHandlers = {
             });
         } catch (error) {
             console.error("Error:", error);
+            const gradeSelect = document.getElementById("registerGrade");
+            gradeSelect.innerHTML = '<option value="">Erro ao carregar turmas</option>';
             userUtils.showError("Erro ao carregar turmas");
         }
     },
@@ -701,14 +830,14 @@ const userHandlers = {
     setupGradeEditSelectListener() {
         const schoolSelect = document.getElementById('editSchool');
         const gradeSelect = document.getElementById('editGrade');
-    
+
         if (schoolSelect && gradeSelect) {
             schoolSelect.addEventListener('change', async () => {
                 const schoolId = schoolSelect.value;
                 if (schoolId) {
-                    // Não está passando o tipo para updateGradeSelect
-                    const grades = await userServices.fetchGradesBySchool(schoolId);
-                    userUtils.updateGradeSelect(grades, 'edit'); // Correção aqui
+                    const effectiveSchoolId = userUtils.getEffectiveSchoolId(schoolId);
+                    const grades = await userServices.fetchGradesBySchool(effectiveSchoolId);
+                    userUtils.updateGradeSelect(grades, 'edit');
                 } else {
                     gradeSelect.innerHTML = '<option value="">Selecione uma turma</option>';
                 }
@@ -719,14 +848,14 @@ const userHandlers = {
     setupGradeRegisterSelectListener() {
         const schoolSelect = document.getElementById('registerSchool');
         const gradeSelect = document.getElementById('registerGrade');
-                
+            
         if (schoolSelect && gradeSelect) {
             schoolSelect.addEventListener('change', async () => {
                 const schoolId = schoolSelect.value;
                 if (schoolId) {
-                    // Não está passando o tipo para updateGradeSelect
-                    const grades = await userServices.fetchGradesBySchool(schoolId);
-                    userUtils.updateGradeSelect(grades, 'register'); // Correção aqui
+                    const effectiveSchoolId = userUtils.getEffectiveSchoolId(schoolId);
+                    const grades = await userServices.fetchGradesBySchool(effectiveSchoolId);
+                    userUtils.updateGradeSelect(grades, 'register');
                 } else {
                     gradeSelect.innerHTML = '<option value="">Selecione uma escola</option>';
                 }
@@ -739,6 +868,52 @@ const userUtils = {
 
     showInfo(message) {
         this.showPopup(message, 'info');
+    },
+
+    async updateContentSelect(subjects, selectId, selectedValue = null) {
+        const contentSelect = document.getElementById(selectId);
+        if (!contentSelect) return;
+
+        // Limpar select existente
+        contentSelect.innerHTML = '<option value="">Selecione uma disciplina</option>';
+        
+        // Verificar se temos dados
+        if (!subjects || !Array.isArray(subjects) || subjects.length === 0) {
+            console.warn("Nenhuma disciplina disponível");
+            return;
+        }
+        
+        // Adicionar opções
+        subjects.forEach(subject => {
+            const option = document.createElement('option');
+            option.value = subject.id;
+            option.textContent = subject.name;
+            
+            // Se temos um valor selecionado, verificar correspondência
+            if (selectedValue && (subject.id == selectedValue || subject.name == selectedValue)) {
+                option.selected = true;
+            }
+            
+            contentSelect.appendChild(option);
+        });
+        
+        // Verificar se alguma opção foi selecionada automaticamente
+        if (selectedValue && contentSelect.value !== selectedValue) {
+            console.log(`Disciplina ${selectedValue} não encontrada automaticamente, verificando...`);
+            
+            // Tentativa de encontrar pela string ou ID
+            let found = false;
+            
+            // Procurar por correspondência parcial no nome
+            Array.from(contentSelect.options).forEach(option => {
+                if (!found && option.textContent.includes(selectedValue) || 
+                    option.value == selectedValue) {
+                    option.selected = true;
+                    found = true;
+                    console.log(`Disciplina encontrada: ${option.textContent}`);
+                }
+            });
+        }
     },
 
     updateGradeSelect(grades, type = 'register') {
@@ -774,49 +949,53 @@ const userUtils = {
     },
 
     async handleFilterUsers(event) {
-        event.preventDefault();
+        event?.preventDefault();
         try {
             // Coletar valores dos filtros
-            const districtId = document.getElementById("districtFilter")?.value || "";
-            const schoolId = document.getElementById("schoolFilter")?.value || "";
+            const districtId = document.getElementById("filterDistrict")?.value || "";
+            let schoolId = document.getElementById("filterSchool")?.value || "";
             const role = document.getElementById("roleFilter")?.value || "";
             const content = document.getElementById("contentFilter")?.value || "";
-            const grade = document.getElementById("filterGrade")?.value || ""; // Corrigido: era "classFilter"
+            const grade = document.getElementById("filterGrade")?.value || "";
             const status = document.getElementById("statusFilter")?.value || "";
-    
+
+            // Determinar qual ID de escola usar com base no papel do usuário
+            const userRole = document.getElementById("userRole")?.value;
+            const userSchool = document.getElementById("userSchool")?.value;
+            
+            if (userRole !== "Master" && userRole !== "Inspetor") {
+                schoolId = userSchool;
+            }
+
             // Construir parâmetros de consulta
-            const queryParams = new URLSearchParams();
-            if (districtId) queryParams.append("districtId", districtId);
-            if (schoolId) queryParams.append("schoolId", schoolId);
-            if (role) queryParams.append("role", role);
-            if (content) queryParams.append("content", content);
-            if (grade) queryParams.append("gradeId", grade); // Corrigido: era "class" agora é "gradeId"
-            if (status) queryParams.append("status", status); // Adicionado filtro por status
+            const queryParams = {
+                page: 1, // Ao filtrar, sempre voltar para a página 1
+                limit: 10 // Valor padrão para itens por página
+            };
             
-            console.log("Filtros aplicados:", Object.fromEntries(queryParams));
-    
-            // Mostrar loading enquanto carrega
-            userUtils.showLoading();
+            // Adicionar filtros aos parâmetros apenas se tiverem valor
+            if (districtId) queryParams.districtId = districtId;
+            if (schoolId) queryParams.schoolId = schoolId;
+            if (role) queryParams.role = role;
+            if (content) queryParams.content = content;
+            if (grade) queryParams.gradeId = grade;
+            if (status) queryParams.status = status;
             
-            const url = queryParams.toString() ? 
-                `/users/filter?${queryParams.toString()}` : '/users/filter';
-    
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`Erro ao buscar usuários filtrados`);
-    
-            const data = await response.json();
-            userUtils.updateTable(data);
-            userUtils.hideLoading();
+            // Buscar dados com os filtros e paginação
+            const data = await userServices.fetchPaginatedUsers(queryParams);
+            
+            // Atualizar a tabela
+            this.updateTable(data);
         } catch (error) {
             console.error("Error:", error);
-            userUtils.showError("Erro ao filtrar usuários");
-            userUtils.hideLoading();
+            this.showError("Erro ao filtrar usuários");
         }
     },
 
     validateUserData(userData) {
         const fieldNames = {
             name: 'Nome',
+            username: 'Username',
             email: 'E-mail',
             role: 'Função',
             cpf: 'CPF',
@@ -829,8 +1008,7 @@ const userUtils = {
             zip: 'CEP'
         };
 
-        const requiredFields = ['name', 'email', 'role', 'cpf', 'phone', 'dateOfBirth', 
-            'gender', 'address', 'city', 'state', 'zip'];
+        const requiredFields = ['name', 'username', 'email', 'role'];
         
         const emptyFields = requiredFields.filter(field => !userData[field]);
         
@@ -916,7 +1094,7 @@ const userUtils = {
         if (!date) return '';
         return date.split('/').reverse().join('-');
     },
-
+    
     updateTable(data) {
         const tbody = document.querySelector('table tbody');
         if (!tbody) {
@@ -950,20 +1128,21 @@ const userUtils = {
                 
                 return;
             }
-    
-            // Código existente para quando há usuários
+
+            // Manter a lógica existente de ordenação e exibição dos usuários
             const sortedUsers = data.users.sort((a, b) => {
                 if (a.status === 'inactive' && b.status !== 'inactive') return -1;
                 if (a.status !== 'inactive' && b.status === 'inactive') return 1;
                 return new Date(b.createdAt) - new Date(a.createdAt);
             });
-    
+
             sortedUsers.forEach(user => {
+                // Manter o código existente de renderizar cada linha
                 const tr = document.createElement('tr');
                 if (user.status === 'inactive') {
                     tr.classList.add('inactive-user');
                 }
-    
+
                 tr.innerHTML = `
                     <td>${user.name}</td>
                     <td>${user.email}</td>
@@ -987,12 +1166,19 @@ const userUtils = {
                 
                 tbody.appendChild(tr);
             });
+
+            // Renderizar controles de paginação
+            if (data.pagination) {
+                this.renderPaginationControls(data);
+            }
         }
+        
+        // Reinstalar listeners nos botões
         userHandlers.setupListeners();
     },
 
     addClearTableListeners() {
-        const filters = document.querySelectorAll('#districtFilter, #schoolFilter, #roleFilter, #contentFilter, #filterGrade, #statusFilter');
+        const filters = document.querySelectorAll('#filterDistrict, #filterSchool, #roleFilter, #contentFilter, #filterGrade, #statusFilter');
         const filterButton = document.getElementById("filterUsers");
         
         // Flag para determinar se estamos no carregamento inicial
@@ -1058,8 +1244,8 @@ const userUtils = {
                 const fields = {
                     contentField: document.getElementById("contentFilter"),
                     classField: document.getElementById("filterGrade"),
-                    districtField: document.getElementById("districtFilter"),
-                    schoolField: document.getElementById("schoolFilter")
+                    districtField: document.getElementById("filterDistrict"),
+                    schoolField: document.getElementById("filterSchool")
                 };
     
                 // Esconde todos os campos primeiro
@@ -1070,13 +1256,10 @@ const userUtils = {
                 // Mostra campos específicos baseado na role
                 switch(role) {
                     case "Master":
-                        if (fields.districtField) fields.districtField.style.display = "block";
-                        if (fields.schoolField) fields.schoolField.style.display = "block";
                         break;
                     case "Inspetor":
                         // Mostra apenas distrito
                         if (fields.districtField) fields.districtField.style.display = "block";
-                        if (fields.schoolField) fields.schoolField.style.display = "block";
                         break;
                     case "Diretor":
                         // Mostra distrito e escola
@@ -1136,7 +1319,7 @@ const userUtils = {
                     if (filter) filter.value = "";
                 });
 
-                const fields = ["districtFilter", "schoolFilter", "roleFilter", 
+                const fields = ["filterDistrict", "filterSchool", "roleFilter", 
                             "contentFilter", "classFilter", "statusFilter"]
                     .map(id => document.getElementById(id));
                 
@@ -1337,13 +1520,173 @@ const userUtils = {
             horarioField.style.display = 'block';
             horarioLabel.style.display = 'block';
         }
+    },
+
+    // Adicionar este método ao userUtils
+    getEffectiveSchoolId(selectedSchoolId) {
+        // Determinar qual ID de escola usar com base no papel do usuário
+        const userRole = document.getElementById("userRole")?.value;
+        const userSchool = document.getElementById("userSchool")?.value;
+        
+        if (userRole !== "Master" && userRole !== "Inspetor") {
+            console.log(`Usando escola do usuário (${userSchool}) em vez da selecionada (${selectedSchoolId})`);
+            return userSchool;
+        }
+        
+        return selectedSchoolId;
+    },
+
+    setupFilterFieldsHighlight() {
+        // Adicionar classe 'has-filter' aos selects que têm um valor selecionado
+        const filterSelects = document.querySelectorAll('.filter-fields select, .filter-fields input');
+        
+        // Inicialização - verificar valores iniciais
+        filterSelects.forEach(field => {
+            if (field.value) {
+                field.classList.add('has-filter');
+            }
+            
+            // Atualizar classe quando o valor mudar
+            field.addEventListener('change', function() {
+                if (this.value) {
+                    this.classList.add('has-filter');
+                } else {
+                    this.classList.remove('has-filter');
+                }
+            });
+        });
+        
+        // Remover classe has-filter quando o botão limpar for clicado
+        const cleanFilterBtn = document.getElementById('cleanFilter');
+        if (cleanFilterBtn) {
+            cleanFilterBtn.addEventListener('click', function() {
+                setTimeout(() => {
+                    filterSelects.forEach(field => {
+                        field.classList.remove('has-filter');
+                    });
+                }, 100);
+            });
+        }
+    },
+
+    renderPaginationControls(data) {
+        // Verificar se temos dados de paginação
+        if (!data.pagination) return;
+        
+        const { totalItems, totalPages, currentPage, itemsPerPage } = data.pagination;
+        
+        // Atualizar informações de total
+        document.getElementById('items-shown').textContent = 
+            Math.min(itemsPerPage, totalItems - (currentPage - 1) * itemsPerPage);
+        document.getElementById('total-items').textContent = totalItems;
+        
+        // Configurar botões de navegação
+        const prevButton = document.getElementById('prev-page');
+        const nextButton = document.getElementById('next-page');
+        
+        if (prevButton) {
+            prevButton.disabled = currentPage <= 1;
+            prevButton.onclick = () => this.changePage(currentPage - 1);
+        }
+        
+        if (nextButton) {
+            nextButton.disabled = currentPage >= totalPages;
+            nextButton.onclick = () => this.changePage(currentPage + 1);
+        }
+        
+        // Renderizar números de página
+        const pageNumbers = document.getElementById('page-numbers');
+        if (!pageNumbers) return;
+        
+        pageNumbers.innerHTML = '';
+        
+        // Determinar quais páginas mostrar
+        const maxButtons = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+        
+        if (endPage - startPage + 1 < maxButtons) {
+            startPage = Math.max(1, endPage - maxButtons + 1);
+        }
+        
+        // Adicionar primeira página
+        if (startPage > 1) {
+            const firstPageBtn = document.createElement('button');
+            firstPageBtn.className = 'page-number';
+            firstPageBtn.textContent = '1';
+            firstPageBtn.onclick = () => this.changePage(1);
+            pageNumbers.appendChild(firstPageBtn);
+            
+            // Adicionar elipses se necessário
+            if (startPage > 2) {
+                const ellipsis = document.createElement('span');
+                ellipsis.textContent = '...';
+                ellipsis.className = 'page-ellipsis';
+                pageNumbers.appendChild(ellipsis);
+            }
+        }
+        
+        // Adicionar páginas numéricas
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = `page-number ${i === currentPage ? 'active' : ''}`;
+            pageBtn.textContent = i;
+            pageBtn.onclick = () => this.changePage(i);
+            pageNumbers.appendChild(pageBtn);
+        }
+        
+        // Adicionar última página
+        if (endPage < totalPages) {
+            // Adicionar elipses se necessário
+            if (endPage < totalPages - 1) {
+                const ellipsis = document.createElement('span');
+                ellipsis.textContent = '...';
+                ellipsis.className = 'page-ellipsis';
+                pageNumbers.appendChild(ellipsis);
+            }
+            
+            const lastPageBtn = document.createElement('button');
+            lastPageBtn.className = 'page-number';
+            lastPageBtn.textContent = totalPages;
+            lastPageBtn.onclick = () => this.changePage(totalPages);
+            pageNumbers.appendChild(lastPageBtn);
+        }
+    },
+    
+    // Método para mudar de página
+    async changePage(page) {
+        try {
+            userUtils.showLoading();
+            
+            // Obter parâmetros atuais da URL
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('page', page);
+            
+            // Buscar dados com a nova página
+            const data = await userServices.fetchPaginatedUsers(Object.fromEntries(urlParams));
+            
+            // Atualizar a tabela com os novos dados
+            this.updateTable(data);
+        } catch (error) {
+            console.error('Erro ao mudar de página:', error);
+            this.showError('Erro ao carregar a página ' + page);
+        } finally {
+            userUtils.hideLoading();
+        }
+    },
+    
+    // Método para ler parâmetros da URL
+    getUrlParams() {
+        return Object.fromEntries(new URLSearchParams(window.location.search));
     }
+
 };
 
 // INITIALIZATION
 document.addEventListener('DOMContentLoaded', async function() {
     const isUsers = window.location.pathname.includes("users");
     if (!isUsers) return;
+
     
     try {
 
@@ -1382,10 +1725,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             userHandlers.handleSchoolChange(e.target.value);
         });
 
-        document.getElementById("registerSchool").addEventListener("change", (e) => {
-            userHandlers.handleGradeChange(e.target.value);
-        });
-
         // Close modal listeners
         document.querySelectorAll(".close, .btn-cancel").forEach(button => {
             button.addEventListener("click", (e) => {
@@ -1398,16 +1737,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Filtros de distrito e escola
         const userRole = document.getElementById("userRole").value;
         if (userRole === "Master" || userRole === "Inspetor") {
-            document.getElementById("districtFilter")?.addEventListener("change", async (event) => {
+            document.getElementById("filterDistrict")?.addEventListener("change", async (event) => {
                 const district = event.target.value;
                 await userServices.loadSchools(district);
             });
         }
 
-        document.getElementById("schoolFilter")?.addEventListener("change", async (event) => {
-            const district = document.getElementById("districtFilter")?.value;
+        document.getElementById("filterSchool")?.addEventListener("change", async (event) => {
             const school = event.target.value;
-            await userServices.loadClasses(district, school);
+            await userServices.loadClasses(school);
         });
 
         // Adicionar listener para resetar senha
@@ -1427,9 +1765,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Carregar dados iniciais uma única vez
         try {
             // Carregar conteúdos e turmas em paralelo
-            const [subjects, grades] = await Promise.all([
-                userServices.loadContentOptions(),
-                userServices.loadAllGrades()
+            const [subjects] = await Promise.all([
+                userServices.loadContentOptions()
             ]);
 
             // Preencher todos os selects de conteúdo
@@ -1437,10 +1774,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             userUtils.updateContentSelect(subjects, 'registerContent'); // Modal de registro
             userUtils.updateContentSelect(subjects, 'editContent');    // Modal de edição
 
-            // Preencher todos os selects de turma
-            userUtils.updateGradeSelect(grades, 'filter');     // Filtro
-            userUtils.updateGradeSelect(grades, 'register');   // Modal de registro
-            userUtils.updateGradeSelect(grades, 'edit');       // Modal de edição
         } catch (error) {
             console.error('Erro ao carregar dados iniciais:', error);
         }
@@ -1450,6 +1783,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         userUtils.addClearTableListeners();
         userUtils.addRoleChangeListener();
         userUtils.addClearFilterListener();
+        userUtils.setupFilterFieldsHighlight();
 
         // Close pop-up listener
         const closePopup = document.getElementById("close-popup");
@@ -1465,7 +1799,42 @@ document.addEventListener('DOMContentLoaded', async function() {
             const userId = document.getElementById("deleteUserId").value;
             await userHandlers.handleDeleteUser(userId);
         });
-         } catch (error) {
+        
+    const userSchool = document.getElementById("userSchool")?.value;
+    
+    if (userRole && userSchool && userRole !== "Master" && userRole !== "Inspetor") {
+        // No filtro, desabilitar a seleção de escola e definir o valor como a escola do usuário
+        const schoolFilterSelect = document.getElementById("filterSchool");
+        if (schoolFilterSelect) {
+            // Quando o schoolFilter for carregado, selecionar automaticamente a escola do usuário
+            const observer = new MutationObserver((mutations) => {
+                for (const mutation of mutations) {
+                    if (mutation.type === 'childList') {
+                        schoolFilterSelect.value = userSchool;
+                        schoolFilterSelect.disabled = true;
+                        observer.disconnect();
+                        
+                        // Disparar evento de change para carregar as turmas
+                        schoolFilterSelect.dispatchEvent(new Event('change'));
+                        
+                        // Carregar as turmas diretamente (adição)
+                        setTimeout(async () => {
+                            try {
+                                console.log(`Carregando turmas da escola do usuário (${userSchool})`);
+                                const grades = await userServices.fetchGradesBySchool(userSchool);
+                                userUtils.updateGradeSelect(grades, 'filter');
+                            } catch (error) {
+                                console.error('Erro ao carregar turmas:', error);
+                            }
+                        }, 300);
+                    }
+                }
+            });
+            
+            observer.observe(schoolFilterSelect, { childList: true });
+        }
+    }
+     } catch (error) {
         console.error('Erro ao carregar dados iniciais:', error);
         userUtils.showError('Erro ao carregar dados iniciais');
     } 
@@ -1493,4 +1862,155 @@ document.addEventListener('DOMContentLoaded', async function() {
         userUtils.openModal("registerModal");
         userUtils.updateFieldsVisibility(registerRole.value, 'register');
     });
+
+    const schoolFilterSelect = document.getElementById("filterSchool");
+    if (schoolFilterSelect) {
+        schoolFilterSelect.addEventListener("change", async function() {
+            const schoolId = schoolFilterSelect.value;
+            console.log('Escola selecionada:', schoolId); // Debug
+            if (schoolId) {
+                const effectiveSchoolId = userUtils.getEffectiveSchoolId(schoolId);
+                // Buscar turmas apenas da escola efetiva (selecionada ou do usuário)
+                const grades = await userServices.loadAllGrades(effectiveSchoolId);
+                userUtils.updateGradeSelect(grades, 'filter');
+            } else {
+                // Se não tiver escola selecionada, limpar o select de turmas
+                const gradeSelect = document.getElementById('filterGrade');
+                if (gradeSelect) {
+                    gradeSelect.innerHTML = '<option value="">Selecione uma escola primeiro</option>';
+                }
+            }
+        });
+    }
+        
+    try {
+        // Carregar apenas conteúdos (disciplinas) inicialmente
+        const subjects = await userServices.loadContentOptions();
+        
+        // Preencher todos os selects de conteúdo
+        userUtils.updateContentSelect(subjects, 'contentFilter');  // Filtro
+        userUtils.updateContentSelect(subjects, 'registerContent'); // Modal de registro
+        userUtils.updateContentSelect(subjects, 'editContent');    // Modal de edição
+        
+        // Lógica para carregamento inicial das turmas baseado no papel do usuário
+        const gradeSelect = document.getElementById('filterGrade');
+        const userRole = document.getElementById("userRole")?.value;
+        const userSchool = document.getElementById("userSchool")?.value;
+        
+        if (gradeSelect) {
+            if (userRole && userSchool && userRole !== "Master" && userRole !== "Inspetor") {
+                // Para usuários não-admin, carregar as turmas da sua escola automaticamente
+                gradeSelect.innerHTML = '<option value="">Carregando turmas...</option>';
+                
+                try {
+                    console.log(`Carregando turmas da escola do usuário (${userSchool}) no carregamento inicial`);
+                    const grades = await userServices.fetchGradesBySchool(userSchool);
+                    userUtils.updateGradeSelect(grades, 'filter');
+                } catch (error) {
+                    console.error('Erro ao carregar turmas:', error);
+                    gradeSelect.innerHTML = '<option value="">Erro ao carregar turmas</option>';
+                }
+            } else {
+                // Para admin, manter a mensagem para selecionar escola
+                gradeSelect.innerHTML = '<option value="">Selecione uma escola primeiro</option>';
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao carregar dados iniciais:', error);
+    }
+
+    // Verificar se existem parâmetros de paginação na URL ao carregar
+    try {
+        const urlParams = userUtils.getUrlParams();
+        if (Object.keys(urlParams).length > 0) {
+            // Se existem parâmetros na URL, usá-los para o carregamento inicial
+            const data = await userServices.fetchPaginatedUsers(urlParams);
+            userUtils.updateTable(data);
+            
+            // Preencher os campos de filtro com os valores da URL
+            if (urlParams.districtId) {
+                const districtSelect = document.getElementById('filterDistrict');
+                if (districtSelect) districtSelect.value = urlParams.districtId;
+                
+                // Carregar escolas do distrito selecionado
+                if (userRole === "Master" || userRole === "Inspetor") {
+                    await userServices.loadSchools(urlParams.districtId);
+                }
+            }
+            
+            if (urlParams.schoolId) {
+                const schoolSelect = document.getElementById('filterSchool');
+                if (schoolSelect) {
+                    setTimeout(() => {
+                        schoolSelect.value = urlParams.schoolId;
+                        schoolSelect.dispatchEvent(new Event('change'));
+                    }, 300);
+                }
+            }
+            
+            // Preencher outros campos de filtro
+            const fieldMappings = {
+                'role': 'roleFilter',
+                'content': 'contentFilter',
+                'gradeId': 'filterGrade',
+                'status': 'statusFilter'
+            };
+            
+            Object.entries(fieldMappings).forEach(([param, fieldId]) => {
+                if (urlParams[param]) {
+                    const field = document.getElementById(fieldId);
+                    if (field) field.value = urlParams[param];
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao processar parâmetros da URL:', error);
+    }
+    
+    // Carregar os usuários com paginação no carregamento inicial
+    (async function loadInitialUsersWithPagination() {
+        try {
+            userUtils.showLoading();
+            
+            // Obter role e school do usuário atual
+            const userRole = document.getElementById("userRole")?.value;
+            const userSchool = document.getElementById("userSchool")?.value;
+            const userDistrict = document.getElementById("filterDistrict")?.value;
+            
+            // Construir parâmetros iniciais para filtro com paginação
+            const initialParams = {
+                page: 1,
+                limit: 10
+            };
+            
+            // Aplicar filtros baseados no papel do usuário
+            if (userRole !== "Master" && userRole !== "Inspetor") {
+                // Para usuários não admin, filtrar por sua própria escola
+                initialParams.schoolId = userSchool;
+            } else if (userRole === "Inspetor" && userDistrict) {
+                // Para inspetores, filtrar por seu distrito
+                initialParams.districtId = userDistrict;
+            }
+            
+            // Verificar se existem parâmetros na URL que devem sobrescrever os defaults
+            const urlParams = userUtils.getUrlParams();
+            if (Object.keys(urlParams).length > 0) {
+                // Combinar parâmetros da URL com os iniciais
+                Object.assign(initialParams, urlParams);
+            }
+            
+            console.log("Carregando usuários com parâmetros:", initialParams);
+            
+            // Buscar dados com paginação
+            const data = await userServices.fetchPaginatedUsers(initialParams);
+            
+            // Atualizar tabela com dados paginados
+            userUtils.updateTable(data);
+            
+        } catch (error) {
+            console.error("Erro ao carregar usuários iniciais:", error);
+        } finally {
+            userUtils.hideLoading();
+        }
+    })();
 });

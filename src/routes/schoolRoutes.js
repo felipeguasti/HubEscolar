@@ -6,6 +6,51 @@ const isAuthenticated = require('../middlewares/auth');
 // Middleware de autenticação para todas as rotas abaixo
 router.use(isAuthenticated);
 
+// Rota para visualizar o perfil da escola
+router.get("/profile/:id", async (req, res) => {
+    const { id } = req.params;
+    const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+    
+    try {
+        const school = await schoolsService.getSchoolById(id, accessToken);
+        
+        if (!school) {
+            return res.status(404).render('error', {
+                title: 'Erro',
+                message: 'Escola não encontrada',
+                user: req.user
+            });
+        }
+        
+        // Verificar se pode editar (Diretor ou Secretário)
+        const canEdit = req.user && ['Diretor', 'Secretario', 'Coordenador'].includes(req.user.role);
+        
+        // Verificar se o usuário pertence a esta escola (para Diretor/Secretário)
+        const isSchoolMember = req.user && (
+            req.user.role === 'Admin' || 
+            (req.user.schoolId && req.user.schoolId === parseInt(id))
+        );
+        
+        // Renderizar a página do perfil da escola
+        res.render('school', {
+            title: `Perfil - ${school.name}`,
+            school: school,
+            user: req.user,
+            canEdit: canEdit && isSchoolMember,
+            canConfigWhatsApp: canEdit && isSchoolMember,
+            currentPage: 'schools'
+        });
+    } catch (error) {
+        console.error(`Erro ao buscar perfil da escola com ID ${id}:`, error);
+        res.status(500).render('error', {
+            title: 'Erro',
+            message: 'Erro ao carregar perfil da escola',
+            error: error.message,
+            user: req.user
+        });
+    }
+});
+
 // Rota para criar uma nova escola (chama o school-service)
 router.post("/create", async (req, res) => {
     try {

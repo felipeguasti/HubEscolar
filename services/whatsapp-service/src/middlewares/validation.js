@@ -22,11 +22,11 @@ const validateMessage = (req, res, next) => {
         });
     }
 
-    if (message.length > 1000) {
+    if (message.length > 4000) {
         logger.warn('Message exceeds maximum length');
         return res.status(400).json({
             success: false,
-            message: 'Message exceeds maximum length of 1000 characters'
+            message: 'Message exceeds maximum length of 4000 characters'
         });
     }
 

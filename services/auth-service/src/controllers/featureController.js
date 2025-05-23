@@ -227,5 +227,81 @@ export const featureController = {
             logger.error(`Error in getFeatureById: ${error.message}`);
             return res.status(500).json({ error: 'Erro ao buscar feature' });
         }
+    },
+
+    async assignFeatureToBatch(req, res) {
+        try {
+            const { featureId, role, districtId, schoolId } = req.body;
+            const grantedBy = req.user.id;
+            
+            // Extrair o token da requisição
+            const token = req.headers.authorization?.replace('Bearer ', '');
+
+            if (!featureId || !role) {
+                return res.status(400).json({ error: 'featureId e role são obrigatórios' });
+            }
+
+            const result = await featureService.assignFeatureToBatch(
+                featureId, 
+                role, 
+                districtId || null, 
+                schoolId || null, 
+                grantedBy,
+                token  // Passar o token para o serviço
+            );
+            
+            if (!result.success) {
+                return res.status(404).json({ error: result.error });
+            }
+
+            return res.status(200).json({ 
+                success: true, 
+                message: `Ferramenta atribuída com sucesso a ${result.count} usuários.`,
+                count: result.count 
+            });
+        } catch (error) {
+            logger.error('Error in assignFeatureToBatch:', error);
+            return res.status(500).json({ 
+                success: false,
+                error: 'Erro ao atribuir feature em lote' 
+            });
+        }
+    },
+
+    async removeFeatureFromBatch(req, res) {
+        try {
+            const { featureId, role, districtId, schoolId } = req.body;
+            
+            // Extrair o token da requisição
+            const token = req.headers.authorization?.replace('Bearer ', '');
+
+            if (!featureId || !role) {
+                return res.status(400).json({ error: 'featureId e role são obrigatórios' });
+            }
+
+            const result = await featureService.removeFeatureFromBatch(
+                featureId, 
+                role, 
+                districtId || null, 
+                schoolId || null,
+                token  // Passar o token para o serviço
+            );
+            
+            if (!result.success) {
+                return res.status(404).json({ error: result.error });
+            }
+
+            return res.status(200).json({ 
+                success: true, 
+                message: `Ferramenta removida com sucesso de ${result.count} usuários.`,
+                count: result.count 
+            });
+        } catch (error) {
+            logger.error('Error in removeFeatureFromBatch:', error);
+            return res.status(500).json({ 
+                success: false,
+                error: 'Erro ao remover feature em lote' 
+            });
+        }
     }
 };

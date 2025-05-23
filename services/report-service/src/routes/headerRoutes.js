@@ -24,10 +24,10 @@ router.post('/update', authMiddleware, async (req, res) => {
         const headerData = {
             schoolId: req.body.schoolId,
             districtId: req.body.districtId,
-            schoolLogo: req.body.schoolLogo,      // Already a path from frontend
-            districtLogo: req.body.districtLogo,  // Already a path from frontend
-            line1: req.body.line1,               // Add line1 field
-            line2: req.body.line2,               // Add line2 field
+            schoolLogo: req.body.schoolLogo,
+            districtLogo: req.body.districtLogo,
+            line1: req.body.line1,
+            line2: req.body.line2,
             authToken: req.headers.authorization?.split(' ')[1]
         };
 

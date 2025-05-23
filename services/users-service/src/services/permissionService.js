@@ -6,8 +6,8 @@ const verificarPermissaoCriacao = (roleUsuarioLogado, roleNovoUsuario) => {
         'Inspetor': ['Diretor', 'Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
         'Diretor': ['Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
         'Secretario': ['Coordenador', 'Pedagogo', 'Secretario', 'Professor', 'Aluno'],
-        'Coordenador': [],
-        'Pedagogo': [],
+        'Coordenador': ['Professor', 'Aluno'],
+        'Pedagogo': ['Professor', 'Aluno'],
         'Professor': [],
         'Aluno': []
     };

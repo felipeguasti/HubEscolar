@@ -14,5 +14,6 @@ router.get('/email/:email', cacheUserMiddleware, usersController.buscarUsuarioPo
 router.get('/filter', authenticate, cacheUserMiddleware, usersController.filterUsers);
 router.post('/reset-password', authenticate, cacheUserMiddleware, usersController.resetarSenha);
 router.get('/data', authenticate, cacheUserMiddleware, usersController.getUsersData);
+router.get('/check-exists', authenticate, cacheUserMiddleware, usersController.checkUserExists);
 
 module.exports = router;

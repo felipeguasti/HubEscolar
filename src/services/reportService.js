@@ -176,6 +176,56 @@ const reportService = {
             throw error;
         }
     },
+
+    async generateStudentOccurrencesReportPDF(accessToken, studentId, logos = {}, filters = {}) {
+        try {
+            logger.info(`Gerando relatório de ocorrências para o aluno ID: ${studentId}`);
+            
+            // Construir query params
+            const queryParams = new URLSearchParams();
+            if (filters.startDate) queryParams.append('startDate', filters.startDate);
+            if (filters.endDate) queryParams.append('endDate', filters.endDate);
+            if (filters.reportLevel) queryParams.append('reportLevel', filters.reportLevel);
+            
+            // Adicionar logos à query string
+            if (logos?.schoolLogo) queryParams.append('schoolLogo', logos.schoolLogo);
+            if (logos?.districtLogo) queryParams.append('districtLogo', logos.districtLogo);
+            
+            const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+            
+            logger.info(`Query params para relatório de ocorrências: ${queryString}`);
+            
+            // Chamar o microserviço de relatórios
+            const response = await axios.get(
+                `${REPORT_SERVICE_BASE_URL}/reports/student/${studentId}/occurrences/pdf${queryString}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    },
+                    responseType: 'arraybuffer' // Importante para receber corretamente o PDF
+                }
+            );
+            
+            logger.info(`PDF de ocorrências do aluno ID ${studentId} gerado com sucesso`);
+            return response.data;
+            
+        } catch (error) {
+            logger.error('Erro ao gerar relatório de ocorrências do aluno:', 
+                error.response ? error.response.data : error.message);
+            
+            // Se o erro contém resposta e não é um PDF
+            if (error.response && error.response.headers['content-type']?.includes('application/json')) {
+                try {
+                    const errorData = JSON.parse(Buffer.from(error.response.data).toString());
+                    throw new Error(errorData.error || errorData.message || 'Erro no serviço de relatórios');
+                } catch {
+                    throw error;
+                }
+            }
+            
+            throw error;
+        }
+    },
 };
 
 module.exports = reportService;

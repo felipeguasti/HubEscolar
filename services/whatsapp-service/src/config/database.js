@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { Sequelize } = require('sequelize');
 
 // Development configuration (default)
 const development = {
@@ -30,33 +31,26 @@ const production = {
   logging: false
 };
 
-// Export configurations for Sequelize CLI
-module.exports = {
-  development,
-  test,
-  production
-};
+// Selecionar a configuração baseada no ambiente
+const env = process.env.NODE_ENV || 'development';
+const config = { development, test, production }[env];
 
-// Export Sequelize instance for models
-const Sequelize = require('sequelize');
+// Criar e exportar a instância do Sequelize
 const sequelize = new Sequelize(
-  development.database,
-  development.username,
-  development.password,
+  config.database,
+  config.username,
+  config.password,
   {
-    host: development.host,
-    dialect: development.dialect,
-    logging: development.logging
+    host: config.host,
+    dialect: config.dialect,
+    logging: config.logging
   }
 );
 
-// Test connection
+// Testar a conexão
 sequelize.authenticate()
-  .then(() => {
-    console.log('Conexão com MySQL estabelecida com sucesso!');
-  })
-  .catch(err => {
-    console.error('Erro ao conectar ao MySQL:', err);
-  });
+  .then(() => console.log('Conexão com o banco de dados estabelecida com sucesso.'))
+  .catch(err => console.error('Não foi possível conectar ao banco de dados:', err));
 
-module.exports.sequelize = sequelize;
+// Exportar a instância do Sequelize diretamente
+module.exports = sequelize;

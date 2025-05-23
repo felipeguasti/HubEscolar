@@ -435,3 +435,256 @@
         width: 100%;
     }
 }
+
+/* Responsividade avançada para tabelas em dispositivos móveis */
+@media (max-width: 768px) {
+    /* Transformação da tabela em cards para visualização mobile */
+    .table {
+        display: block;
+        border: none;
+        overflow-x: visible;
+        white-space: normal;
+    }
+    
+    .table thead {
+        display: none; /* Oculta os cabeçalhos da tabela */
+    }
+    
+    .table tbody {
+        display: block;
+    }
+    
+    .table tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 12px;
+        background-color: var(--form-bg);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    .table tr.inactive-grade {
+        border-left: 4px solid #c62828;
+    }
+    
+    .table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f1f1;
+        text-align: right;
+    }
+    
+    .table td:last-child {
+        border-bottom: none;
+    }
+    
+    /* Adicionar labels para cada célula */
+    .table td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--primary-color);
+        text-align: left;
+        padding-right: 10px;
+        flex: 1;
+    }
+    
+    /* Ajustes para cells específicas */
+    .table td.actions-column {
+        display: flex;
+        justify-content: flex-end;
+        width: 100%;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .table td.actions-column:before {
+        content: '';
+        display: none;
+    }
+    
+    /* Status badge em mobile */
+    .status-badge {
+        display: inline-block;
+        margin-left: auto;
+    }
+    
+    /* Botões de ação em mobile */
+    .actions-column .btn {
+        margin: 0 5px;
+        padding: 8px 12px;
+        font-size: 14px;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        border: 1px solid var(--border-color);
+        color: var(--primary-color);
+    }
+    
+    .actions-column .btn-edit {
+        color: var(--primary-color);
+    }
+    
+    .actions-column .btn-delete {
+        color: #dc3545;
+    }
+    
+    /* Melhorar layouts dos filtros */
+    .grades-filters {
+        padding: 15px;
+    }
+    
+    .grades-filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    /* Botão de filtrar em mobile */
+    .btn-filter {
+        width: 100%;
+        margin-top: 10px;
+        height: 42px;
+    }
+}
+
+/* Modificar os estilos para botões de ação em mobile */
+@media (max-width: 768px) {
+    /* Ajustes para células de ação específicas */
+    .table td.actions-column {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: center;
+        width: 100%;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border-color);
+        gap: 8px; /* Espaçamento entre os botões */
+    }
+    
+    .table td.actions-column:before {
+        content: '';
+        display: none;
+    }
+    
+    /* Estilo de botão quadrado com ícone */
+    .actions-column .btn {
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 16px; /* Tamanho do ícone */
+        transition: all 0.2s ease;
+    }
+    
+    /* Cores específicas para cada botão */
+    .actions-column .btn-edit {
+        color: var(--primary-color);
+        background-color: rgba(185, 255, 102, 0.1);
+    }
+    
+    .actions-column .btn-delete {
+        color: #dc3545;
+        background-color: rgba(220, 53, 69, 0.05);
+    }
+    
+    .actions-column .btn-students {
+        color: #2196f3;
+        background-color: rgba(33, 150, 243, 0.05);
+    }
+    
+    /* Efeito hover */
+    .actions-column .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Efeito active */
+    .actions-column .btn:active {
+        transform: translateY(0);
+    }
+}
+
+/* Para telas muito pequenas, manter o layout horizontal mas ajustar tamanho */
+@media (max-width: 480px) {
+    .table td.actions-column {
+        justify-content: flex-end; /* Manter alinhados à direita */
+    }
+    
+    .actions-column .btn {
+        width: 38px; /* Ligeiramente menor */
+        height: 38px;
+        font-size: 15px;
+    }
+}
+
+/* Ajustar espaçamento interno das linhas da tabela em mobile */
+@media (max-width: 768px) {
+    /* Reduzir padding nas linhas */
+    .table tr {
+        padding: 8px; /* Reduzido de 12px */
+        margin-bottom: 10px; /* Reduzido de 15px */
+    }
+    
+    /* Reduzir espaço entre células */
+    .table td {
+        padding: 6px 0; /* Reduzido de 10px */
+        margin-bottom: 2px;
+        min-height: 36px; /* Altura mínima para garantir alinhamento */
+    }
+    
+    /* Ajustar espaçamento para o último item */
+    .table td:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* Reduzir tamanho de fonte dos labels */
+    .table td:before {
+        font-size: 13px; /* Ligeiramente menor */
+    }
+    
+    /* Ajustar célula de ações */
+    .table td.actions-column {
+        margin-top: 6px; /* Reduzido de 10px */
+        padding-top: 6px; /* Reduzido de 10px */
+    }
+    
+    /* Reduzir tamanho dos botões */
+    .actions-column .btn {
+        width: 36px; /* Reduzido de 42px */
+        height: 36px; /* Reduzido de 42px */
+        font-size: 15px; /* Reduzido de 16px */
+    }
+    
+    /* Reduzir gap entre os botões */
+    .table td.actions-column {
+        gap: 6px; /* Reduzido de 8px */
+    }
+}
+
+/* Para telas muito pequenas, reduzir ainda mais */
+@media (max-width: 480px) {
+    .table tr {
+        padding: 6px; /* Ainda mais compacto */
+    }
+    
+    .table td {
+        padding: 4px 0; /* Espaço vertical mínimo */
+        min-height: 32px;
+    }
+    
+    .actions-column .btn {
+        width: 32px; /* Reduzido para telas muito pequenas */
+        height: 32px;
+        font-size: 14px;
+    }
+}

@@ -7,6 +7,56 @@ document.addEventListener('DOMContentLoaded', function() {
         const autocompleteResultsList = document.getElementById('autocomplete-results');
         let highlightedIndex = -1;
 
+        let schoolGrades = [];
+
+        // Função unificada para carregar as turmas
+        async function loadAllSchoolGrades() {
+            const schoolId = document.getElementById("loggedInSchoolId")?.value;
+            if (!schoolId) {
+                console.warn("ID da escola não encontrado para carregar turmas");
+                return [];
+            }
+
+            try {
+                const response = await fetch(`/grades/school/${encodeURIComponent(schoolId)}`);
+                if (!response.ok) {
+                    throw new Error(`Erro ao buscar turmas: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                schoolGrades = data.data || [];
+                console.log('Turmas carregadas e em cache:', schoolGrades);
+                
+                // Agora que temos as turmas, vamos atualizar o select de filtro
+                updateClassFilter();
+                
+                return schoolGrades;
+            } catch (error) {
+                console.error("Erro ao carregar turmas da escola:", error);
+                return [];
+            }
+        }
+
+        function updateClassFilter() {
+            const classSelect = document.getElementById("classFilter");
+            if (!classSelect) return;
+            
+            classSelect.innerHTML = `<option value="">Todas as Turmas</option>`;
+            
+            if (!schoolGrades || schoolGrades.length === 0) {
+                classSelect.innerHTML += `<option value="" disabled>Nenhuma turma cadastrada</option>`;
+                return;
+            }
+            
+            // Mapear as turmas para o select, mas só incluir turmas ativas
+            const classOptions = schoolGrades
+                .filter(cls => cls.status === 'active')
+                .map(cls => `<option value="${cls.id}">${cls.name}</option>`)
+                .join("");
+                
+            classSelect.innerHTML += classOptions;
+        }
+
         // Event Listener for search input
         searchStudentInput?.addEventListener('input', debounce(async (e) => {
             const searchTerm = e.target.value;
@@ -51,14 +101,40 @@ document.addEventListener('DOMContentLoaded', function() {
             if (students && students.length > 0) {
                 students.forEach((student, index) => {
                     const listItem = document.createElement('li');
-                    listItem.textContent = `${student.name} (${student.userClass || 'Sem turma'})`;
+                    
+                    // Encontrar o nome da turma a partir do ID
+                    let turmaDisplay = 'Sem turma';
+                    
+                    if (student.gradeId) {
+                        // Converter os IDs para número para garantir comparação correta
+                        const studentGradeId = parseInt(student.gradeId, 10);
+                        
+                        // Procurar a turma no cache carregado
+                        const turma = schoolGrades.find(g => parseInt(g.id, 10) === studentGradeId);
+                        
+                        console.log('Buscando turma:', {
+                            studentGradeId,
+                            turmasDisponiveis: schoolGrades.map(g => g.id),
+                            turmaEncontrada: turma
+                        });
+                        
+                        if (turma) {
+                            turmaDisplay = turma.name;
+                        } else {
+                            turmaDisplay = `Turma inexistente`;
+                        }
+                    }
+                    
+                    listItem.textContent = `${student.name} (${turmaDisplay})`;
                     listItem.dataset.studentId = student.id;
                     listItem.dataset.studentName = student.name;
+                    
                     listItem.addEventListener('click', () => {
                         searchStudentInput.value = student.name;
                         autocompleteResultsList.innerHTML = '';
-                        fetchReportsByStudentId(student.id);
+                        fetchReportsByStudentId(student.id, student.name); // Agora passamos o nome também
                     });
+                    
                     autocompleteResultsList.appendChild(listItem);
                 });
             } else if (searchStudentInput.value.trim()) {
@@ -66,11 +142,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 listItem.textContent = 'Nenhum aluno encontrado';
                 autocompleteResultsList.appendChild(listItem);
             }
+
+            // Esconder o botão quando não houver resultados
+            const reportButton = document.getElementById('generate-full-report');
+            if (reportButton) {
+                reportButton.style.display = 'none';
+            }
         }
 
         // Fetch reports by student ID
         let currentStudentIdFilter = null;
-        async function fetchReportsByStudentId(studentId) {
+        let currentStudentData = null; // Adicionada para armazenar os dados do aluno
+        async function fetchReportsByStudentId(studentId, studentName = '') {
             try {
                 showLoading();
         
@@ -80,6 +163,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const offset = 0;
         
                 currentStudentIdFilter = studentId; // Armazena o studentId filtrado
+                currentStudentData = { id: studentId, name: studentName }; // Armazena os dados do aluno
+                
+                // Mostrar o botão de relatório completo
+                const reportButton = document.getElementById('generate-full-report');
+                if (reportButton) {
+                    reportButton.style.display = 'inline-flex';
+                    reportButton.setAttribute('data-student-id', studentId);
+                    reportButton.setAttribute('data-student-name', studentName);
+                }
         
                 const filters = {
                     studentId,
@@ -132,7 +224,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Event Listeners
         searchStudentInput?.addEventListener('input', debounce(function() {
-            searchStudents(this.value);
+            const searchTerm = this.value;
+            if (!searchTerm?.trim()) {
+                if (autocompleteResultsList) {
+                    autocompleteResultsList.innerHTML = '';
+                }
+                highlightedIndex = -1;
+                
+                // Esconder o botão quando o campo de busca estiver vazio
+                const reportButton = document.getElementById('generate-full-report');
+                if (reportButton) {
+                    reportButton.style.display = 'none';
+                }
+                return;
+            }
+            searchStudents(searchTerm);
         }, 300));
 
         // Keyboard navigation
@@ -151,7 +257,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (event.key === 'Enter') {
                     event.preventDefault();
                     if (highlightedIndex >= 0) {
-                        listItems[highlightedIndex].click();
+                        const selectedItem = listItems[highlightedIndex];
+                        const studentId = selectedItem.dataset.studentId;
+                        const studentName = selectedItem.dataset.studentName;
+                        searchStudentInput.value = studentName;
+                        autocompleteResultsList.innerHTML = '';
+                        fetchReportsByStudentId(studentId, studentName); // Passar o nome também
                     }
                 } else if (event.key === 'Escape') {
                     autocompleteResultsList.innerHTML = '';
@@ -210,6 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const currentPage = parseInt(page) || 1;
                 const limit = 10;
                 const offset = (currentPage - 1) * limit;
+
         
                 if (isNaN(offset)) {
                     throw new Error('Invalid page number');
@@ -314,7 +426,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 const data = await response.json();
                 
-// Encontrar o relatório específico na lista
                 // Encontrar o relatório específico na lista
                 const report = data.reports.find(r => r.id === parseInt(reportId));
                 if (!report) {
@@ -348,21 +459,21 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ${report.reportRecommendation ? `
                                     <p><strong>Recomendações:</strong> ${report.reportRecommendation}</p>
                                 ` : ''}
-        
+
                                 ${report.suspended ? `
                                     <div class="suspension-info">
                                         <h3>Suspensão</h3>
                                         <p><strong>Duração:</strong> ${report.suspensionDuration} dias</p>
                                     </div>
                                 ` : ''}
-        
+
                                 ${report.callParents ? `
                                     <div class="parents-meeting">
                                         <h3>Reunião com Responsáveis</h3>
                                         <p><strong>Data Agendada:</strong> ${new Date(report.parentsMeeting).toLocaleString('pt-BR')}</p>
                                     </div>
                                 ` : ''}
-        
+
                                 ${report.deliveredAt ? `
                                     <div class="delivery-info">
                                         <h3>Informações de Entrega</h3>
@@ -418,14 +529,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const studentResponse = await fetch(`/users/list/${report.studentId}`);
                 const studentData = await studentResponse.json();
                 console.log('Verificando dados do aluno:', {
-                    userClass: studentData.userClass,
+                    gradeId: studentData.gradeId,
                     name: studentData.name
                 });
                 
                 // Forçar verificação do fallback
-                const turma = (studentData.userClass === null || studentData.userClass === undefined) 
+                const turma = (studentData.gradeId === null || studentData.gradeId === undefined) 
                     ? 'Sem Turma' 
-                    : studentData.userClass;
+                    : studentData.gradeId;
                 
                 const pdfResponse = await fetch(`/reports/${reportId}/print`);
                 const blob = await pdfResponse.blob();
@@ -519,25 +630,31 @@ document.addEventListener('DOMContentLoaded', function() {
             `).join('');
         }
         
-        function updatePagination({ current, total, pages, studentId }) {
-            const paginationContainer = document.querySelector('.pagination');
-            console.log('UpdatePagination called with:', { current, total, pages, studentId });
-        
-            // Se não houver container ou apenas 1 página, não mostra paginação
-            if (!paginationContainer) {
-                console.error('Pagination container not found');
+        function updatePagination({ current, total, pages, studentId, classId }) {
+            // Se não há páginas ou apenas uma, não precisamos paginação
+            if (!pages || pages <= 1) {
+                // Tentar remover a paginação existente se houver
+                const existingPagination = document.querySelector('.pagination');
+                if (existingPagination) {
+                    existingPagination.innerHTML = '';
+                }
                 return;
             }
         
-            // Sempre calcular o número total de páginas
-            const totalPages = Math.ceil(total / 10); // usando 10 como limit fixo
-        
-            console.log('Calculated total pages:', totalPages);
-        
-            // Se houver apenas 1 página, limpa o container
-            if (totalPages <= 1) {
-                paginationContainer.innerHTML = '';
-                return;
+            // Verificar se o container já existe ou criar um se necessário
+            let paginationContainer = document.querySelector('.pagination');
+            if (!paginationContainer) {
+                paginationContainer = document.createElement('div');
+                paginationContainer.className = 'pagination';
+                
+                // Adicionar ao final da seção de relatórios
+                const reportsSection = document.querySelector('.reports-center-container');
+                if (reportsSection) {
+                    reportsSection.appendChild(paginationContainer);
+                } else {
+                    console.log('Reports section not found');
+                    return;
+                }
             }
         
             let paginationHTML = '';
@@ -550,10 +667,10 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         
             // Números das páginas
-            for (let i = 1; i <= totalPages; i++) {
+            for (let i = 1; i <= pages; i++) {
                 if (
                     i === 1 ||
-                    i === totalPages ||
+                    i === pages ||
                     (i >= current - 2 && i <= current + 2)
                 ) {
                     paginationHTML += `
@@ -569,7 +686,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
             // Botão Next
             paginationHTML += `
-                <button class="page-btn next" data-page="${current + 1}" ${current === totalPages ? 'disabled' : ''}>
+                <button class="page-btn next" data-page="${current + 1}" ${current === pages ? 'disabled' : ''}> 
                     &raquo;
                 </button>
             `;
@@ -582,9 +699,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!button.disabled) {
                     button.addEventListener('click', () => {
                         const newPage = parseInt(button.dataset.page);
-                        if (!isNaN(newPage) && newPage > 0 && newPage <= totalPages) {
+                        if (!isNaN(newPage) && newPage > 0 && newPage <= pages) {
                             console.log('Changing to page:', newPage);
-                            handleFilters(newPage, studentId); // Passa o studentId ao clicar no botão
+                            // Usar o studentId recebido como parâmetro
+                            handleFilters(newPage, studentId, classId);
                         }
                     });
                 }
@@ -629,7 +747,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="report-info">
                             <h3>Informações do Aluno</h3>
                             <p><strong>Nome:</strong> ${report.student?.name || 'Não identificado'}</p>
-                            <p><strong>Turma:</strong> ${report.student?.userClass || 'N/A'}</p>
+                            <p><strong>Turma:</strong> ${report.student?.gradeId || 'N/A'}</p>
                             
                             <h3>Ocorrência</h3>
                             <p><strong>Data:</strong> ${new Date(report.createdAt).toLocaleDateString('pt-BR')}</p>
@@ -830,6 +948,8 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(removeToast, 5000);
         }
 
+                // Substituir a função loadClassesByUserSchool existente
+        
         async function loadClassesByUserSchool() {
             const schoolId = document.getElementById("loggedInSchoolId")?.value;
             const classSelect = document.getElementById("classFilter");
@@ -843,16 +963,32 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         
             try {
-                const response = await fetch(`/classes/list?schoolId=${encodeURIComponent(schoolId)}`); // Filtra por schoolId
+                const response = await fetch(`/grades/school/${encodeURIComponent(schoolId)}`);
                 if (!response.ok) {
                     console.error("Erro ao buscar turmas:", response.status);
                     classSelect.innerHTML = `<option value="">Erro ao carregar turmas</option>`;
                     return;
                 }
-                const data = await response.json();
-                const classes = data.classes || data;
+                
+                const responseData = await response.json();
+                
+                // Ajuste para o novo formato de resposta
+                const classes = responseData.data || [];
+                
+                console.log('Turmas carregadas:', classes);
         
-                classSelect.innerHTML += classes.map(cls => `<option value="${cls.id}">${cls.name}</option>`).join("");
+                if (classes.length === 0) {
+                    classSelect.innerHTML += `<option value="" disabled>Nenhuma turma cadastrada</option>`;
+                    return;
+                }
+        
+                // Mapear as turmas para o select, mas só incluir turmas ativas
+                const classOptions = classes
+                    .filter(cls => cls.status === 'active')
+                    .map(cls => `<option value="${cls.id}">${cls.name}</option>`)
+                    .join("");
+                    
+                classSelect.innerHTML += classOptions;
         
             } catch (error) {
                 console.error("Erro ao buscar turmas:", error);
@@ -860,7 +996,52 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Chame essa função no carregamento da página
-        loadClassesByUserSchool();
+        // Carregar turmas no início
+        loadAllSchoolGrades().then(() => {
+            console.log('Turmas carregadas com sucesso!');
+            // Iniciar a busca de relatórios (não precisa mais chamar loadClassesByUserSchool)
+            handleFilters(1);
+        });
+        
+        // Nova função para gerar o relatório completo
+        async function generateStudentFullReport(studentId, studentName) {
+            try {
+                if (!studentId) {
+                    showToast('ID do aluno não fornecido', 'error');
+                    return;
+                }
+
+                showLoading();
+                
+                // Construir a URL para o PDF
+                const pdfUrl = `/reports/student/${studentId}/occurrences/pdf`;
+                
+                // Abrir em uma nova aba
+                window.open(pdfUrl, '_blank');
+                
+                showToast(`Gerando relatório para ${studentName || 'o aluno selecionado'}`, 'success');
+            } catch (error) {
+                console.error('Erro ao gerar relatório completo:', error);
+                showToast('Erro ao gerar relatório completo', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Adicione o evento de clique para o botão - coloque dentro do bloco DOMContentLoaded existente
+        const generateFullReportBtn = document.getElementById('generate-full-report');
+        if (generateFullReportBtn) {
+            generateFullReportBtn.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-student-id');
+                const studentName = this.getAttribute('data-student-name');
+                
+                if (!studentId) {
+                    showToast('Selecione um aluno primeiro', 'error');
+                    return;
+                }
+                
+                generateStudentFullReport(studentId, studentName);
+            });
+        }
     }
 });

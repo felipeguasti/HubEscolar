@@ -166,6 +166,69 @@ const featureService = {
             logger.error(`Error getting feature ${featureId}`, error.message);
             throw new Error('Erro ao buscar feature');
         }
+    },
+
+    async assignFeatureToBatch(featureId, role, districtId, schoolId, token) {
+        try {
+            const response = await axios.post(`${this.baseURL}/assign-batch`,
+                { 
+                    featureId, 
+                    role, 
+                    districtId: districtId || null, 
+                    schoolId: schoolId || null 
+                },
+                { headers: { Authorization: `Bearer ${token}` }}
+            );
+            
+            console.log('Enviando para a API:', {
+                featureId,
+                role,
+                districtId,
+                schoolId
+            });
+
+            if (response.status === 200) {
+                logger.info(`Feature ${featureId} assigned in batch to ${role} users`);
+                return response.data;
+            }
+            
+            throw new Error('Erro ao atribuir feature em lote');
+            
+        } catch (error) {
+            logger.error('Error assigning feature in batch:', error.message);
+            throw new Error(error.response?.data?.error || 'Erro ao atribuir feature em lote');
+        }
+    },
+
+    async removeFeatureFromBatch(featureId, role, districtId, schoolId, token) {
+        try {
+            const response = await axios.post(`${this.baseURL}/remove-batch`,
+                { 
+                    featureId, 
+                    role, 
+                    districtId: districtId || null, 
+                    schoolId: schoolId || null 
+                },
+                { headers: { Authorization: `Bearer ${token}` }}
+            );
+            console.log('Enviando para a API:', {
+                featureId,
+                role,
+                districtId,
+                schoolId
+            });
+            
+            if (response.status === 200) {
+                logger.info(`Feature ${featureId} removed in batch from ${role} users`);
+                return response.data;
+            }
+            
+            throw new Error('Erro ao remover feature em lote');
+            
+        } catch (error) {
+            logger.error('Error removing feature in batch:', error.message);
+            throw new Error(error.response?.data?.error || 'Erro ao remover feature em lote');
+        }
     }
 };
 

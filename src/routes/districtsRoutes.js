@@ -14,7 +14,7 @@
     
         try {
             const districts = await districtsService.getAllDistricts(accessToken);
-            res.render('districts', { districts: districts.data, user: user, title:'Distritos' });
+            res.render('districts', { districts: districts.data, user: user, title:'Secretarias e escolas' });
 
         } catch (error) {
             console.error('Erro ao buscar e renderizar a página de distritos:', error);

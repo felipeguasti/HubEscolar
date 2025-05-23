@@ -31,6 +31,7 @@ const dashboardRoutes = require('./src/routes/dashboard');
 const reportRoutes = require('./src/routes/reportRoutes');
 const featureRoutes = require('./src/routes/featureRoutes');
 const headerRoutes = require('./src/routes/headerRoutes');
+const whatsappRoutes = require('./src/routes/whatsappRoutes');
 console.log('[HubEscolar - app.js] Módulos de rotas importados.');
 
 // Validação das variáveis de ambiente
@@ -123,11 +124,15 @@ app.use('/features', featureRoutes);
 console.log('[HubEscolar - app.js] Rotas de ferramentas carregadas.');
 app.use('/reports/headers', headerRoutes);
 console.log('[HubEscolar - app.js] Rotas de cabeçalhos carregadas.');
+app.use('/whatsapp', whatsappRoutes);
+console.log('[HubEscolar - app.js] Rotas de cabeçalhos carregadas.');
+
 
 // Rota inicial
 app.get('/', (req, res) => {
     res.render('index', {
-        title: 'Início'
+        title: 'Início',
+        user: undefined
     });
     console.log('[HubEscolar - app.js] Rota GET / carregada.');
 });
@@ -136,6 +141,7 @@ app.get('/', (req, res) => {
 app.get('/login', (req, res) => {
     res.render('login', {
         title: 'Login',
+        user: undefined,
         message: req.flash('message')
     });
     console.log('[HubEscolar - app.js] Rota GET /login carregada.');
@@ -143,50 +149,50 @@ app.get('/login', (req, res) => {
 
 // Outras rotas de página (que são renderizadas localmente pelo sistema principal)
 app.get('/recursos', (req, res) => {
-    res.render('recursos', { title: 'Recursos' });
+    res.render('recursos', { title: 'Recursos', user: undefined });
     console.log('[HubEscolar - app.js] Rota GET /recursos carregada.');
 });
 
 app.get('/planos', (req, res) => {
-    res.render('planos', { title: 'Planos' });
+    res.render('planos', { title: 'Planos', user: undefined });
     console.log('[HubEscolar - app.js] Rota GET /planos carregada.');
 });
 
 app.get('/blog', (req, res) => {
-    res.render('blog', { title: 'Blog' });
+    res.render('blog', { title: 'Blog', user: undefined });
     console.log('[HubEscolar - app.js] Rota GET /blog carregada.');
 });
 
 app.get('/sobre', (req, res) => {
-    res.render('sobre', { title: 'Sobre' });
+    res.render('sobre', { title: 'Sobre', user: undefined });
     console.log('[HubEscolar - app.js] Rota GET /sobre carregada.');
 });
 
 app.get('/contato', (req, res) => {
-    res.render('contato', { title: 'Contato' });
+    res.render('contato', { title: 'Contato', user: undefined });
     console.log('[HubEscolar - app.js] Rota GET /contato carregada.');
 });
 
 // Rota de esqueci minha senha (renderiza a página localmente)
 app.get('/forgot-password', (req, res) => {
-    res.render('forgot', { title: 'Esqueceu a senha', message: req.flash('message') });
+    res.render('forgot', { title: 'Esqueceu a senha', message: req.flash('message'), user: undefined });
     console.log('[HubEscolar - app.js] Rota GET /forgot-password carregada.');
 });
 
 app.get('/reports', (req, res) => {
     const reports = req.query.reports || [];
-    res.render('reports', { reports });
+    res.render('reports', { reports, user: undefined });
     console.log('[HubEscolar - app.js] Rota GET /reports carregada.');
 });
 
 app.get('/warnings', (req, res) => {
-    res.render('warnings');
+    res.render('warnings', {user: undefined});
     console.log('[HubEscolar - app.js] Rota GET /warnings carregada.');
 });
 
 // Página de redefinição de senha (renderiza a página localmente)
 app.get('/reset-password/:token', (req, res) => {
-    res.render('reset-password', { title: 'Redefinir Senha', token: req.params.token });
+    res.render('reset-password', { title: 'Redefinir Senha', token: req.params.token, user: undefined });
     console.log('[HubEscolar - app.js] Rota GET /reset-password/:token carregada.');
 });
 

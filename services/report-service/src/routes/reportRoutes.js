@@ -19,6 +19,8 @@ router.delete('/delete/:id', authMiddleware, reportController.deleteReport);
 // Rota para listar relatórios com filtros
 router.get('/list', authMiddleware, reportController.listReports);
 
+router.get('/student/:studentId/occurrences/pdf', authMiddleware, reportController.generateStudentOccurrencesReportPDF);
+
 router.get('/disciplinary-options', async (req, res) => {
     try {
         const filePath = path.join(__dirname, '..', '..', 'faltas_disciplinares.json');

@@ -110,24 +110,57 @@ const validarCPF = (cpf) => {
 
 // Função para validar telefone
 const validarTelefone = (telefone) => {
-    // Remove todos os caracteres não numéricos
-    telefone = telefone.replace(/[^\d]/g, '');
-
-    // Verifica se o telefone está vazio (agora opcional)
+    // Se o telefone for nulo ou vazio, considera como válido (campo opcional)
     if (!telefone) {
-        return true; // Telefone vazio é considerado válido
+        return true;
     }
+    
+    // Verificar se contém múltiplos telefones
+    if (telefone.includes('|')) {
+        // Dividir os telefones e validar cada um
+        const telefones = telefone.split('|');
+        // Um telefone inválido torna todo o conjunto inválido
+        return telefones.every(tel => validarTelefoneSingular(tel.trim()));
+    }
+    
+    // Caso seja um único telefone
+    return validarTelefoneSingular(telefone);
+};
 
+// Função auxiliar para validar um único telefone
+const validarTelefoneSingular = (telefone) => {
+    // Remove todos os caracteres não numéricos
+    const numerosApenas = telefone.replace(/[^\d]/g, '');
+    
+    // Verifica se o telefone está vazio
+    if (!numerosApenas) {
+        return false; // Telefone vazio não é válido quando fornecido
+    }
+    
+    // Verifica se tem pelo menos 10 dígitos (DDD + número)
+    if (numerosApenas.length < 10) {
+        return false;
+    }
+    
+    // Extrai o DDD e o número
+    const ddd = numerosApenas.substring(0, 2);
+    const numero = numerosApenas.substring(2);
+    
+    // Verifica se o DDD é válido
+    if (!/^[1-9][0-9]$/.test(ddd)) {
+        return false;
+    }
+    
     // Verifica se é celular (começa com 9)
-    if (telefone.startsWith('9')) {
-        return telefone.length >= 9 && telefone.length <= 12;
+    if (numero.startsWith('9')) {
+        return numero.length >= 9 && numero.length <= 10;
     }
-
+    
     // Verifica se é fixo (começa com 2, 3, 4 ou 5)
-    if (/^[2-5]/.test(telefone)) {
-        return telefone.length >= 8 && telefone.length <= 11;
+    if (/^[2-5]/.test(numero)) {
+        return numero.length >= 8 && numero.length <= 9;
     }
-
+    
     // Se não se encaixar em nenhum dos padrões
     return false;
 };
@@ -141,7 +174,7 @@ const validarDataNascimento = (data) => {
 
     const dataNascimento = new Date(data);
     const hoje = new Date();
-    const idadeMinima = 14; // Idade mínima para cadastro
+    const idadeMinima = 7; // Idade mínima para cadastro
 
     // Verifica se é uma data válida
     if (isNaN(dataNascimento.getTime())) return false;

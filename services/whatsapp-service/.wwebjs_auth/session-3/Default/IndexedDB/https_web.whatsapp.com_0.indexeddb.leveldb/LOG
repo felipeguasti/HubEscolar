@@ -1,0 +1,19 @@
+2025/05/23-18:33:31.334 920 Reusing MANIFEST D:\Documents\GitHub\hubescolar\services\whatsapp-service\.wwebjs_auth\session-3\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/05/23-18:33:31.371 920 Recovering log #89
+2025/05/23-18:33:31.899 920 Reusing old log D:\Documents\GitHub\hubescolar\services\whatsapp-service\.wwebjs_auth\session-3\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000089.log 
+2025/05/23-18:33:31.902 920 Delete type=2 #88
+2025/05/23-12:50:23.002 5844 Compacting 1@1 + 1@2 files
+2025/05/23-12:50:23.021 5844 Generated table #93@1: 458 keys, 12281 bytes
+2025/05/23-12:50:23.021 5844 Compacted 1@1 + 1@2 files => 12281 bytes
+2025/05/23-12:50:23.028 5844 compacted to: files[ 0 0 1 0 0 0 0 ]
+2025/05/23-12:50:23.029 5844 Delete type=2 #56
+2025/05/23-12:50:23.029 5844 Delete type=2 #91
+2025/05/23-13:19:00.374 44f4 Level-0 table #95: started
+2025/05/23-13:19:00.598 44f4 Level-0 table #95: 1265979 bytes OK
+2025/05/23-13:19:00.608 44f4 Delete type=0 #89
+2025/05/23-13:21:40.597 20ec Compacting 1@1 + 1@2 files
+2025/05/23-13:21:40.756 20ec Generated table #96@1: 9037 keys, 504834 bytes
+2025/05/23-13:21:40.756 20ec Compacted 1@1 + 1@2 files => 504834 bytes
+2025/05/23-13:21:40.763 20ec compacted to: files[ 0 0 1 0 0 0 0 ]
+2025/05/23-13:21:40.764 20ec Delete type=2 #93
+2025/05/23-13:21:40.764 20ec Delete type=2 #95

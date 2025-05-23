@@ -5,6 +5,22 @@
             <h1>Central de Advertências</h1>
             <p>Gerencie as advertências registradas no sistema.</p>
         </header>   
+        <div class="nav-reports">
+            <a href="/reports" style="
+                display: inline-block;
+                padding: 10px 20px;
+                background-color: black;
+                color: white;
+                text-decoration: none;
+                border-radius: 5px;
+                font-family: sans-serif;
+                font-size: 16px;
+                white-space: nowrap;
+                border: none;
+                cursor: pointer;
+                transition: background-color 0.3s ease, color 0.3s ease;
+            " onmouseover="this.style.backgroundColor='#B9FF66'; this.style.color='black';" onmouseout="this.style.backgroundColor='black'; this.style.color='white';">Voltar</a>
+        </div>
         <section class="reports-center-container">
             <!-- Stats Section -->
             <div class="stats-container">
@@ -34,12 +50,18 @@
                         <option value="">Todas as Turmas</option>
                     </select>
                 </div>
-                <div class="filter-group">
-                    <input type="text"
-                           id="student-search"
-                           placeholder="Buscar por aluno..."
-                           autocomplete="off">
-                    <ul id="autocomplete-results" class="autocomplete-results"></ul>
+                <div class="filter-group search-container">
+                    <div class="search-input-wrapper">
+                        <input type="text"
+                               id="student-search"
+                               placeholder="Buscar por aluno..."
+                               autocomplete="off">
+                        <ul id="autocomplete-results" class="autocomplete-results"></ul>
+                    </div>
+                    <!-- Botão de relatório completo (inicialmente oculto) -->
+                    <button id="generate-full-report" class="report-btn" style="display: none;">
+                        <i class="fas fa-file-pdf"></i> Relatório Completo
+                    </button>
                 </div>
             </div>
             
