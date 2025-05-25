@@ -34,12 +34,18 @@
                         <option value="">Todas as Turmas</option>
                     </select>
                 </div>
-                <div class="filter-group">
-                    <input type="text"
-                           id="student-search"
-                           placeholder="Buscar por aluno..."
-                           autocomplete="off">
-                    <ul id="autocomplete-results" class="autocomplete-results"></ul>
+                <div class="filter-group search-container">
+                    <div class="search-input-wrapper">
+                        <input type="text"
+                               id="student-search"
+                               placeholder="Buscar por aluno..."
+                               autocomplete="off">
+                        <ul id="autocomplete-results" class="autocomplete-results"></ul>
+                    </div>
+                    <!-- Botão de relatório completo (inicialmente oculto) -->
+                    <button id="generate-full-report" class="report-btn" style="display: none;">
+                        <i class="fas fa-file-pdf"></i> Relatório Completo
+                    </button>
                 </div>
             </div>
             

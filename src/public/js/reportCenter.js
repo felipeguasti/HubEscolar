@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     listItem.addEventListener('click', () => {
                         searchStudentInput.value = student.name;
                         autocompleteResultsList.innerHTML = '';
-                        fetchReportsByStudentId(student.id);
+                        fetchReportsByStudentId(student.id, student.name); // Agora passamos o nome também
                     });
                     
                     autocompleteResultsList.appendChild(listItem);
@@ -142,11 +142,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 listItem.textContent = 'Nenhum aluno encontrado';
                 autocompleteResultsList.appendChild(listItem);
             }
+
+            // Esconder o botão quando não houver resultados
+            const reportButton = document.getElementById('generate-full-report');
+            if (reportButton) {
+                reportButton.style.display = 'none';
+            }
         }
 
         // Fetch reports by student ID
         let currentStudentIdFilter = null;
-        async function fetchReportsByStudentId(studentId) {
+        let currentStudentData = null; // Adicionada para armazenar os dados do aluno
+        async function fetchReportsByStudentId(studentId, studentName = '') {
             try {
                 showLoading();
         
@@ -156,6 +163,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const offset = 0;
         
                 currentStudentIdFilter = studentId; // Armazena o studentId filtrado
+                currentStudentData = { id: studentId, name: studentName }; // Armazena os dados do aluno
+                
+                // Mostrar o botão de relatório completo
+                const reportButton = document.getElementById('generate-full-report');
+                if (reportButton) {
+                    reportButton.style.display = 'inline-flex';
+                    reportButton.setAttribute('data-student-id', studentId);
+                    reportButton.setAttribute('data-student-name', studentName);
+                }
         
                 const filters = {
                     studentId,
@@ -208,7 +224,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Event Listeners
         searchStudentInput?.addEventListener('input', debounce(function() {
-            searchStudents(this.value);
+            const searchTerm = this.value;
+            if (!searchTerm?.trim()) {
+                if (autocompleteResultsList) {
+                    autocompleteResultsList.innerHTML = '';
+                }
+                highlightedIndex = -1;
+                
+                // Esconder o botão quando o campo de busca estiver vazio
+                const reportButton = document.getElementById('generate-full-report');
+                if (reportButton) {
+                    reportButton.style.display = 'none';
+                }
+                return;
+            }
+            searchStudents(searchTerm);
         }, 300));
 
         // Keyboard navigation
@@ -227,7 +257,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (event.key === 'Enter') {
                     event.preventDefault();
                     if (highlightedIndex >= 0) {
-                        listItems[highlightedIndex].click();
+                        const selectedItem = listItems[highlightedIndex];
+                        const studentId = selectedItem.dataset.studentId;
+                        const studentName = selectedItem.dataset.studentName;
+                        searchStudentInput.value = studentName;
+                        autocompleteResultsList.innerHTML = '';
+                        fetchReportsByStudentId(studentId, studentName); // Passar o nome também
                     }
                 } else if (event.key === 'Escape') {
                     autocompleteResultsList.innerHTML = '';
@@ -966,5 +1001,46 @@ document.addEventListener('DOMContentLoaded', function() {
             // Iniciar a busca de relatórios (não precisa mais chamar loadClassesByUserSchool)
             handleFilters(1);
         });
+        
+        // Nova função para gerar o relatório completo
+        async function generateStudentFullReport(studentId, studentName) {
+            try {
+                if (!studentId) {
+                    showToast('ID do aluno não fornecido', 'error');
+                    return;
+                }
+
+                showLoading();
+                
+                // Construir a URL para o PDF
+                const pdfUrl = `/reports/student/${studentId}/occurrences/pdf`;
+                
+                // Abrir em uma nova aba
+                window.open(pdfUrl, '_blank');
+                
+                showToast(`Gerando relatório para ${studentName || 'o aluno selecionado'}`, 'success');
+            } catch (error) {
+                console.error('Erro ao gerar relatório completo:', error);
+                showToast('Erro ao gerar relatório completo', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Adicione o evento de clique para o botão - coloque dentro do bloco DOMContentLoaded existente
+        const generateFullReportBtn = document.getElementById('generate-full-report');
+        if (generateFullReportBtn) {
+            generateFullReportBtn.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-student-id');
+                const studentName = this.getAttribute('data-student-name');
+                
+                if (!studentId) {
+                    showToast('Selecione um aluno primeiro', 'error');
+                    return;
+                }
+                
+                generateStudentFullReport(studentId, studentName);
+            });
+        }
     }
 });

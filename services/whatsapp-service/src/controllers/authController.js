@@ -205,6 +205,29 @@ class AuthController {
             res.status(500).send('Erro ao carregar página de conexão');
         }
     }
+
+    /**
+     * Reset de uma sessão WhatsApp
+     * @param {Request} req - Objeto da requisição Express
+     * @param {Response} res - Objeto da resposta Express
+     */
+    async resetSession(req, res) {
+        try {
+            const { sessionId = 'default' } = req.body;
+            
+            logger.info(`Solicitação de reset para sessão ${sessionId}`);
+            const result = await whatsappService.resetSession(sessionId);
+            
+            return res.json(result);
+        } catch (error) {
+            logger.error(`Erro ao resetar sessão:`, error);
+            return res.status(500).json({
+                success: false,
+                message: 'Erro ao resetar sessão do WhatsApp',
+                error: error.message
+            });
+        }
+    }
 }
 
 module.exports = new AuthController();

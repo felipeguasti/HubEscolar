@@ -17,4 +17,7 @@ router.post('/disconnect', authController.disconnect);
 // Rota para listar todas as sessões ativas
 router.get('/sessions', authController.getAllSessions);
 
+// Rota para resetar uma sessão
+router.post('/reset', authController.resetSession);
+
 module.exports = router;

@@ -1,3 +1,8 @@
-2025/05/18-22:40:27.965 9184 Reusing MANIFEST D:\Documents\GitHub\hubescolar\services\whatsapp-service\.wwebjs_auth\session-4\Default\Local Storage\leveldb/MANIFEST-000001
-2025/05/18-22:40:28.024 9184 Recovering log #3
-2025/05/18-22:40:28.028 9184 Reusing old log D:\Documents\GitHub\hubescolar\services\whatsapp-service\.wwebjs_auth\session-4\Default\Local Storage\leveldb/000003.log 
+2025/05/19-13:45:56.538 6f10 Creating DB D:\Documents\GitHub\hubescolar\services\whatsapp-service\.wwebjs_auth\session-4\Default\Local Storage\leveldb since it was missing.
+2025/05/19-13:45:56.791 6f10 Reusing MANIFEST D:\Documents\GitHub\hubescolar\services\whatsapp-service\.wwebjs_auth\session-4\Default\Local Storage\leveldb/MANIFEST-000001
+2025/05/19-15:04:15.442 cff8 Level-0 table #5: started
+2025/05/19-15:04:15.464 cff8 Level-0 table #5: 20519 bytes OK
+2025/05/19-15:04:15.471 cff8 Delete type=0 #3
+2025/05/19-18:26:29.440 af4 Level-0 table #7: started
+2025/05/19-18:26:29.465 af4 Level-0 table #7: 15824 bytes OK
+2025/05/19-18:26:29.476 af4 Delete type=0 #4

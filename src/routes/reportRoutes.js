@@ -355,4 +355,49 @@ router.patch("/:id/update-delivery", async (req, res) => {
     }
 });
 
+// Rota API para gerar o PDF com as ocorrências de um aluno
+router.get('/student/:studentId/occurrences/pdf', async (req, res) => {
+    try {
+        const loggedInUser = req.user;
+        const accessToken = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
+        const { studentId } = req.params;
+        const filters = req.query; // startDate, endDate, reportLevel
+        const schoolId = req.user.schoolId;
+        
+        if (!accessToken) {
+            return res.status(401).json({ error: 'Token de autorização não fornecido.' });
+        }
+
+        // Verificar permissões
+        const allowedRoles = ['Master', 'Diretor', 'Coordenador', 'Pedagogo', 'Secretario'];
+        if (!allowedRoles.includes(loggedInUser.role)) {
+            return res.status(403).json({ error: 'Você não tem permissão para gerar este relatório.' });
+        }
+
+        // 1. Buscar URLs dos logos
+        const logos = await mediaService.getLogosUrl(schoolId, accessToken);
+        
+        // 2. Gerar PDF com as ocorrências do aluno
+        const pdfBuffer = await reportService.generateStudentOccurrencesReportPDF(
+            accessToken, 
+            studentId,
+            logos,
+            filters
+        );
+
+        // Set response headers for PDF download
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=ocorrencias-aluno-${studentId}.pdf`);
+        
+        return res.send(pdfBuffer);
+
+    } catch (error) {
+        console.error('Erro ao gerar PDF de ocorrências do aluno:', error);
+        return res.status(500).json({ 
+            message: 'Erro ao gerar PDF de ocorrências do aluno', 
+            error: error.message 
+        });
+    }
+});
+
 module.exports = router;

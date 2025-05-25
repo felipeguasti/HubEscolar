@@ -204,6 +204,54 @@ class WhatsAppService {
     getAllSessions() {
         return whatsappConfig.getAllSessions();
     }
+    
+    /**
+     * Resetar uma sessão do WhatsApp
+     * @param {string} sessionId - ID da sessão a ser resetada
+     * @returns {Object} resultado da operação
+     */
+    async resetSession(sessionId = 'default') {
+        try {
+            logger.info(`Iniciando reset da sessão ${sessionId}`);
+            
+            // Primeiro, desconectar a sessão atual
+            await whatsappConfig.disconnect(sessionId);
+            logger.info(`Sessão ${sessionId} desconectada`);
+            
+            // Limpar arquivos da sessão (o LocalAuth armazena os dados em .wwebjs_auth)
+            const sessionDir = path.join(process.cwd(), '.wwebjs_auth', 'session-' + sessionId);
+            if (fs.existsSync(sessionDir)) {
+                // Remover diretório completo da sessão
+                await fs.promises.rm(sessionDir, { recursive: true, force: true });
+                logger.info(`Diretório da sessão ${sessionId} removido: ${sessionDir}`);
+            }
+            
+            // Remover o QR code se existir
+            const qrPath = whatsappConfig.getQrCodePath(sessionId);
+            if (qrPath && fs.existsSync(qrPath)) {
+                await fs.promises.unlink(qrPath);
+                logger.info(`QR code da sessão ${sessionId} removido`);
+            }
+            
+            // Inicializar uma nova sessão
+            await whatsappConfig.initializeClient(sessionId);
+            logger.info(`Nova sessão ${sessionId} inicializada`);
+            
+            return {
+                success: true,
+                message: `Sessão ${sessionId} resetada com sucesso`,
+                sessionId
+            };
+        } catch (error) {
+            logger.error(`Erro ao resetar sessão ${sessionId}:`, error);
+            return {
+                success: false,
+                message: `Erro ao resetar sessão ${sessionId}`,
+                error: error.message,
+                sessionId
+            };
+        }
+    }
 }
 
 module.exports = new WhatsAppService();
